@@ -1,0 +1,17 @@
+let
+    Start = Date.StartOfMonth(Date.AddYears(Date.From(DateTimeZone.UtcNow()),-1)),
+    End = Date.EndOfMonth(Date.From(DateTimeZone.UtcNow())),
+    DayCount = Duration.Days(End-Start),
+    Source = List.Dates(Start, DayCount, #duration(1,0,0,0)),
+    #"Converted to Table" = Table.FromList(Source, Splitter.SplitByNothing(), null, null, ExtraValues.Error),
+    #"Changed Type" = Table.TransformColumnTypes(#"Converted to Table",{{"Column1", type date}}),
+    #"Renamed Columns" = Table.RenameColumns(#"Changed Type",{{"Column1", "Date"}}),
+    #"Inserted Year" = Table.AddColumn(#"Renamed Columns", "Year", each Date.Year([Date]), Int64.Type),
+    #"Inserted Month" = Table.AddColumn(#"Inserted Year", "Month", each Date.Month([Date]), Int64.Type),
+    #"Inserted Month Name" = Table.AddColumn(#"Inserted Month", "Month Name", each Date.MonthName([Date]), type text),
+    #"Inserted Day" = Table.AddColumn(#"Inserted Month Name", "Day", each Date.Day([Date]), Int64.Type),
+    #"Inserted Day Name" = Table.AddColumn(#"Inserted Day", "Day Name", each Date.DayOfWeekName([Date]), type text),
+    #"Inserted Month Year Name" = Table.AddColumn(#"Inserted Day Name", "Month Year Name", each [Month Name] & " " & Text.From([Year])),
+    #"Inserted Day Month Name" = Table.AddColumn(#"Inserted Month Year Name", "Day Month Name", each Date.ToText([Date], "dd.MM"))
+in
+    #"Inserted Day Month Name"

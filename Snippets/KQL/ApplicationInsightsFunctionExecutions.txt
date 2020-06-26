@@ -1,0 +1,4 @@
+requests
+| where sdkVersion startswith "azurefunctions:"
+| project timestamp, operationName=name, success, duration, functionName=cloud_RoleName
+| summarize durationAvg=avg(duration), durationMin=min(duration), durationMax=max(duration), countSuccess=countif(success == true), countFailure=countif(success == false) by bin(timestamp,1d), functionName, operationName

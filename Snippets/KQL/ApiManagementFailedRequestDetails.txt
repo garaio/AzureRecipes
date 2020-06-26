@@ -1,0 +1,4 @@
+AzureDiagnostics
+| where ResourceProvider =~ "Microsoft.ApiManagement"
+| where isRequestSuccess_b == false
+| project TimeGenerated, ResourceName=tolower(Resource), ApiName=apiId_s, OperationName=operationId_s, ResponseCode=responseCode_d, ErrorType=lastError_source_s, ErrorReason=lastError_reason_s, ErrorMessage=lastError_message_s

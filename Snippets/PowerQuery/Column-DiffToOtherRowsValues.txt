@@ -1,0 +1,1 @@
+Date.From(List.Min((let currentTs = [TimeGenerated] in Table.SelectRows(AnalyticsQuery, each ([TimeGenerated]>currentTs)))[TimeGenerated]))

@@ -1,0 +1,1 @@
+#"Added Custom" = Table.AddColumn(#"Previous Step", "TotalWork", each List.Sum((let currentDate = [Date] in Table.SelectRows(Source, each ([StartDate]<=currentDate and [EndDate]>=currentDate)))[PersonPerDay]))
