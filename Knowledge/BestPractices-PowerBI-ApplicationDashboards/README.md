@@ -17,11 +17,11 @@ _content added later_
   * [Mark this table as date table](https://docs.microsoft.com/en-us/power-bi/transform-model/desktop-date-tables) to support the automatic functionalities of Power BI
   * Define filters based on this general table
   * Define readable formatted date values as additional columns in date table and use them for the axis values in visualizations. To ensure proper sorting, you may add the date value column to the Tooltip field which then enables sorting by this column
-* You may use this snippet to define the date table: [Snippets/PowerQuery/Table-GenerateDateTable](../Snippets/PowerQuery/Table-GenerateDateTable.txt)
+* You may use this snippet to define the date table: [Snippets/PowerQuery/Table-GenerateDateTable](../../Snippets/PowerQuery/Table-GenerateDateTable.txt)
 
 ### Data ingestion
 * Implement ingestion processes if query becomes too complex. This especially applies if you consume data from API's which include complex authentication, aggregation with multiple requests or paging.
-* A simple solution may include Azure Tables and Data Factory Pipelines for integration processes. Example [Snippets/ARM/data-factory-usage-details-ingestion](../ARM/PowerQuery/data-factory-usage-details-ingestion)
+* A simple solution may include Azure Tables and Data Factory Pipelines for integration processes. Example [Snippets/ARM/data-factory-usage-details-ingestion](../../Snippets/ARM/data-factory-usage-details-ingestion)
 
 ### Integration
 * Use service principals and API keys for connections which can be shared in Organisation scope (avoid personal logins)
