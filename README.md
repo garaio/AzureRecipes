@@ -22,7 +22,9 @@ The content is focused to the type of applications GARAIO AG typically develops 
 ### Blueprints
 Some quickstart templates for projects with standardized architectures.
 
-_coming soon_
+| Architecture | Purpose | Description | Link |
+|--------------|---------|-------------|------|
+| Serverless | General applications | Base resources including Storage Account, Log Analytics Workspace, Application Insights and Key Vault | [Show](./Blueprints/serverless-base-resources) |
 
 ### Snippets
 Directly reusable code artefacts for development, deployment or monitoring / analytics grouped by type of language or format.
@@ -39,12 +41,16 @@ Directly reusable code artefacts for development, deployment or monitoring / ana
 ### Templates
 This contains document structures and contents for technical reviews and project-specific definition of guidelines or conventions.
 
-_coming soon_
+| Type | Scope | Description | Link |
+|------|-------|-------------|------|
+| Convention | Project Setup, Consulting | How to structure and name application components as code artefacts and Azure resources | [Show](./Templates/Convention-ResourceStructuringAndNaming.md) |
 
 ### Knowledge
-In that folder various "How To" content is collected, e.g. regarding setup of Azure service configurations or selection of most appropriate Azure Service for specific requirements.
+In that folder various "How To" and "Best Practices" content is collected, e.g. regarding setup of Azure service configurations or selection of most appropriate Azure Service for specific requirements.
 
-_coming soon_
+| Type | Scope | Description | Link |
+|------|-------|-------------|------|
+| Best Practices | Power BI | Tips for creating valuable Application Dashboards to empower the project/product team with deep knowledge | [Show](./Knowledge/BestPractices-PowerBI-ApplicationDashboards) |
 
 ## Support
 If you need help with some content or find a bug then you may [create an issue](https://github.com/garaio/AzureRecipes/issues). For further inquiries please use contact possibilities on the [official website](https://garaio.com).

@@ -1,0 +1,1017 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "resourceNamePrefix": {
+            "type": "string",
+            "defaultValue": "customer-project",
+            "metadata": {
+                "description": "The prefix will be used for every parameter that represents a resource name. See the description of the parameter."
+            }
+        },
+        "resourceNameSuffix": {
+            "type": "string",
+            "metadata": {
+                "description": "The suffix will be appended to every parameter that represents a resource name. See the description of the parameter."
+            }
+        },
+        "analyticsServicePrincipalId": {
+            "type": "string",
+            "defaultValue": "00000000-0000-0000-0000-000000000000"
+        },
+        "analyticsServicePrincipalSecret": {
+            "type": "securestring"
+        }
+    },
+    "variables": {
+        "logAnalyticsWsName": "[concat(parameters('resourceNamePrefix'), '-', 'law', '-', parameters('resourceNameSuffix'))]",
+        "dataFactoryName": "[concat(parameters('resourceNamePrefix'), '-', 'df', '-', parameters('resourceNameSuffix'))]",
+
+        "keyVaultName": "[concat(parameters('resourceNamePrefix'), '-kv', '-', parameters('resourceNameSuffix'))]",
+        "keyVaultSecrets": [
+            {
+                "name": "analyticsServicePrincipalSecret",
+                "value": "[parameters('analyticsServicePrincipalSecret')]"
+            }
+        ],
+        "keyVaultSecretStorageAccountConnectionString": "storageAccountConnectionString",
+        
+        "storageAccountName": "[replace(concat(parameters('resourceNamePrefix'), '-', 'sa', '-', parameters('resourceNameSuffix')), '-', '')]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "name": "[variables('storageAccountName')]",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "Standard_LRS",
+                "tier": "Standard"
+            },
+            "kind": "StorageV2",
+            "apiVersion": "2019-06-01",
+            "tags": {},
+            "scale": null,
+            "properties": {
+                "networkAcls": {
+                    "bypass": "AzureServices",
+                    "virtualNetworkRules": [],
+                    "ipRules": [],
+                    "defaultAction": "Allow"
+                },
+                "supportsHttpsTrafficOnly": true,
+                "encryption": {
+                    "services": {
+                        "file": {
+                            "enabled": true
+                        },
+                        "blob": {
+                            "enabled": true
+                        }
+                    },
+                    "keySource": "Microsoft.Storage"
+                },
+                "accessTier": "Hot"
+            }
+        },
+        {
+            "type": "Microsoft.OperationalInsights/workspaces",
+            "name": "[variables('logAnalyticsWsName')]",
+            "apiVersion": "2020-03-01-preview",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "sku": {
+                    "name": "pergb2018"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults",
+            "name": "[variables('keyVaultName')]",
+            "apiVersion": "2019-09-01",
+            "location": "[resourceGroup().location]",
+            "tags": {},
+            "scale": null,
+            "properties": {
+                "sku": {
+                    "family": "A",
+                    "name": "standard"
+                },
+                "tenantId": "[subscription().tenantId]",
+                "enabledForTemplateDeployment": true,
+                "accessPolicies": []
+            }
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults/providers/diagnosticSettings",
+            "apiVersion": "2017-05-01-preview",
+            "name": "[concat(variables('keyVaultName'), '/Microsoft.Insights/', 'LogAnalytics')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]",
+                "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]"
+            ],
+            "properties": {
+                "name": "LogAnalytics",
+                "workspaceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]",
+                "logs": [
+                    {
+                        "category": "AuditEvent",
+                        "enabled": true
+                    }
+                ],
+                "metrics": [
+                    {
+                        "category": "AllMetrics",
+                        "enabled": true
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults/accessPolicies",
+            "name": "[concat(variables('keyVaultName'), '/add')]",
+            "apiVersion": "2019-09-01",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "accessPolicies": [
+                    {
+                        "tenantId": "[subscription().tenantId]",
+                        "objectId": "[reference(resourceId('Microsoft.DataFactory/factories', variables('dataFactoryName')), '2018-06-01', 'Full').identity.principalId]",
+                        "permissions": {
+                            "keys": [ "get" ],
+                            "secrets": [ "get" ]
+                        }
+                    }
+                ]
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.DataFactory/factories', variables('dataFactoryName'))]",
+                "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults/secrets",
+            "name": "[concat(variables('keyVaultName'), '/', variables('keyVaultSecrets')[copyIndex()].name)]",
+            "apiVersion": "2019-09-01",
+            "dependsOn": [
+                "[concat('Microsoft.KeyVault/vaults/', variables('keyVaultName'))]"
+            ],
+            "copy": {
+                "name": "secretsCopy",
+                "count": "[length(variables('keyVaultSecrets'))]"
+            },
+            "properties": {
+                "value": "[variables('keyVaultSecrets')[copyIndex()].value]"
+            }
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults/secrets",
+            "name": "[concat(variables('keyVaultName'), '/', variables('keyVaultSecretStorageAccountConnectionString'))]",
+            "apiVersion": "2019-09-01",
+            "dependsOn": [
+                "[concat('Microsoft.KeyVault/vaults/', variables('keyVaultName'))]",
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+            ],
+            "properties": {
+                "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2019-06-01').keys[0].value)]"
+            }
+        },
+        {
+            "type": "Microsoft.DataFactory/factories",
+            "name": "[variables('dataFactoryName')]",
+            "apiVersion": "2018-06-01",
+            "location": "[resourceGroup().location]",
+            "properties": {
+            },
+            "identity": {
+                "type": "SystemAssigned"
+            }
+        },
+        {
+            "type": "Microsoft.DataFactory/factories/providers/diagnosticSettings",
+            "apiVersion": "2017-05-01-preview",
+            "name": "[concat(variables('dataFactoryName'), '/Microsoft.Insights/', 'LogAnalytics')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.DataFactory/factories', variables('dataFactoryName'))]",
+                "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]"
+            ],
+            "properties": {
+                "name": "LogAnalytics",
+                "workspaceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]",
+                "logs": [
+                    {
+                        "category": "ActivityRuns",
+                        "enabled": true
+                    },
+                    {
+                        "category": "PipelineRuns",
+                        "enabled": true
+                    },
+                    {
+                        "category": "TriggerRuns",
+                        "enabled": true
+                    }
+                ],
+                "metrics": [
+                    {
+                        "category": "AllMetrics",
+                        "enabled": true
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.DataFactory/factories/linkedServices",
+            "name": "[concat(variables('dataFactoryName'), '/AzureKeyVault')]",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "annotations": [],
+                "type": "AzureKeyVault",
+                "typeProperties": {
+                    "baseUrl": "[concat('https://', variables('keyVaultName'), '.vault.azure.net/')]"
+                }
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.DataFactory/factories/pipelines",
+            "name": "[concat(variables('dataFactoryName'), '/ExportAndAggregateUsageDetailsToTable')]",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "activities": [
+                    {
+                        "name": "LoadToBlob",
+                        "type": "Copy",
+                        "dependsOn": [],
+                        "policy": {
+                            "timeout": "7.00:00:00",
+                            "retry": 0,
+                            "retryIntervalInSeconds": 30,
+                            "secureOutput": false,
+                            "secureInput": false
+                        },
+                        "userProperties": [
+                            {
+                                "name": "Source",
+                                "value": "?api-version=2019-01-01"
+                            },
+                            {
+                                "name": "Destination",
+                                "value": "exports//"
+                            }
+                        ],
+                        "typeProperties": {
+                            "source": {
+                                "type": "RestSource",
+                                "httpRequestTimeout": "00:01:40",
+                                "requestInterval": "00.00:00:00.010",
+                                "requestMethod": "GET",
+                                "paginationRules": {
+                                    "AbsoluteUrl": "$.nextLink"
+                                }
+                            },
+                            "sink": {
+                                "type": "JsonSink",
+                                "storeSettings": {
+                                    "type": "AzureBlobStorageWriteSettings"
+                                },
+                                "formatSettings": {
+                                    "type": "JsonWriteSettings",
+                                    "quoteAllText": true,
+                                    "filePattern": "setOfObjects"
+                                }
+                            },
+                            "enableStaging": false,
+                            "translator": {
+                                "type": "TabularTranslator",
+                                "mappings": [
+                                    {
+                                        "source": {
+                                            "path": "[['name']"
+                                        },
+                                        "sink": {
+                                            "path": "$['id']"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "path": "[['properties']['usageStart']"
+                                        },
+                                        "sink": {
+                                            "path": "$['date']"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "path": "[['properties']['instanceId']"
+                                        },
+                                        "sink": {
+                                            "path": "$['resourceId']"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "path": "[['properties']['instanceName']"
+                                        },
+                                        "sink": {
+                                            "path": "$['resourceName']"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "path": "[['properties']['instanceLocation']"
+                                        },
+                                        "sink": {
+                                            "path": "$['location']"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "path": "[['properties']['meterId']"
+                                        },
+                                        "sink": {
+                                            "path": "$['meterId']"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "path": "[['properties']['usageQuantity']"
+                                        },
+                                        "sink": {
+                                            "path": "$['usageQuantity']"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "path": "[['properties']['pretaxCost']"
+                                        },
+                                        "sink": {
+                                            "path": "$['pretaxCost']"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "path": "[['properties']['currency']"
+                                        },
+                                        "sink": {
+                                            "path": "$['currency']"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "path": "[['properties']['isEstimated']"
+                                        },
+                                        "sink": {
+                                            "path": "$['isEstimated']"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "path": "[['properties']['subscriptionGuid']"
+                                        },
+                                        "sink": {
+                                            "path": "$['subscriptionGuid']"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "path": "[['properties']['consumedService']"
+                                        },
+                                        "sink": {
+                                            "path": "$['resourceTypeName']"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "path": "[['properties']['resourceGuid']"
+                                        },
+                                        "sink": {
+                                            "path": "$['resourceTypeGuid']"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "path": "[['properties']['offerId']"
+                                        },
+                                        "sink": {
+                                            "path": "$['offerId']"
+                                        }
+                                    }
+                                ],
+                                "collectionReference": "$['value']"
+                            }
+                        },
+                        "inputs": [
+                            {
+                                "referenceName": "UsageDetailsApiResponse",
+                                "type": "DatasetReference",
+                                "parameters": {}
+                            }
+                        ],
+                        "outputs": [
+                            {
+                                "referenceName": "UsageDetailsRawBlob",
+                                "type": "DatasetReference",
+                                "parameters": {
+                                    "UsageDetailsExportContainer": "exports",
+                                    "UsageDetailsRawBlobName": "usage-details.json"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "name": "AggregateData",
+                        "type": "ExecuteDataFlow",
+                        "dependsOn": [
+                            {
+                                "activity": "LoadToBlob",
+                                "dependencyConditions": [
+                                    "Succeeded"
+                                ]
+                            }
+                        ],
+                        "policy": {
+                            "timeout": "7.00:00:00",
+                            "retry": 0,
+                            "retryIntervalInSeconds": 30,
+                            "secureOutput": false,
+                            "secureInput": false
+                        },
+                        "userProperties": [],
+                        "typeProperties": {
+                            "dataflow": {
+                                "referenceName": "AggregateUsageDetails",
+                                "type": "DataFlowReference",
+                                "parameters": {},
+                                "datasetParameters": {
+                                    "blobData": {},
+                                    "tableData": {}
+                                }
+                            },
+                            "staging": {},
+                            "compute": {
+                                "coreCount": 8,
+                                "computeType": "General"
+                            }
+                        }
+                    },
+                    {
+                        "name": "WriteToTable",
+                        "type": "Copy",
+                        "dependsOn": [
+                            {
+                                "activity": "AggregateData",
+                                "dependencyConditions": [
+                                    "Succeeded"
+                                ]
+                            }
+                        ],
+                        "policy": {
+                            "timeout": "7.00:00:00",
+                            "retry": 0,
+                            "retryIntervalInSeconds": 30,
+                            "secureOutput": false,
+                            "secureInput": false
+                        },
+                        "userProperties": [],
+                        "typeProperties": {
+                            "source": {
+                                "type": "DelimitedTextSource",
+                                "storeSettings": {
+                                    "type": "AzureBlobStorageReadSettings",
+                                    "recursive": true,
+                                    "wildcardFileName": "usage-details.csv",
+                                    "enablePartitionDiscovery": false
+                                },
+                                "formatSettings": {
+                                    "type": "DelimitedTextReadSettings"
+                                }
+                            },
+                            "sink": {
+                                "type": "AzureTableSink",
+                                "azureTableInsertType": "replace",
+                                "azureTablePartitionKeyName": "partitionKey",
+                                "azureTableRowKeyName": "date",
+                                "writeBatchSize": 10000
+                            },
+                            "enableStaging": false,
+                            "translator": {
+                                "type": "TabularTranslator",
+                                "mappings": [
+                                    {
+                                        "source": {
+                                            "name": "partitionKey",
+                                            "type": "String"
+                                        },
+                                        "sink": {
+                                            "name": "partitionKey"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "name": "meterId",
+                                            "type": "String"
+                                        },
+                                        "sink": {
+                                            "name": "meterId"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "name": "resourceName",
+                                            "type": "String"
+                                        },
+                                        "sink": {
+                                            "name": "resourceName"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "name": "date",
+                                            "type": "String"
+                                        },
+                                        "sink": {
+                                            "name": "date"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "name": "usageQuantity",
+                                            "type": "String"
+                                        },
+                                        "sink": {
+                                            "name": "usageQuantity"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "name": "pretaxCost",
+                                            "type": "String"
+                                        },
+                                        "sink": {
+                                            "name": "pretaxCost"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "name": "id",
+                                            "type": "String"
+                                        },
+                                        "sink": {
+                                            "name": "id"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "name": "resourceId",
+                                            "type": "String"
+                                        },
+                                        "sink": {
+                                            "name": "resourceId"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "name": "location",
+                                            "type": "String"
+                                        },
+                                        "sink": {
+                                            "name": "location"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "name": "currency",
+                                            "type": "String"
+                                        },
+                                        "sink": {
+                                            "name": "currency"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "name": "isEstimated",
+                                            "type": "String"
+                                        },
+                                        "sink": {
+                                            "name": "isEstimated"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "name": "subscriptionGuid",
+                                            "type": "String"
+                                        },
+                                        "sink": {
+                                            "name": "subscriptionGuid"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "name": "resourceTypeName",
+                                            "type": "String"
+                                        },
+                                        "sink": {
+                                            "name": "resourceTypeName"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "name": "resourceTypeGuid",
+                                            "type": "String"
+                                        },
+                                        "sink": {
+                                            "name": "resourceTypeGuid"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "name": "offerId",
+                                            "type": "String"
+                                        },
+                                        "sink": {
+                                            "name": "offerId"
+                                        }
+                                    },
+                                    {
+                                        "source": {
+                                            "name": "resourceGroupName",
+                                            "type": "String"
+                                        },
+                                        "sink": {
+                                            "name": "resourceGroupName"
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "inputs": [
+                            {
+                                "referenceName": "UsageDetailsAggregatedBlob",
+                                "type": "DatasetReference",
+                                "parameters": {}
+                            }
+                        ],
+                        "outputs": [
+                            {
+                                "referenceName": "UsageDetailsDestinationTable",
+                                "type": "DatasetReference",
+                                "parameters": {}
+                            }
+                        ]
+                    }
+                ],
+                "annotations": []
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.DataFactory/factories/datasets', variables('dataFactoryName'), 'UsageDetailsApiResponse')]",
+                "[resourceId('Microsoft.DataFactory/factories/datasets', variables('dataFactoryName'), 'UsageDetailsRawBlob')]",
+                "[resourceId('Microsoft.DataFactory/factories/datasets', variables('dataFactoryName'), 'UsageDetailsAggregatedBlob')]",
+                "[resourceId('Microsoft.DataFactory/factories/datasets', variables('dataFactoryName'), 'UsageDetailsDestinationTable')]",
+                "[resourceId('Microsoft.DataFactory/factories/dataflows', variables('dataFactoryName'), 'AggregateUsageDetails')]"
+            ]
+        },
+        {
+            "type": "Microsoft.DataFactory/factories/linkedServices",
+            "name": "[concat(variables('dataFactoryName'), '/AzureManagementApi')]",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "annotations": [],
+                "type": "RestService",
+                "typeProperties": {
+                    "url": "[concat('https://management.azure.com/subscriptions/', subscription().id, '/providers/Microsoft.Consumption/usageDetails')]",
+                    "enableServerCertificateValidation": true,
+                    "authenticationType": "AadServicePrincipal",
+                    "servicePrincipalId": "[parameters('analyticsServicePrincipalId')]",
+                    "servicePrincipalKey": {
+                        "type": "AzureKeyVaultSecret",
+                        "store": {
+                            "referenceName": "AzureKeyVault",
+                            "type": "LinkedServiceReference"
+                        },
+                        "secretName": "analyticsServicePrincipalSecret"
+                    },
+                    "tenant": "[subscription().tenantId]",
+                    "aadResourceId": "https://management.azure.com"
+                }
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.DataFactory/factories/linkedServices', variables('dataFactoryName'), 'AzureKeyVault')]"
+            ]
+        },
+        {
+            "type": "Microsoft.DataFactory/factories/linkedServices",
+            "name": "[concat(variables('dataFactoryName'), '/CostDataBlobStorage')]",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "annotations": [],
+                "type": "AzureBlobStorage",
+                "typeProperties": {
+                    "connectionString": {
+                        "type": "AzureKeyVaultSecret",
+                        "store": {
+                            "referenceName": "AzureKeyVault",
+                            "type": "LinkedServiceReference"
+                        },
+                        "secretName": "[variables('keyVaultSecretStorageAccountConnectionString')]"
+                    }
+                }
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.DataFactory/factories/linkedServices', variables('dataFactoryName'), 'AzureKeyVault')]"
+            ]
+        },
+        {
+            "type": "Microsoft.DataFactory/factories/datasets",
+            "name": "[concat(variables('dataFactoryName'), '/UsageDetailsDestinationTable')]",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "linkedServiceName": {
+                    "referenceName": "VnbDataTableStorage",
+                    "type": "LinkedServiceReference"
+                },
+                "parameters": {
+                    "UsageDetailsTableName": {
+                        "type": "String",
+                        "defaultValue": "usagedetails"
+                    }
+                },
+                "folder": {
+                    "name": "UsageDetails"
+                },
+                "annotations": [],
+                "type": "AzureTable",
+                "schema": [],
+                "typeProperties": {
+                    "tableName": {
+                        "value": "@dataset().UsageDetailsTableName",
+                        "type": "Expression"
+                    }
+                }
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.DataFactory/factories/linkedServices', variables('dataFactoryName'), 'VnbDataTableStorage')]"
+            ]
+        },
+        {
+            "type": "Microsoft.DataFactory/factories/datasets",
+            "name": "[concat(variables('dataFactoryName'), '/UsageDetailsAggregatedBlob')]",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "linkedServiceName": {
+                    "referenceName": "CostDataBlobStorage",
+                    "type": "LinkedServiceReference"
+                },
+                "parameters": {
+                    "UsageDetailsExportContainer": {
+                        "type": "String",
+                        "defaultValue": "exports"
+                    }
+                },
+                "folder": {
+                    "name": "UsageDetails"
+                },
+                "annotations": [],
+                "type": "DelimitedText",
+                "typeProperties": {
+                    "location": {
+                        "type": "AzureBlobStorageLocation",
+                        "container": {
+                            "value": "@dataset().UsageDetailsExportContainer",
+                            "type": "Expression"
+                        }
+                    },
+                    "columnDelimiter": ",",
+                    "escapeChar": "\\",
+                    "firstRowAsHeader": true,
+                    "quoteChar": "\""
+                },
+                "schema": [
+                    {
+                        "name": "partitionKey",
+                        "type": "String"
+                    },
+                    {
+                        "name": "date",
+                        "type": "String"
+                    },
+                    {
+                        "name": "usageQuantity",
+                        "type": "String"
+                    },
+                    {
+                        "name": "pretaxCost",
+                        "type": "String"
+                    },
+                    {
+                        "name": "id",
+                        "type": "String"
+                    },
+                    {
+                        "name": "resourceId",
+                        "type": "String"
+                    },
+                    {
+                        "name": "resourceName",
+                        "type": "String"
+                    },
+                    {
+                        "name": "location",
+                        "type": "String"
+                    },
+                    {
+                        "name": "meterId",
+                        "type": "String"
+                    },
+                    {
+                        "name": "currency",
+                        "type": "String"
+                    },
+                    {
+                        "name": "isEstimated",
+                        "type": "String"
+                    },
+                    {
+                        "name": "subscriptionGuid",
+                        "type": "String"
+                    },
+                    {
+                        "name": "resourceTypeName",
+                        "type": "String"
+                    },
+                    {
+                        "name": "resourceTypeGuid",
+                        "type": "String"
+                    },
+                    {
+                        "name": "offerId",
+                        "type": "String"
+                    },
+                    {
+                        "name": "resourceGroupName",
+                        "type": "String"
+                    }
+                ]
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.DataFactory/factories/linkedServices', variables('dataFactoryName'), 'CostDataBlobStorage')]"
+            ]
+        },
+        {
+            "name": "[concat(variables('dataFactoryName'), '/UsageDetailsRawBlob')]",
+            "type": "Microsoft.DataFactory/factories/datasets",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "linkedServiceName": {
+                    "referenceName": "CostDataBlobStorage",
+                    "type": "LinkedServiceReference"
+                },
+                "parameters": {
+                    "UsageDetailsExportContainer": {
+                        "type": "String",
+                        "defaultValue": "exports"
+                    },
+                    "UsageDetailsRawBlobName": {
+                        "type": "String",
+                        "defaultValue": "usage-details.json"
+                    }
+                },
+                "folder": {
+                    "name": "UsageDetails"
+                },
+                "annotations": [],
+                "type": "Json",
+                "typeProperties": {
+                    "location": {
+                        "type": "AzureBlobStorageLocation",
+                        "fileName": {
+                            "value": "@dataset().UsageDetailsRawBlobName",
+                            "type": "Expression"
+                        },
+                        "container": {
+                            "value": "@dataset().UsageDetailsExportContainer",
+                            "type": "Expression"
+                        }
+                    }
+                },
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "id": {
+                            "type": "string"
+                        },
+                        "date": {
+                            "type": "string"
+                        },
+                        "resourceId": {
+                            "type": "string"
+                        },
+                        "resourceName": {
+                            "type": "string"
+                        },
+                        "location": {
+                            "type": "string"
+                        },
+                        "meterId": {
+                            "type": "string"
+                        },
+                        "usageQuantity": {
+                            "type": "number"
+                        },
+                        "pretaxCost": {
+                            "type": "number"
+                        },
+                        "currency": {
+                            "type": "string"
+                        },
+                        "isEstimated": {
+                            "type": "boolean"
+                        },
+                        "subscriptionGuid": {
+                            "type": "string"
+                        },
+                        "resourceTypeName": {
+                            "type": "string"
+                        },
+                        "resourceTypeGuid": {
+                            "type": "string"
+                        },
+                        "offerId": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.DataFactory/factories/linkedServices', variables('dataFactoryName'), 'CostDataBlobStorage')]"
+            ]
+        },
+        {
+            "type": "Microsoft.DataFactory/factories/datasets",
+            "name": "[concat(variables('dataFactoryName'), '/UsageDetailsApiResponse')]",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "linkedServiceName": {
+                    "referenceName": "AzureManagementApi",
+                    "type": "LinkedServiceReference"
+                },
+                "folder": {
+                    "name": "UsageDetails"
+                },
+                "annotations": [],
+                "type": "RestResource",
+                "typeProperties": {
+                    "relativeUrl": "?api-version=2019-01-01"
+                },
+                "schema": []
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.DataFactory/factories/linkedServices', variables('dataFactoryName'), 'AzureManagementApi')]"
+            ]
+        },
+        {
+            "type": "Microsoft.DataFactory/factories/dataflows",
+            "name": "[concat(variables('dataFactoryName'), '/AggregateUsageDetails')]",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "type": "MappingDataFlow",
+                "typeProperties": {
+                    "sources": [
+                        {
+                            "dataset": {
+                                "referenceName": "UsageDetailsRawBlob",
+                                "type": "DatasetReference"
+                            },
+                            "name": "blobData"
+                        }
+                    ],
+                    "sinks": [
+                        {
+                            "dataset": {
+                                "referenceName": "UsageDetailsAggregatedBlob",
+                                "type": "DatasetReference"
+                            },
+                            "name": "tableData"
+                        }
+                    ],
+                    "transformations": [
+                        {
+                            "name": "aggregatedData"
+                        },
+                        {
+                            "name": "mappedData",
+                            "description": "Creates an explicit mapping for each drifted column"
+                        }
+                    ],
+                    "script": "source(output(\n\t\tid as string,\n\t\tdate as string,\n\t\tresourceId as string,\n\t\tresourceName as string,\n\t\tlocation as string,\n\t\tmeterId as string,\n\t\tusageQuantity as double,\n\t\tpretaxCost as double,\n\t\tcurrency as string,\n\t\tisEstimated as boolean,\n\t\tsubscriptionGuid as string,\n\t\tresourceTypeName as string,\n\t\tresourceTypeGuid as string,\n\t\tofferId as string\n\t),\n\tallowSchemaDrift: false,\n\tvalidateSchema: false,\n\twildcardPaths:['usage-details.json']) ~> blobData\nmappedData aggregate(groupBy(partitionKey,\n\t\tdate),\n\tusageQuantity = sum(usageQuantity),\n\t\tpretaxCost = sum(pretaxCost),\n\t\teach(match(!in(['partitionKey','date','usageQuantity','pretaxCost'],name)), $$ = first($$))) ~> aggregatedData\nblobData derive(id = lower(toString(byName('id'))),\n\t\tdate = toString(byName('date')),\n\t\tresourceId = toString(byName('resourceId')),\n\t\tresourceName = lower(toString(byName('resourceName'))),\n\t\tlocation = toString(byName('location')),\n\t\tmeterId = lower(toString(byName('meterId'))),\n\t\tusageQuantity = toDouble(byName('usageQuantity')),\n\t\tpretaxCost = toDouble(byName('pretaxCost')),\n\t\tcurrency = toString(byName('currency')),\n\t\tisEstimated = toBoolean(byName('isEstimated')),\n\t\tsubscriptionGuid = lower(toString(byName('subscriptionGuid'))),\n\t\tresourceTypeName = toString(byName('resourceTypeName')),\n\t\tresourceTypeGuid = lower(toString(byName('resourceTypeGuid'))),\n\t\tofferId = toString(byName('offerId')),\n\t\tresourceGroupName = lower(regexExtract(byName('resourceId'), '\\\\/(?i)resourceGroups\\\\/(.*?)\\\\/', 1)),\n\t\tpartitionKey = lower(concat(byName('resourceName'), ':', byName('meterId')))) ~> mappedData\naggregatedData sink(input(\n\t\tpartitionKey as string,\n\t\tdate as string,\n\t\tusageQuantity as string,\n\t\tpretaxCost as string,\n\t\tid as string,\n\t\tresourceId as string,\n\t\tresourceName as string,\n\t\tlocation as string,\n\t\tmeterId as string,\n\t\tcurrency as string,\n\t\tisEstimated as string,\n\t\tsubscriptionGuid as string,\n\t\tresourceTypeName as string,\n\t\tresourceTypeGuid as string,\n\t\tofferId as string,\n\t\tresourceGroupName as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tpartitionFileNames:['usage-details.csv'],\n\tpartitionBy('hash', 1),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> tableData"
+                }
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.DataFactory/factories/datasets', variables('dataFactoryName'), 'UsageDetailsRawBlob')]",
+                "[resourceId('Microsoft.DataFactory/factories/datasets', variables('dataFactoryName'), 'UsageDetailsAggregatedBlob')]"
+            ]
+        }
+    ],
+    "outputs": {}
+}

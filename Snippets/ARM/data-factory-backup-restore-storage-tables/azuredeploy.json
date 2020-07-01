@@ -1,0 +1,811 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "resourceNamePrefix": {
+            "type": "string",
+            "defaultValue": "customer-project",
+            "metadata": {
+                "description": "The prefix will be used for every parameter that represents a resource name. See the description of the parameter."
+            }
+        },
+        "resourceNameSuffix": {
+            "type": "string",
+            "metadata": {
+                "description": "The suffix will be appended to every parameter that represents a resource name. See the description of the parameter."
+            }
+        }
+    },
+    "variables": {
+        "logAnalyticsWsName": "[concat(parameters('resourceNamePrefix'), '-', 'law', '-', parameters('resourceNameSuffix'))]",
+        "dataFactoryName": "[concat(parameters('resourceNamePrefix'), '-', 'df', '-', parameters('resourceNameSuffix'))]",
+
+        "keyVaultName": "[concat(parameters('resourceNamePrefix'), '-kv', '-', parameters('resourceNameSuffix'))]",
+        "keyVaultSecretStorageAccountConnectionString": "storageAccountConnectionString",
+        "keyVaultSecretStorageAccountTablesSasToken": "storageAccountTablesSasToken",
+        
+        "storageAccountName": "[replace(concat(parameters('resourceNamePrefix'), '-', 'sa', '-', parameters('resourceNameSuffix')), '-', '')]",
+        "storageAccountListTablesSasParams": {
+            "signedServices": "t",
+            "signedResourceTypes": "c",
+            "signedPermission": "l",
+            "signedExpiry": "2050-01-01T00:00:00Z"
+        },
+        "storageAccountTableUri": "[concat('https://', variables('storageAccountName'), '.table.core.windows.net')]",
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "name": "[variables('storageAccountName')]",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "Standard_LRS",
+                "tier": "Standard"
+            },
+            "kind": "StorageV2",
+            "apiVersion": "2019-06-01",
+            "tags": {},
+            "scale": null,
+            "properties": {
+                "networkAcls": {
+                    "bypass": "AzureServices",
+                    "virtualNetworkRules": [],
+                    "ipRules": [],
+                    "defaultAction": "Allow"
+                },
+                "supportsHttpsTrafficOnly": true,
+                "encryption": {
+                    "services": {
+                        "file": {
+                            "enabled": true
+                        },
+                        "blob": {
+                            "enabled": true
+                        }
+                    },
+                    "keySource": "Microsoft.Storage"
+                },
+                "accessTier": "Hot"
+            }
+        },
+        {
+            "type": "Microsoft.OperationalInsights/workspaces",
+            "name": "[variables('logAnalyticsWsName')]",
+            "apiVersion": "2020-03-01-preview",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "sku": {
+                    "name": "pergb2018"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults",
+            "name": "[variables('keyVaultName')]",
+            "apiVersion": "2019-09-01",
+            "location": "[resourceGroup().location]",
+            "tags": {},
+            "scale": null,
+            "properties": {
+                "sku": {
+                    "family": "A",
+                    "name": "standard"
+                },
+                "tenantId": "[subscription().tenantId]",
+                "enabledForTemplateDeployment": true,
+                "accessPolicies": []
+            }
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults/providers/diagnosticSettings",
+            "apiVersion": "2017-05-01-preview",
+            "name": "[concat(variables('keyVaultName'), '/Microsoft.Insights/', 'LogAnalytics')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]",
+                "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]"
+            ],
+            "properties": {
+                "name": "LogAnalytics",
+                "workspaceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]",
+                "logs": [
+                    {
+                        "category": "AuditEvent",
+                        "enabled": true
+                    }
+                ],
+                "metrics": [
+                    {
+                        "category": "AllMetrics",
+                        "enabled": true
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults/accessPolicies",
+            "name": "[concat(variables('keyVaultName'), '/add')]",
+            "apiVersion": "2019-09-01",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "accessPolicies": [
+                    {
+                        "tenantId": "[subscription().tenantId]",
+                        "objectId": "[reference(resourceId('Microsoft.DataFactory/factories', variables('dataFactoryName')), '2018-06-01', 'Full').identity.principalId]",
+                        "permissions": {
+                            "keys": [ "get" ],
+                            "secrets": [ "get" ]
+                        }
+                    }
+                ]
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.DataFactory/factories', variables('dataFactoryName'))]",
+                "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults/secrets",
+            "name": "[concat(variables('keyVaultName'), '/', variables('keyVaultSecretStorageAccountConnectionString'))]",
+            "apiVersion": "2019-09-01",
+            "dependsOn": [
+                "[concat('Microsoft.KeyVault/vaults/', variables('keyVaultName'))]",
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+            ],
+            "properties": {
+                "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2019-06-01').keys[0].value)]"
+            }
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults/secrets",
+            "name": "[concat(variables('keyVaultName'), '/', variables('keyVaultSecretStorageAccountTablesSasToken'))]",
+            "apiVersion": "2019-09-01",
+            "dependsOn": [
+                "[concat('Microsoft.KeyVault/vaults/', variables('keyVaultName'))]",
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+            ],
+            "properties": {
+                "value": "[listAccountSas(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2019-06-01', variables('storageAccountListTablesSasParams')).accountSasToken]"
+            }
+        },
+        {
+            "type": "Microsoft.DataFactory/factories",
+            "name": "[variables('dataFactoryName')]",
+            "apiVersion": "2018-06-01",
+            "location": "[resourceGroup().location]",
+            "properties": {
+            },
+            "identity": {
+                "type": "SystemAssigned"
+            }
+        },
+        {
+            "type": "Microsoft.DataFactory/factories/providers/diagnosticSettings",
+            "apiVersion": "2017-05-01-preview",
+            "name": "[concat(variables('dataFactoryName'), '/Microsoft.Insights/', 'LogAnalytics')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.DataFactory/factories', variables('dataFactoryName'))]",
+                "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]"
+            ],
+            "properties": {
+                "name": "LogAnalytics",
+                "workspaceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]",
+                "logs": [
+                    {
+                        "category": "ActivityRuns",
+                        "enabled": true
+                    },
+                    {
+                        "category": "PipelineRuns",
+                        "enabled": true
+                    },
+                    {
+                        "category": "TriggerRuns",
+                        "enabled": true
+                    }
+                ],
+                "metrics": [
+                    {
+                        "category": "AllMetrics",
+                        "enabled": true
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.DataFactory/factories/linkedServices",
+            "name": "[concat(variables('dataFactoryName'), '/AzureKeyVault')]",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "annotations": [],
+                "type": "AzureKeyVault",
+                "typeProperties": {
+                    "baseUrl": "[concat('https://', variables('keyVaultName'), '.vault.azure.net/')]"
+                }
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.DataFactory/factories/pipelines",
+            "name": "[concat(variables('dataFactoryName'), '/BackupStorageTables')]",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "activities": [
+                    {
+                        "name": "ListExistingTables",
+                        "type": "Lookup",
+                        "dependsOn": [
+                            {
+                                "activity": "GetKeyVaultSecret",
+                                "dependencyConditions": [
+                                    "Succeeded"
+                                ]
+                            }
+                        ],
+                        "policy": {
+                            "timeout": "7.00:00:00",
+                            "retry": 0,
+                            "retryIntervalInSeconds": 30,
+                            "secureOutput": false,
+                            "secureInput": true
+                        },
+                        "userProperties": [],
+                        "typeProperties": {
+                            "source": {
+                                "type": "JsonSource",
+                                "storeSettings": {
+                                    "type": "HttpReadSettings",
+                                    "requestMethod": "GET",
+                                    "additionalHeaders": "Accept: application/json;odata=nometadata",
+                                    "requestTimeout": ""
+                                },
+                                "formatSettings": {
+                                    "type": "JsonReadSettings"
+                                }
+                            },
+                            "dataset": {
+                                "referenceName": "StorageTablesApiResponse",
+                                "type": "DatasetReference",
+                                "parameters": {
+                                    "StorageAccountSasToken": {
+                                        "value": "@activity('GetKeyVaultSecret').output.value",
+                                        "type": "Expression"
+                                    }
+                                }
+                            },
+                            "firstRowOnly": false
+                        }
+                    },
+                    {
+                        "name": "GetKeyVaultSecret",
+                        "type": "WebActivity",
+                        "dependsOn": [],
+                        "policy": {
+                            "timeout": "7.00:00:00",
+                            "retry": 0,
+                            "retryIntervalInSeconds": 30,
+                            "secureOutput": true,
+                            "secureInput": false
+                        },
+                        "userProperties": [],
+                        "typeProperties": {
+                            "url": {
+                                "value": "@concat(pipeline().parameters.KeyVaultSecretUri, '?api-version=7.0')",
+                                "type": "Expression"
+                            },
+                            "method": "GET",
+                            "headers": {},
+                            "authentication": {
+                                "type": "MSI",
+                                "resource": "https://vault.azure.net"
+                            }
+                        }
+                    },
+                    {
+                        "name": "SetTables",
+                        "type": "SetVariable",
+                        "dependsOn": [
+                            {
+                                "activity": "ListExistingTables",
+                                "dependencyConditions": [
+                                    "Succeeded"
+                                ]
+                            }
+                        ],
+                        "userProperties": [],
+                        "typeProperties": {
+                            "variableName": "Tables",
+                            "value": {
+                                "value": "@first(activity('ListExistingTables').output.value).value",
+                                "type": "Expression"
+                            }
+                        }
+                    },
+                    {
+                        "name": "CreateDumpForTable",
+                        "type": "ForEach",
+                        "dependsOn": [
+                            {
+                                "activity": "SetTables",
+                                "dependencyConditions": [
+                                    "Succeeded"
+                                ]
+                            }
+                        ],
+                        "userProperties": [],
+                        "typeProperties": {
+                            "items": {
+                                "value": "@variables('Tables')",
+                                "type": "Expression"
+                            },
+                            "activities": [
+                                {
+                                    "name": "FilterIgnoredTables",
+                                    "type": "IfCondition",
+                                    "dependsOn": [],
+                                    "userProperties": [],
+                                    "typeProperties": {
+                                        "expression": {
+                                            "value": "@not(contains(pipeline().parameters.IgnoredTables, item().TableName))",
+                                            "type": "Expression"
+                                        },
+                                        "ifTrueActivities": [
+                                            {
+                                                "name": "CreateDump",
+                                                "type": "Copy",
+                                                "dependsOn": [],
+                                                "policy": {
+                                                    "timeout": "7.00:00:00",
+                                                    "retry": 0,
+                                                    "retryIntervalInSeconds": 30,
+                                                    "secureOutput": false,
+                                                    "secureInput": false
+                                                },
+                                                "userProperties": [],
+                                                "typeProperties": {
+                                                    "source": {
+                                                        "type": "AzureTableSource",
+                                                        "azureTableSourceIgnoreTableNotFound": false
+                                                    },
+                                                    "sink": {
+                                                        "type": "DelimitedTextSink",
+                                                        "storeSettings": {
+                                                            "type": "AzureBlobStorageWriteSettings"
+                                                        },
+                                                        "formatSettings": {
+                                                            "type": "DelimitedTextWriteSettings",
+                                                            "quoteAllText": true,
+                                                            "fileExtension": ".csv"
+                                                        }
+                                                    },
+                                                    "enableStaging": false
+                                                },
+                                                "inputs": [
+                                                    {
+                                                        "referenceName": "RecoveryTargetTable",
+                                                        "type": "DatasetReference",
+                                                        "parameters": {
+                                                            "TableName": {
+                                                                "value": "@item().TableName",
+                                                                "type": "Expression"
+                                                            }
+                                                        }
+                                                    }
+                                                ],
+                                                "outputs": [
+                                                    {
+                                                        "referenceName": "StorageTablesBackupBlob",
+                                                        "type": "DatasetReference",
+                                                        "parameters": {
+                                                            "BackupBlobContainer": "backup",
+                                                            "BackupTableName": {
+                                                                "value": "@item().TableName",
+                                                                "type": "Expression"
+                                                            }
+                                                        }
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "parameters": {
+                    "KeyVaultSecretUri": {
+                        "type": "String",
+                        "defaultValue": "[reference(resourceId('Microsoft.KeyVault/vaults/secrets', variables('keyVaultName'), variables('keyVaultSecretStorageAccountTablesSasToken'))).secretUri]"
+                    },
+                    "IgnoredTables": {
+                        "type": "array",
+                        "defaultValue": [
+                            "vnbdata"
+                        ]
+                    }
+                },
+                "variables": {
+                    "Tables": {
+                        "type": "Array"
+                    }
+                },
+                "annotations": []
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults/secrets', variables('keyVaultName'), variables('keyVaultSecretStorageAccountTablesSasToken'))]",
+                "[resourceId('Microsoft.DataFactory/factories/datasets', variables('dataFactoryName'), 'StorageTablesApiResponse')]",
+                "[resourceId('Microsoft.DataFactory/factories/datasets', variables('dataFactoryName'), 'RecoveryTargetTable')]",
+                "[resourceId('Microsoft.DataFactory/factories/datasets', variables('dataFactoryName'), 'StorageTablesBackupBlob')]"
+            ]
+        },
+        {
+            "type": "Microsoft.DataFactory/factories/pipelines",
+            "name": "[concat(variables('dataFactoryName'), '/RestoreStorageTable')]",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "activities": [
+                    {
+                        "name": "GetBlobMetadata",
+                        "type": "GetMetadata",
+                        "dependsOn": [],
+                        "policy": {
+                            "timeout": "7.00:00:00",
+                            "retry": 0,
+                            "retryIntervalInSeconds": 30,
+                            "secureOutput": false,
+                            "secureInput": false
+                        },
+                        "userProperties": [],
+                        "typeProperties": {
+                            "dataset": {
+                                "referenceName": "StorageTablesRestoreBlob",
+                                "type": "DatasetReference",
+                                "parameters": {}
+                            },
+                            "fieldList": [
+                                "childItems"
+                            ],
+                            "storeSettings": {
+                                "type": "AzureBlobStorageReadSettings"
+                            },
+                            "formatSettings": {
+                                "type": "DelimitedTextReadSettings"
+                            }
+                        }
+                    },
+                    {
+                        "name": "RestoreSingleBlob",
+                        "type": "ForEach",
+                        "dependsOn": [
+                            {
+                                "activity": "GetBlobMetadata",
+                                "dependencyConditions": [
+                                    "Succeeded"
+                                ]
+                            }
+                        ],
+                        "userProperties": [],
+                        "typeProperties": {
+                            "items": {
+                                "value": "@activity('GetBlobMetadata').output.childItems",
+                                "type": "Expression"
+                            },
+                            "activities": [
+                                {
+                                    "name": "FilterEntityDumpBlob",
+                                    "type": "IfCondition",
+                                    "dependsOn": [],
+                                    "userProperties": [],
+                                    "typeProperties": {
+                                        "expression": {
+                                            "value": "@and(equals(length(split(item().name, '-')), 4), endswith(item().name, '.csv'))",
+                                            "type": "Expression"
+                                        },
+                                        "ifTrueActivities": [
+                                            {
+                                                "name": "RestoreTableFromBlob",
+                                                "type": "Copy",
+                                                "dependsOn": [],
+                                                "policy": {
+                                                    "timeout": "7.00:00:00",
+                                                    "retry": 0,
+                                                    "retryIntervalInSeconds": 30,
+                                                    "secureOutput": false,
+                                                    "secureInput": false
+                                                },
+                                                "userProperties": [],
+                                                "typeProperties": {
+                                                    "source": {
+                                                        "type": "DelimitedTextSource",
+                                                        "storeSettings": {
+                                                            "type": "AzureBlobStorageReadSettings",
+                                                            "recursive": true,
+                                                            "wildcardFileName": {
+                                                                "value": "@item().name",
+                                                                "type": "Expression"
+                                                            },
+                                                            "enablePartitionDiscovery": false
+                                                        },
+                                                        "formatSettings": {
+                                                            "type": "DelimitedTextReadSettings"
+                                                        }
+                                                    },
+                                                    "sink": {
+                                                        "type": "AzureTableSink",
+                                                        "azureTableInsertType": "replace",
+                                                        "azureTablePartitionKeyName": {
+                                                            "value": "PartitionKey",
+                                                            "type": "Expression"
+                                                        },
+                                                        "azureTableRowKeyName": {
+                                                            "value": "RowKey",
+                                                            "type": "Expression"
+                                                        },
+                                                        "writeBatchSize": 10000
+                                                    },
+                                                    "enableStaging": false
+                                                },
+                                                "inputs": [
+                                                    {
+                                                        "referenceName": "StorageTablesRestoreBlob",
+                                                        "type": "DatasetReference",
+                                                        "parameters": {}
+                                                    }
+                                                ],
+                                                "outputs": [
+                                                    {
+                                                        "referenceName": "RecoveryTargetTable",
+                                                        "type": "DatasetReference",
+                                                        "parameters": {
+                                                            "TableName": {
+                                                                "value": "@first(split(item().name, '-'))",
+                                                                "type": "Expression"
+                                                            }
+                                                        }
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "annotations": []
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.DataFactory/factories/datasets', variables('dataFactoryName'), 'StorageTablesRestoreBlob')]",
+                "[resourceId('Microsoft.DataFactory/factories/datasets', variables('dataFactoryName'), 'RecoveryTargetTable')]"
+            ]
+        },
+        {
+            "type": "Microsoft.DataFactory/factories/linkedServices",
+            "name": "[concat(variables('dataFactoryName'), '/RecoveryTargetTableStorage')]",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "annotations": [],
+                "type": "AzureTableStorage",
+                "typeProperties": {
+                    "connectionString": {
+                        "type": "AzureKeyVaultSecret",
+                        "store": {
+                            "referenceName": "AzureKeyVault",
+                            "type": "LinkedServiceReference"
+                        },
+                        "secretName": "[variables('keyVaultSecretStorageAccountConnectionString')]"
+                    }
+                }
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.DataFactory/factories/linkedServices', variables('dataFactoryName'), 'AzureKeyVault')]"
+            ]
+        },
+        {
+            "type": "Microsoft.DataFactory/factories/linkedServices",
+            "name": "[concat(variables('dataFactoryName'), '/StorageTablesRestoreBlobStorage')]",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "annotations": [],
+                "type": "AzureBlobStorage",
+                "typeProperties": {
+                    "connectionString": {
+                        "type": "AzureKeyVaultSecret",
+                        "store": {
+                            "referenceName": "AzureKeyVault",
+                            "type": "LinkedServiceReference"
+                        },
+                        "secretName": "[variables('keyVaultSecretStorageAccountConnectionString')]"
+                    }
+                }
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.DataFactory/factories/linkedServices', variables('dataFactoryName'), 'AzureKeyVault')]"
+            ]
+        },
+        {
+            "type": "Microsoft.DataFactory/factories/linkedServices",
+            "name": "[concat(variables('dataFactoryName'), '/StorageTablesBackupBlobStorage')]",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "annotations": [],
+                "type": "AzureBlobStorage",
+                "typeProperties": {
+                    "connectionString": {
+                        "type": "AzureKeyVaultSecret",
+                        "store": {
+                            "referenceName": "AzureKeyVault",
+                            "type": "LinkedServiceReference"
+                        },
+                        "secretName": "[variables('keyVaultSecretStorageAccountConnectionString')]"
+                    }
+                }
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.DataFactory/factories/linkedServices', variables('dataFactoryName'), 'AzureKeyVault')]"
+            ]
+        },
+        {
+            "type": "Microsoft.DataFactory/factories/linkedServices",
+            "name": "[concat(variables('dataFactoryName'), '/StorageTablesApi')]",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "annotations": [],
+                "type": "HttpServer",
+                "typeProperties": {
+                    "url": "[variables('storageAccountTableUri')]",
+                    "enableServerCertificateValidation": true,
+                    "authenticationType": "Anonymous"
+                }
+            },
+            "dependsOn": []
+        },
+        {
+            "type": "Microsoft.DataFactory/factories/datasets",
+            "name": "[concat(variables('dataFactoryName'), '/RecoveryTargetTable')]",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "linkedServiceName": {
+                    "referenceName": "RecoveryTargetTableStorage",
+                    "type": "LinkedServiceReference"
+                },
+                "parameters": {
+                    "TableName": {
+                        "type": "String",
+                        "defaultValue": "vnbdata"
+                    }
+                },
+                "folder": {
+                    "name": "Recovery"
+                },
+                "annotations": [],
+                "type": "AzureTable",
+                "schema": [],
+                "typeProperties": {
+                    "tableName": {
+                        "value": "@dataset().TableName",
+                        "type": "Expression"
+                    }
+                }
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.DataFactory/factories/linkedServices', variables('dataFactoryName'), 'RecoveryTargetTableStorage')]"
+            ]
+        },
+        {
+            "type": "Microsoft.DataFactory/factories/datasets",
+            "name": "[concat(variables('dataFactoryName'), '/StorageTablesApiResponse')]",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "linkedServiceName": {
+                    "referenceName": "StorageTablesApi",
+                    "type": "LinkedServiceReference"
+                },
+                "parameters": {
+                    "StorageAccountSasToken": {
+                        "type": "string",
+                        "defaultValue": "sv=2019-10-10&ss=t&srt=sco&sp=rl&se=2025-06-16T19:47:37Z&st=2020-06-16T11:47:37Z&spr=https&sig=ABC"
+                    }
+                },
+                "folder": {
+                    "name": "Recovery"
+                },
+                "annotations": [],
+                "type": "Json",
+                "typeProperties": {
+                    "location": {
+                        "type": "HttpServerLocation",
+                        "relativeUrl": {
+                            "value": "@concat('/tables?', dataset().StorageAccountSasToken)",
+                            "type": "Expression"
+                        }
+                    }
+                },
+                "schema": {}
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.DataFactory/factories/linkedServices', variables('dataFactoryName'), 'StorageTablesApi')]"
+            ]
+        },
+        {
+            "type": "Microsoft.DataFactory/factories/datasets",
+            "name": "[concat(variables('dataFactoryName'), '/StorageTablesBackupBlob')]",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "linkedServiceName": {
+                    "referenceName": "StorageTablesBackupBlobStorage",
+                    "type": "LinkedServiceReference"
+                },
+                "parameters": {
+                    "BackupBlobContainer": {
+                        "type": "String",
+                        "defaultValue": "backup"
+                    },
+                    "BackupTableName": {
+                        "type": "String",
+                        "defaultValue": "table"
+                    }
+                },
+                "folder": {
+                    "name": "Recovery"
+                },
+                "annotations": [],
+                "type": "DelimitedText",
+                "typeProperties": {
+                    "location": {
+                        "type": "AzureBlobStorageLocation",
+                        "fileName": {
+                            "value": "@concat(dataset().BackupTableName, '-', utcnow(), '.csv')",
+                            "type": "Expression"
+                        },
+                        "container": {
+                            "value": "@dataset().BackupBlobContainer",
+                            "type": "Expression"
+                        }
+                    },
+                    "columnDelimiter": ",",
+                    "escapeChar": "\\",
+                    "firstRowAsHeader": true,
+                    "quoteChar": "\""
+                },
+                "schema": []
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.DataFactory/factories/linkedServices', variables('dataFactoryName'), 'StorageTablesBackupBlobStorage')]"
+            ]
+        },
+        {
+            "type": "Microsoft.DataFactory/factories/datasets",
+            "name": "[concat(variables('dataFactoryName'), '/StorageTablesRestoreBlob')]",
+            "apiVersion": "2018-06-01",
+            "properties": {
+                "linkedServiceName": {
+                    "referenceName": "StorageTablesRestoreBlobStorage",
+                    "type": "LinkedServiceReference"
+                },
+                "folder": {
+                    "name": "Recovery"
+                },
+                "annotations": [],
+                "type": "DelimitedText",
+                "typeProperties": {
+                    "location": {
+                        "type": "AzureBlobStorageLocation",
+                        "container": "restore"
+                    },
+                    "columnDelimiter": ",",
+                    "escapeChar": "\\",
+                    "firstRowAsHeader": true,
+                    "quoteChar": "\""
+                },
+                "schema": []
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.DataFactory/factories/linkedServices', variables('dataFactoryName'), 'StorageTablesRestoreBlobStorage')]"
+            ]
+        }
+    ],
+    "outputs": {}
+}
