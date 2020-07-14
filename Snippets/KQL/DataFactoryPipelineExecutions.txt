@@ -1,12 +1,12 @@
 AzureDiagnostics 
 | where ResourceProvider =~ "Microsoft.DataFactory"
 | where Category =~ "TriggerRuns"
-| project TimeGenerated, ResourceName=tolower(Resource), TriggerName=triggerName_s, TriggerType=triggerType_s, Status=status_s, TriggerId=triggerId_s
+| project TimeGenerated, ResourceName=tolower(Resource), TriggerName=triggerName_s, TriggerType=triggerType_s, Status=status_s, TriggerId=coalesce(triggerId_s, triggerId_g)
 | join (AzureDiagnostics
 | where ResourceProvider =~ "Microsoft.DataFactory"
 | where Category =~ "PipelineRuns"
 | mv-expand Pipelines=todynamic(Predecessors_s)
 | evaluate bag_unpack(Pipelines, "Trigger")
-| summarize min=min(TimeGenerated), max=max(TimeGenerated) by TriggerId, PipelineName=pipelineName_s
+| summarize min=min(TimeGenerated), max=max(TimeGenerated) by tostring(TriggerId), PipelineName=pipelineName_s
 | project TriggerId, PipelineName, Duration=max-min) on TriggerId
 | project-away TriggerId*

@@ -1,0 +1,9 @@
+let ignored = dynamic(["listKeys", "listAdminKeys", "listQueryKeys", "querydebugpipelineruns", "pipelines/createRun", "triggers/start", "triggers/getEventSubscriptionStatus", "service/subscriptions", "service/users/token/action", "workspaces/metadata/action", "deployments/exportTemplate"]);
+AzureActivity 
+| where ResourceGroup =~ "<resource-group-name>"
+| where CategoryValue == "Administrative"
+| where ActivityStatusValue =~ "Started"
+| where isnotempty(Caller) and isnull(toguid(Caller))
+| where not(OperationNameValue has_any(ignored))
+| order by TimeGenerated desc
+| project TimeGenerated, Caller, CallerIpAddress, OperationNameValue, ResourceProviderValue, OperationName
