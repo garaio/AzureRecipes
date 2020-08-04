@@ -1,0 +1,112 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "resourceNamePrefix": {
+            "type": "string",
+            "defaultValue": "customer-project",
+            "metadata": {
+                "description": "The prefix will be used for every parameter that represents a resource name. See the description of the parameter."
+            }
+        },
+        "resourceNameSuffix": {
+            "type": "string",
+            "metadata": {
+                "description": "The suffix will be appended to every parameter that represents a resource name. See the description of the parameter."
+            }
+        },
+        "monitoringAlertsReceiverEmail": {
+            "type": "string",
+            "defaultValue": "no-reply@garaio.com"
+        }
+    },
+    "variables": {
+		"appInsightsName": "[concat(parameters('resourceNamePrefix'), '-', 'ai', '-', parameters('resourceNameSuffix'))]",
+        "actionGrpAdminName": "[concat(parameters('resourceNamePrefix'), '-', 'admin-ag', '-', parameters('resourceNameSuffix'))]",
+        "alertRuleHttp500Name": "[concat(parameters('resourceNamePrefix'), '-', 'http500-ar', '-', parameters('resourceNameSuffix'))]"
+    },
+    "resources": [
+		{
+            "type": "Microsoft.Insights/components",
+            "apiVersion": "2015-05-01",
+            "name": "[variables('appInsightsName')]",
+            "location": "[resourceGroup().location]",
+            "kind": "web",
+            "properties": {
+                "ApplicationId": "[variables('appInsightsName')]"
+            }
+        },
+		{
+            "type": "Microsoft.Insights/actionGroups",
+            "name": "[variables('actionGrpAdminName')]",
+            "apiVersion": "2019-03-01",
+            "location": "Global",
+            "properties": {
+                "groupShortName": "Admin",
+                "enabled": true,
+                "emailReceivers": [
+                    {
+                        "name": "Notifications_-EmailAction-",
+                        "emailAddress": "[parameters('monitoringAlertsReceiverEmail')]",
+                        "useCommonAlertSchema": false
+                    }
+                ],
+                "smsReceivers": []
+            }
+        },
+		{
+            "type": "microsoft.insights/metricAlerts",
+            "name": "[variables('alertRuleHttp500Name')]",
+            "condition": "[parameters('createMonitoringAlerts')]",
+            "apiVersion": "2018-03-01",
+            "location": "global",
+            "dependsOn": [
+                "[resourceId('Microsoft.Insights/actionGroups', variables('actionGrpAdminName'))]",
+                "[resourceId('Microsoft.Insights/components', variables('appInsightsName'))]"
+            ],
+            "properties": {
+                "description": "Unhandled internal server errors in any Function",
+                "severity": 2,
+                "enabled": true,
+                "scopes": [
+                    "[resourceId('Microsoft.Insights/components', variables('appInsightsName'))]"
+                ],
+                "evaluationFrequency": "PT1H",
+                "windowSize": "PT1H",
+                "criteria": {
+                    "allOf": [
+                        {
+                            "threshold": 5,
+                            "name": "Metric1",
+                            "metricNamespace": "Microsoft.Insights/components",
+                            "metricName": "requests/failed",
+                            "dimensions": [
+                                {
+                                    "name": "request/resultCode",
+                                    "operator": "Include",
+                                    "values": [
+                                        "500"
+                                    ]
+                                }
+                            ],
+                            "operator": "GreaterThan",
+                            "timeAggregation": "Count",
+                            "criterionType": "StaticThresholdCriterion"
+                        }
+                    ],
+                    "odata.type": "Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria"
+                },
+                "autoMitigate": true,
+                "targetResourceType": "Microsoft.Insights/components",
+                "targetResourceRegion": "[resourceGroup().location]",
+                "actions": [
+                    {
+                        "actionGroupId": "[resourceId('Microsoft.Insights/actionGroups', variables('actionGrpAdminName'))]",
+                        "webHookProperties": {}
+                    }
+                ]
+            }
+        }
+    ],
+    "outputs": {}
+}

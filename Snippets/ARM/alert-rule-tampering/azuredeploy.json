@@ -1,0 +1,99 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "resourceNamePrefix": {
+            "type": "string",
+            "defaultValue": "customer-project",
+            "metadata": {
+                "description": "The prefix will be used for every parameter that represents a resource name. See the description of the parameter."
+            }
+        },
+        "resourceNameSuffix": {
+            "type": "string",
+            "metadata": {
+                "description": "The suffix will be appended to every parameter that represents a resource name. See the description of the parameter."
+            }
+        },
+        "monitoringAlertsReceiverEmail": {
+            "type": "string",
+            "defaultValue": "no-reply@garaio.com"
+        }
+    },
+    "variables": {
+        "logAnalyticsWsName": "[concat(parameters('resourceNamePrefix'), '-', 'law', '-', parameters('resourceNameSuffix'))]",
+        "actionGrpAdminName": "[concat(parameters('resourceNamePrefix'), '-', 'admin-ag', '-', parameters('resourceNameSuffix'))]",
+        "alertRuleTamperingName": "[concat(parameters('resourceNamePrefix'), '-', 'tampering-ar', '-', parameters('resourceNameSuffix'))]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.OperationalInsights/workspaces",
+            "name": "[variables('logAnalyticsWsName')]",
+            "apiVersion": "2020-03-01-preview",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "sku": {
+                    "name": "pergb2018"
+                }
+            }
+        },
+		{
+            "type": "Microsoft.Insights/actionGroups",
+            "name": "[variables('actionGrpAdminName')]",
+            "apiVersion": "2019-03-01",
+            "location": "Global",
+            "properties": {
+                "groupShortName": "Admin",
+                "enabled": true,
+                "emailReceivers": [
+                    {
+                        "name": "Notifications_-EmailAction-",
+                        "emailAddress": "[parameters('monitoringAlertsReceiverEmail')]",
+                        "useCommonAlertSchema": false
+                    }
+                ],
+                "smsReceivers": []
+            }
+        },
+		{
+            "type": "Microsoft.Insights/scheduledqueryrules",
+            "name": "[variables('alertRuleTamperingName')]",
+            "apiVersion": "2018-04-16",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Insights/actionGroups', variables('actionGrpAdminName'))]",
+                "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]"
+            ],
+            "properties": {
+                "description": "Manual activities in PROD environment",
+                "enabled": "true",
+                "source": {
+                    "query": "[concat('let ignored = dynamic([\"listKeys\", \"listAdminKeys\", \"listQueryKeys\", \"querydebugpipelineruns\", \"pipelines/createRun\", \"triggers/start\", \"triggers/getEventSubscriptionStatus\", \"service/subscriptions\", \"service/users/token/action\", \"workspaces/metadata/action\", \"deployments/exportTemplate\"]);\nlet resourceGroupName = \"', resourceGroup().name, '\";\nAzureActivity \n| where ResourceGroup =~ resourceGroupName\n| where CategoryValue == \"Administrative\"\n| where ActivityStatusValue =~ \"Started\"\n| where isnotempty(Caller) and isnull(toguid(Caller))\n| where not(OperationNameValue has_any(ignored))\n| order by TimeGenerated desc\n| project TimeGenerated, Caller, CallerIpAddress, OperationNameValue, ResourceProviderValue, OperationName\n')]",
+                    "authorizedResources": [],
+                    "dataSourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]",
+                    "queryType": "ResultCount"
+                },
+                "schedule": {
+                    "frequencyInMinutes": 30,
+                    "timeWindowInMinutes": 45
+                },
+                "action": {
+                    "odata.type": "Microsoft.WindowsAzure.Management.Monitoring.Alerts.Models.Microsoft.AppInsights.Nexus.DataContracts.Resources.ScheduledQueryRules.AlertingAction",
+                    "severity": "2",
+                    "aznsAction": {
+                        "actionGroup": [
+                            "[resourceId('Microsoft.Insights/actionGroups', variables('actionGrpAdminName'))]"
+                        ],
+                        "emailSubject": "[concat('Manual Activities in Resource Group ', resourceGroup().name, ' detected')]"
+                    },
+                    "throttlingInMin": 120,
+                    "trigger": {
+                        "thresholdOperator": "GreaterThan",
+                        "threshold": "1"
+                    }
+                }
+            }
+        }
+    ],
+    "outputs": {}
+}
