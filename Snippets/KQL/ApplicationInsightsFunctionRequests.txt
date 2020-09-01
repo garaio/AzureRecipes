@@ -1,0 +1,4 @@
+requests
+| project-away source, custom*, operation_*, session_*, user_*, application_*, client_Model, client_OS, client_IP, client_Browser, cloud_RoleInstance, appId, appName, iKey, sdkVersion, item*
+| project-rename functionName = cloud_RoleName
+| order by timestamp desc
