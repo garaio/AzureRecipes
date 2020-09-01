@@ -8,3 +8,4 @@ General resources:
 | Service(s)                      | Architecture                | Problem / Solution                      | Related | Link                            |
 |---------------------------------|-----------------------------|-----------------------------------------|---------|---------------------------------|
 | Function, Storage Table, Cosmos DB Table API | Serverless | Reference for complete setup of model classes and usage in Azure Function including an Entity-Manager class to simplify access to data and usage | - | [entitymanager-for-table-storage](./entitymanager-for-table-storage) |
+| Function, Cosmos DB Core SQL API | - | Reference for complete setup of Entity Framework Core with model classes and usage in Azure Function | - | [ef-core-with-cosmos-db-sql](./ef-core-with-cosmos-db-sql) |
