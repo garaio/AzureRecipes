@@ -1,0 +1,13 @@
+{
+	"IsEncrypted": false,
+	"Values": {
+		"AzureWebJobsStorage": "UseDevelopmentStorage=true",
+		"FUNCTIONS_WORKER_RUNTIME": "dotnet",
+
+		"StorageConnectionString": "UseDevelopmentStorage=true",
+
+		"FunctionAuthAppId": "00000000-0000-0000-0000-000000000000",
+		"FunctionAuthAppSecret": "<secret>",
+		"FunctionAuthTenantId": "00000000-0000-0000-0000-000000000000"
+	}
+}
