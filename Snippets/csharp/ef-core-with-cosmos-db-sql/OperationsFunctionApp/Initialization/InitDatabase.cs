@@ -12,8 +12,8 @@ namespace OperationsFunctionApp.Initialization
     public static class InitDatabase
     {
         [FunctionName(nameof(InitDatabase))]
-        public static async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
+        public static async Task<IActionResult> RunRequest(
+            [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = Constants.Routes.InitDatabase)] HttpRequest req,
             ILogger log)
         {
             log.LogInformation($"Function {nameof(InitDatabase)} triggered by call");
@@ -24,7 +24,7 @@ namespace OperationsFunctionApp.Initialization
         }
 
         [FunctionName(nameof(InitDatabase) + "AutoStart")]
-        public static async Task Run([TimerTrigger("0 0 0 1 1 *", RunOnStartup = true)]TimerInfo timer, ExecutionContext context, ILogger log)
+        public static async Task RunTimer([TimerTrigger("0 0 0 1 1 *", RunOnStartup = true)]TimerInfo timer, ExecutionContext context, ILogger log)
         {
             log.LogInformation($"Function {nameof(InitDatabase)} triggered by trigger");
 

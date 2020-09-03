@@ -8,5 +8,10 @@
             public const string CosmosAccountKey = nameof(CosmosAccountKey);
             public const string CosmosDatabaseName = nameof(CosmosDatabaseName);
         }
+
+        public static class Routes
+        {
+            public const string InitDatabase = "init-database";
+        }
     }
 }
