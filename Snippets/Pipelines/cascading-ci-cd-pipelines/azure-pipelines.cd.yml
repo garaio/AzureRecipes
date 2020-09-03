@@ -1,0 +1,133 @@
+trigger: none
+
+variables:
+  - group: Develop
+
+resources:
+  containers:
+    - container: linux
+      image: ubuntu-16.04
+  pipelines:
+  - pipeline: CI-Pipeline
+    source: CI
+    trigger: 
+      branches:
+      - develop
+
+stages:
+  - stage: deployDevEnvironment
+    displayName: 'Deploy Dev Environment'
+    dependsOn: []
+    jobs:
+      - deployment: deploy_backend
+        displayName: 'Deploy Backend'
+        pool:
+          vmImage: 'ubuntu-16.04'
+        environment: 'DEV'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - download: CI-Pipeline
+
+                - task: AzureResourceManagerTemplateDeployment@3
+                  displayName: 'Create Resource Group'
+                  inputs:
+                    azureResourceManagerConnection: '$(armSubscription)'
+                    subscriptionId: '$(azureSubscriptionId)'
+                    resourceGroupName: '$(azureResourceGroupName)'
+                    location: '$(azureResourceLocation)'
+                    templateLocation: 'URL of the file'
+                    csmFileLink: 'https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/100-blank-template/azuredeploy.json'
+
+                - task: AzureCLI@2
+                  displayName: 'Create Storage Account for Artifact'
+                  inputs:
+                    azureSubscription: '$(armSubscription)'
+                    scriptType: bash
+                    scriptLocation: inlineScript
+                    inlineScript: |
+                      az storage account create --name $(storageAccountName) --resource-group $(azureResourceGroupName)
+
+                - task: AzureCLI@2
+                  displayName: 'Create Storage Container'
+                  inputs:
+                    azureSubscription: '$(armSubscription)'
+                    scriptType: bash
+                    scriptLocation: inlineScript
+                    inlineScript: |
+                      az storage container create --name $(blobContainerDeployment) --account-name $(storageAccountName) --resource-group $(azureResourceGroupName)
+
+                - task: AzureCLI@2
+                  displayName: 'Copying to Storage Container'
+                  inputs:
+                    azureSubscription: '$(armSubscription)'
+                    scriptType: bash
+                    scriptLocation: inlineScript
+                    inlineScript: |
+                      az storage blob upload-batch -s $(Pipeline.Workspace)/CI-Pipeline/drop -d $(blobContainerDeployment) --account-name $(storageAccountName)
+
+                - task: AzureResourceManagerTemplateDeployment@3
+                  displayName: 'Deploy ARM Template (ResourceGroup)'
+                  inputs:
+                    azureResourceManagerConnection: '$(armSubscription)'
+                    subscriptionId: '$(azureSubscriptionId)'
+                    resourceGroupName: '$(azureResourceGroupName)'
+                    location: '$(azureResourceLocation)'
+                    csmFile: '$(Pipeline.Workspace)/CI-Pipeline/drop/$(backendDeploymentFolderName)/azuredeploy.json'
+                    csmParametersFile: '$(Pipeline.Workspace)/CI-Pipeline/drop/$(backendDeploymentFolderName)/azuredeploy.parameters.json'
+                    overrideParameters: '-resourceNamePrefix "$(resourceNamePrefix)" -resourceNameSuffix "$(resourceNameSuffix)" -serviceFuncKeySecret "$(serviceFuncKeySecret)"'
+
+                - task: AzureResourceManagerTemplateDeployment@3
+                  displayName: 'Deploy ARM Template (serviceFuncKeySecret)'
+                  inputs:
+                    azureResourceManagerConnection: '$(armSubscription)'
+                    subscriptionId: '$(azureSubscriptionId)'
+                    resourceGroupName: '$(azureResourceGroupName)'
+                    location: '$(azureResourceLocation)'
+                    csmFile: '$(Pipeline.Workspace)/CI-Pipeline/drop/$(backendDeploymentFolderName)/azurepostdeploy.json'
+                    overrideParameters: '-resourceNamePrefix "$(resourceNamePrefix)" -resourceNameSuffix "$(resourceNameSuffix)" -deployServiceFuncKey true -serviceFuncKeySecret "$(serviceFuncKeySecret)"'
+
+      - deployment: deploy_frontend
+        dependsOn: deploy_backend
+        displayName: 'Deploy Frontend'
+        pool:
+          vmImage: 'ubuntu-16.04'
+        environment: 'DEV'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: AzureCLI@2
+                  displayName: 'Create Storage Container'
+                  inputs:
+                    azureSubscription: '$(armSubscription)'
+                    scriptType: bash
+                    scriptLocation: inlineScript
+                    inlineScript: |
+                      az storage container create --name '$web' --account-name $(storageAccountName) --resource-group $(azureResourceGroupName)
+
+                - task: FileTransform@1
+                  displayName: 'Transforming configuration'
+                  inputs:
+                    folderPath: '$(Pipeline.Workspace)/CI-Pipeline/drop/$(frontendFolderName)/assets'
+                    fileType: json
+                    targetFiles: config.json
+
+                - task: AzureCLI@2
+                  displayName: 'Copying to Storage'
+                  inputs:
+                    azureSubscription: '$(armSubscription)'
+                    scriptType: bash
+                    scriptLocation: inlineScript
+                    inlineScript: |
+                      az storage blob upload-batch -s $(Pipeline.Workspace)/CI-Pipeline/drop/$(frontendFolderName) -d $(blobContainerFrontendDeployment) --account-name $(storageAccountName)
+
+                - task: AzureCLI@2
+                  displayName: ' Set static website'
+                  inputs:
+                    azureSubscription: '$(armSubscription)'
+                    scriptType: bash
+                    scriptLocation: inlineScript
+                    inlineScript: |
+                      az storage blob service-properties update --account-name $(storageAccountName) --static-website --index-document index.html --404-document 404.html

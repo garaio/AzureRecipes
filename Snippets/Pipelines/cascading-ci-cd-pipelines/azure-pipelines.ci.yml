@@ -1,0 +1,109 @@
+trigger:
+- develop
+- feature/*
+
+variables:
+  - group: Build
+
+resources:
+  containers:
+  - container: linux
+    image: ubuntu-16.04
+
+stages:
+- stage: backend
+  displayName: 'Backend'
+  dependsOn: []
+  jobs:
+    - job: build_test
+      displayName: "Build & Test"
+      pool:
+        vimImage: "ubuntu-16.04"
+      steps:
+        - task: DotNetCoreCLI@2
+          displayName: Restore
+          inputs:
+            command: restore
+            projects: |
+              **/*.csproj
+              **/*.deployproj
+
+        - task: DotNetCoreCLI@2
+          displayName: Build
+          inputs:
+            projects: |
+              **/*.csproj
+              **/*.deployproj
+            arguments: '--configuration $(buildConfiguration)'
+
+        - task: DotNetCoreCLI@2
+          displayName: 'Execute Tests'
+          inputs:
+            command: test
+            projects: '**/*[Tt]ests/*.csproj'
+            arguments: '--configuration $(BuildConfiguration)'
+
+        - task: DotNetCoreCLI@2
+          displayName: Publish
+          inputs:
+            command: publish
+            publishWebProjects: false
+            projects: '**/*.csproj'
+            arguments: '--configuration $(buildConfiguration) --output $(build.artifactstagingdirectory)'
+            zipAfterPublish: True
+
+        - task: AzureResourceManagerTemplateDeployment@3
+          displayName: 'Validate ARM Template'
+          inputs:
+            azureResourceManagerConnection: '$(armSubscription)'
+            subscriptionId: '$(azureSubscriptionId)'
+            resourceGroupName: '$(azureResourceGroupName)'
+            location: '$(azureResourceLocation)'
+            csmFile: '$(backendDeploymentFolderName)/azuredeploy.json'
+            csmParametersFile: '$(backendDeploymentFolderName)/azuredeploy.parameters.json'
+            overrideParameters: '-resourceNameSuffix "build"'
+            deploymentMode: Validation
+          continueOnError: false
+
+        - task: PublishBuildArtifacts@1
+          displayName: 'Publish Artifact'
+          inputs:
+            PathtoPublish: '$(build.artifactstagingdirectory)'
+          condition: succeededOrFailed()
+
+- stage: frontend
+  displayName: 'Frontend'
+  dependsOn: []
+  jobs:
+    - job: build_test
+      displayName: "Build & Test"
+      pool:
+        vimImage: "ubuntu-16.04"
+
+      steps:
+      - task: Npm@1
+        displayName: 'Install Packages'
+        inputs:
+          command: ci
+          workingDir: '$(frontendFolderName)'
+          verbose: false
+
+      - task: Npm@1
+        displayName: Build
+        inputs:
+          command: custom
+          workingDir: '$(frontendFolderName)'
+          verbose: false
+          customCommand: 'run build'
+
+      - task: CopyFiles@2
+        displayName: 'Copy Dist'
+        inputs:
+          SourceFolder: '$(frontendFolderName)/dist/$(frontendPackageName)'
+          TargetFolder: '$(build.artifactstagingdirectory)/$(frontendFolderName)'
+
+      - task: PublishBuildArtifacts@1
+        displayName: 'Publish Artifact'
+        inputs:
+          PathtoPublish: '$(build.artifactStagingDirectory)'
+      
