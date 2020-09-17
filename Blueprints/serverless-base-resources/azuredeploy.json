@@ -114,7 +114,7 @@
                 "Application_Type": "web",
                 "WorkspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]"
             }
-        },        
+        },     
         {
             "type": "Microsoft.KeyVault/vaults",
             "name": "[variables('keyVaultName')]",
