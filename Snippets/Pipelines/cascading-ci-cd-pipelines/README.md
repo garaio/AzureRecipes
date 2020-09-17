@@ -1,7 +1,7 @@
 # Introduction
 The typical pattern for Continous Delivery is as follows
-* On every relevant branch: Build pipeline with integration of all sources, run of unit and integration tests as well as any other validation and finally **creation/publishing of a deployable artifact**
-* On successful build of particular branches: **Deploy given artifact** to multiple environments (e.g. DEV, TEST, INT, PROD) with approval steps between but without initially build the sources again
+1. On every relevant branch: Build pipeline with integration of all sources, run of unit and integration tests as well as any other validation and finally **creation/publishing of a deployable artifact**
+1. On successful build of particular branches: **Deploy given artifact** to multiple environments (e.g. DEV, TEST, INT, PROD) with approval steps between but without initially build the sources again
 
 The reasons for choosing this pattern are as follows:
 * Economize load on build agents (especially the build of Javascript- or Docker-based applications may be very time-consuming)
