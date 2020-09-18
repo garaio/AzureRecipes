@@ -52,6 +52,7 @@ In that folder various "How To" and "Best Practices" content is collected, e.g. 
 | Type | Scope | Description | Link |
 |------|-------|-------------|------|
 | Best Practices | Power BI | Tips for creating valuable Application Dashboards to empower the project/product team with deep knowledge | [Show](./Knowledge/BestPractices-PowerBI-ApplicationDashboards) |
+| Best Practices | Azure Solutions | Overview of services used and usable for monitoring and analytics, its relations and best practices to use them in PaaS/Serverless architectures | [Show](./BestPractices-AzureSolutions-Monitoring) |
 
 ## Support
 If you need help with some content or find a bug then you may [create an issue](https://github.com/garaio/AzureRecipes/issues). For further inquiries please use contact possibilities on the [official website](https://garaio.com).
