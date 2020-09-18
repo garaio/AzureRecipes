@@ -44,6 +44,7 @@ This contains document structures and contents for technical reviews and project
 | Type | Scope | Description | Link |
 |------|-------|-------------|------|
 | Convention | Project Setup, Consulting | How to structure and name application components as code artefacts and Azure resources | [Show](./Templates/Convention-ResourceStructuringAndNaming.md) |
+| Convention | Project Setup, Consulting | How to tag Azure resources for maintainability | [Show](./Templates/Convention-ResourceTagging.md) |
 
 ### Knowledge
 In that folder various "How To" and "Best Practices" content is collected, e.g. regarding setup of Azure service configurations or selection of most appropriate Azure Service for specific requirements.
