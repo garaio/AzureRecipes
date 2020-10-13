@@ -1,0 +1,4 @@
+exceptions 
+| extend invocationId = customDimensions['InvocationId'], readableMessage = customDimensions['FormattedMessage']
+| project timestamp, resourceName = cloud_RoleName, ['type'], operationName = operation_Name, origMessage = outerMessage, readableMessage, clientType = client_Type, clientCity = client_City, clientCountryOrRegion = client_CountryOrRegion, invocationId
+| order by timestamp desc
