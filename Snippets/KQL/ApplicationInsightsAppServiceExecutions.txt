@@ -1,0 +1,5 @@
+requests
+| extend invocationId=customDimensions['InvocationId']
+| project-rename resourceName = cloud_RoleName, clientType = client_Type, clientCity = client_City, clientCountryOrRegion = client_CountryOrRegion
+| project-away id, source, custom*, operation_*, session_*, user_*, application_*, client_*, cloud_*, appId, appName, iKey, sdkVersion, item*
+| order by timestamp desc
