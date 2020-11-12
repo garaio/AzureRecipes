@@ -47,12 +47,13 @@ This contains document structures and contents for technical reviews and project
 | Convention | Project Setup, Consulting | How to tag Azure resources for maintainability | [Show](./Templates/Convention-ResourceTagging.md) |
 
 ### Knowledge
-In that folder various "How To" and "Best Practices" content is collected, e.g. regarding setup of Azure service configurations or selection of most appropriate Azure Service for specific requirements.
+In that folder various "Knowhow", "Tips & Tricks" and "Best Practices" content is collected, e.g. regarding setup of Azure service configurations or selection of most appropriate Azure Service for specific requirements.
 
 | Type | Scope | Description | Link |
 |------|-------|-------------|------|
 | Best Practices | Power BI | Tips for creating valuable Application Dashboards to empower the project/product team with deep knowledge | [Show](./Knowledge/BestPractices-PowerBI-ApplicationDashboards) |
 | Best Practices | Azure Solutions | Overview of services used and usable for monitoring and analytics, its relations and best practices to use them in PaaS/Serverless architectures | [Show](./Knowledge/BestPractices-AzureSolutions-Monitoring) |
+| Knowhow | Azure Bot Service | Infographic (or schematic architecture) displaying the relationship of the various components and resources to build and run Azure Bot Service implementations. Includes Power Virtual Agent and Bot Framework tools such as the Composer or Emulator. | [Show](./Knowledge/Knowhow-AzureBotService-Overview) |
 
 ## Support
 If you need help with some content or find a bug then you may [create an issue](https://github.com/garaio/AzureRecipes/issues). For further inquiries please use contact possibilities on the [official website](https://garaio.com).
