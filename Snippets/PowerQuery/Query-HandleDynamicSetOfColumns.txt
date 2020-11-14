@@ -1,0 +1,31 @@
+let AnalyticsQuery =
+    let Source = Json.Document(Web.Contents("https://api.applicationinsights.io/v1/apps/"&#"ApplicationInsightsId"&"/query", 
+    [Query=[#"query"="customMetrics
+    | where operation_Id != """"
+    | project timestamp, name, value, appName, opName=operation_Name, customDimensions
+    | evaluate bag_unpack(customDimensions)
+    | order by timestamp desc
+    ",#"x-ms-app"="AAPBI",#"timespan"=AzureDataTimespan,#"prefer"="ai.response-thinning=true"],Timeout=#duration(0,0,4,0)])),
+    TypeMap = #table(
+    { "AnalyticsTypes", "Type" }, 
+    { 
+    { "string",   Text.Type },
+    { "int",      Int32.Type },
+    { "long",     Int64.Type },
+    { "real",     Double.Type },
+    { "timespan", Duration.Type },
+    { "datetime", DateTimeZone.Type },
+    { "bool",     Logical.Type },
+    { "guid",     Text.Type },
+    { "dynamic",  Text.Type }
+    }),
+    DataTable = Source[tables]{0},
+    Columns = Table.FromRecords(DataTable[columns]),
+    ColumnsWithType = Table.Join(Columns, {"type"}, TypeMap , {"AnalyticsTypes"}),
+    Rows = Table.FromRows(DataTable[rows], Columns[name]), 
+    Table = Table.TransformColumnTypes(Rows, Table.ToList(ColumnsWithType, (c) => { c{0}, c{3}}))
+in
+    Table,
+    #"Removed Columns" = Table.SelectColumns(AnalyticsQuery,{"timestamp", "name", "value", "appName", "opName", "prop__VnbLookupId", "prop__Subscription", "prop__VnbDefinitionId"},MissingField.UseNull)
+in
+    #"Removed Columns"
