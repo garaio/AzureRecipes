@@ -5,7 +5,7 @@ Power BI is a simple but powerful solution to aggregate all data available and g
 * Usage data which typically are relevant actions and events through the customer journey
 
 ## Contents Best Practices
-* Build your reports around key entities with drill down functionality (overview pages -> detail pages). Establish a clear navigation in the pages.
+* Build your reports around key entities with drill thru functionality (overview pages -> detail pages). Establish a clear navigation in the pages.
 * Most of the BI use cases have the primary goal to show differences in data. Define cohorts which are most useful to segment and compare data (e.g. releases, sales agents, features, marketing campaigns, or simply weeks). Use only relevant cohorts, but use them consistently
 * Create a page per topic/interest and try to only visualize data on a page that is properly linked. For each page have some specific insights in mind (e.g. "show how many users give negative feedbacks and its change over time")
 
