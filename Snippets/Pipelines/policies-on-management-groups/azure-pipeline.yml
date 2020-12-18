@@ -1,0 +1,48 @@
+trigger: none
+
+parameters:
+  - name: serviceConnectionName
+    type: string
+    default: 'ARM Management Group'
+
+variables:
+  deploymentFolderName: 'Policies'
+  managementGroupId: 'xyz'
+  resourceLocation: 'switzerlandnorth'
+  armServiceConnection: ${{ parameters.serviceConnectionName }}
+  currentDate: $[format('{0:yyyy}-{0:MM}-{0:dd}', pipeline.startTime)]
+  releaseName: 'DevOps-Policies-$(Build.BuildId)'
+
+resources:
+  containers:
+  - container: linux
+    image: ubuntu-16.04
+
+stages:    
+- stage: deploy
+  displayName: 'Deploy'
+  dependsOn: []
+  jobs:  
+    - deployment: deploy_policies
+      displayName: 'Deploy Policies'
+      pool:
+        vmImage: 'ubuntu-16.04'
+      environment: 'prod-mg-$(managementGroupId)'
+      strategy:
+        runOnce:
+          deploy:
+            steps:       
+              - checkout: self      
+              - task: AzureResourceManagerTemplateDeployment@3
+                displayName: 'Deploy ARM Template'
+                inputs:
+                  deploymentScope: 'Management Group'
+                  azureResourceManagerConnection: '$(armServiceConnection)'
+                  location: '$(resourceLocation)'
+                  templateLocation: 'Linked artifact'
+                  csmFile: '$(deploymentFolderName)/azuredeploy.json'
+                  csmParametersFile: '$(deploymentFolderName)/azuredeploy.parameters.json'
+                  overrideParameters: '-managementGroupId "$(managementGroupId)"'
+                  deploymentMode: 'Incremental'
+                  deploymentName: '$(releaseName)'
+    
