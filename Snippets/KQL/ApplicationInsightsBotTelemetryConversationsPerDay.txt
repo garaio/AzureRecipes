@@ -1,0 +1,10 @@
+let groupByInterval = 1d;
+customEvents
+| extend DialogId = tostring(customDimensions['DialogId'])
+| extend ActivityId = iif(isnotempty(customDimensions['activityId']), tostring(customDimensions['activityId']), tostring(customDimensions['Activity ID']))
+| extend ConversationID = iif(isnotempty(customDimensions['conversationId']), tostring(customDimensions['conversationId']), tostring(customDimensions['Conversation ID']))
+| where ConversationID != '' and user_Id != ''
+| extend metric = ConversationID
+| summarize Count=dcount(metric) by  bin(timestamp, groupByInterval)
+| order by Count desc nulls last
+| render timechart
