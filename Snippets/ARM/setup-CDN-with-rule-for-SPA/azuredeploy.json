@@ -24,10 +24,14 @@
         "keyVaultSecretStorageAccountConnectionString": "storageAccountConnectionString",
         
         "storageAccountName": "[replace(concat(parameters('resourceNamePrefix'), '-', 'sa', '-', parameters('resourceNameSuffix')), '-', '')]",
+		"storageAccountRegionalCodes": {
+			"westeurope": "z6",
+			"switzerlandnorth": "z1"
+		},
 
         "cdnProfileName": "[concat(parameters('resourceNamePrefix'), '-', 'cdn', '-', parameters('resourceNameSuffix'))]",
         "cdnEndpointName": "[concat(parameters('resourceNamePrefix'), '-', 'cdn-ep', '-', parameters('resourceNameSuffix'))]",
-        "cdnEndpointOriginHost": "[concat(variables('storageAccountName'), '.', 'z6.web.core.windows.net')]",
+        "cdnEndpointOriginHost": "[concat(variables('storageAccountName'), '.', variables('storageAccountRegionalCodes')[resourceGroup().location], '.web.core.windows.net')]",
         "cdnEndpointOriginName": "[concat(variables('storageAccountName'), '-static-website')]"
     },
     "resources": [
@@ -68,7 +72,7 @@
         {
             "type": "Microsoft.OperationalInsights/workspaces",
             "name": "[variables('logAnalyticsWsName')]",
-            "apiVersion": "2020-03-01-preview",
+            "apiVersion": "2020-08-01",
             "location": "[resourceGroup().location]",
             "properties": {
                 "sku": {
@@ -139,7 +143,7 @@
             "name": "[concat(variables('keyVaultName'), '/', variables('keyVaultSecretStorageAccountConnectionString'))]",
             "apiVersion": "2019-09-01",
             "dependsOn": [
-                "[concat('Microsoft.KeyVault/vaults/', variables('keyVaultName'))]",
+                "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]",
                 "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
             ],
             "properties": {
@@ -149,7 +153,7 @@
 		{
             "type": "Microsoft.Cdn/profiles",
             "name": "[variables('cdnProfileName')]",
-            "apiVersion": "2019-12-31",
+            "apiVersion": "2020-04-15",
             "location": "[resourceGroup().location]",
             "sku": {
                 "name": "Standard_Microsoft"
@@ -177,7 +181,7 @@
         },
         {
             "type": "Microsoft.Cdn/profiles/endpoints",
-            "apiVersion": "2019-12-31",
+            "apiVersion": "2020-04-15",
             "name": "[concat(variables('cdnProfileName'), '/', variables('cdnEndpointName'))]",
             "location": "[resourceGroup().location]",
             "dependsOn": [
@@ -268,7 +272,7 @@
         {
             "type": "Microsoft.Cdn/profiles/endpoints/origins",
             "name": "[concat(variables('cdnProfileName'), '/', variables('cdnEndpointName'), '/', variables('cdnEndpointOriginName'))]",
-            "apiVersion": "2019-12-31",
+            "apiVersion": "2020-04-15",
             "dependsOn": [
                 "[resourceId('Microsoft.Cdn/profiles/endpoints', variables('cdnProfileName'), variables('cdnEndpointName'))]"
             ],
@@ -300,5 +304,10 @@
             }
         }
     ],
-    "outputs": {}
+    "outputs": {
+		"storageAccountWebEndpoint": {
+            "type": "string",
+            "value": "[reference(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2019-06-01', 'Full').properties.primaryEndpoints.web]"
+        }
+	}
 }

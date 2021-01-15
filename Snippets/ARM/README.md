@@ -1,6 +1,7 @@
 # Azure Resource Manager Templates
 General resources:
 * [Schema Definition Reference](https://docs.microsoft.com/en-us/azure/templates)
+* [Official Best Practices](https://docs.microsoft.com/en-us/azure/azure-resource-manager/templates/template-best-practices)
 * [ARM Visualizer](http://armviz.io/designer)
 
 <!-- Note: Edit tables with https://www.tablesgenerator.com/markdown_tables -->
