@@ -19,16 +19,16 @@
     "variables": {
         "logAnalyticsWsName": "[concat(parameters('resourceNamePrefix'), '-', 'law', '-', parameters('resourceNameSuffix'))]",
         "appInsightsName": "[concat(parameters('resourceNamePrefix'), '-', 'ai', '-', parameters('resourceNameSuffix'))]",
-		
+        
         "keyVaultName": "[concat(parameters('resourceNamePrefix'), '-kv', '-', parameters('resourceNameSuffix'))]",
         "keyVaultSecretStorageAccountConnectionString": "storageAccountConnectionString",
         
         "storageAccountName": "[replace(concat(parameters('resourceNamePrefix'), '-', 'sa', '-', parameters('resourceNameSuffix')), '-', '')]",
-		"storageAccountRegionalCodes": {
-			"westeurope": "z6",
-			"switzerlandnorth": "z1"
-		},
-
+        "storageAccountRegionalCodes": {
+            "westeurope": "z6",
+            "switzerlandnorth": "z1"
+        },
+        
         "cdnProfileName": "[concat(parameters('resourceNamePrefix'), '-', 'cdn', '-', parameters('resourceNameSuffix'))]",
         "cdnEndpointName": "[concat(parameters('resourceNamePrefix'), '-', 'cdn-ep', '-', parameters('resourceNameSuffix'))]",
         "cdnEndpointOriginHost": "[concat(variables('storageAccountName'), '.', variables('storageAccountRegionalCodes')[resourceGroup().location], '.web.core.windows.net')]",
