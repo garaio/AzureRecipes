@@ -1,0 +1,12 @@
+variables:
+  resourceLocation: 'West Europe'
+  resourceGroupName: 'rg-test'
+
+steps:
+- task: AzureCLI@2
+  displayName: 'Create Resource Group'
+  inputs:
+    azureSubscription: 'ARM Service Connection'
+    scriptType: ps
+    scriptLocation: inlineScript
+    inlineScript: 'az group create --location "$(resourceLocation)" --name "$(resourceGroupName)" --tags (''DeployedAt=''+(Get-Date -Format "yyyy-MM-dd")) ''DeployedBy=$(Build.RequestedFor)'' ''DeployedFrom=$(System.TeamProject)'''
