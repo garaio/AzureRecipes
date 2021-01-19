@@ -54,7 +54,7 @@ In that folder various "Knowhow", "Tips & Tricks" and "Best Practices" content i
 | Best Practices | Power BI | Tips for creating valuable Application Dashboards to empower the project/product team with deep knowledge | [Show](./Knowledge/BestPractices-PowerBI-ApplicationDashboards) |
 | Best Practices | Azure Solutions | Overview of services used and usable for monitoring and analytics, its relations and best practices to use them in PaaS/Serverless architectures | [Show](./Knowledge/BestPractices-AzureSolutions-Monitoring) |
 | Knowhow | Azure Bot Service | Infographic (or schematic architecture) displaying the relationship of the various components and resources to build and run Azure Bot Service implementations. Includes Power Virtual Agent and Bot Framework tools such as the Composer or Emulator. | [Show](./Knowledge/Knowhow-AzureBotService-Overview) |
-| Tips & Tricks | Azure Management REST API | For almost every resource type as well as for the central Azure Resource Manager there is a [comprehensive REST API provided, which is also well documented](https://docs.microsoft.com/en-us/rest/api/azure/). However, the documentation and most of other internet resources just demonstrate how to authenticate a service principal for application access. This requires you to assign according permissions to resources (RBAC), which is not always wanted or even possible. For API calls with Postman you maybe want a delegated access based on your personal account. | [Show](./TipsAndTricks-ManagementApi-Postman) |
+| Tips & Tricks | Azure Management REST API | For almost every resource type as well as for the central Azure Resource Manager there is a [comprehensive REST API provided, which is also well documented](https://docs.microsoft.com/en-us/rest/api/azure/). However, the documentation and most of other internet resources just demonstrate how to authenticate a service principal for application access. This requires you to assign according permissions to resources (RBAC), which is not always wanted or even possible. For API calls with Postman you maybe want a delegated access based on your personal account. | [Show](./Knowledge/TipsAndTricks-ManagementApi-Postman) |
 
 ## Support
 If you need help with some content or find a bug then you may [create an issue](https://github.com/garaio/AzureRecipes/issues). For further inquiries please use contact possibilities on the [official website](https://garaio.com).
@@ -63,4 +63,4 @@ If you need help with some content or find a bug then you may [create an issue](
 [![License](http://img.shields.io/:license-mit-blue.svg?style=flat-square)](http://badges.mit-license.org)
 
 - **[MIT license](http://opensource.org/licenses/mit-license.php)**
-- Copyright 2020 © <a href="https://garaio.com" target="_blank">GARAIO AG</a>
+- Copyright 2021 © <a href="https://garaio.com" target="_blank">GARAIO AG</a>
