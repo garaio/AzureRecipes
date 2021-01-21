@@ -16,4 +16,4 @@ Governance usually includes policy definitions and assignments or blueprint defi
 
 # Templates
 - [Markdown File](./Cloud-Operating-Model.md)
-- [Word Template](./Cloud-Operating-Model.dotx)
+- [Word Template](https://github.com/garaio/AzureRecipes/raw/master/Templates/Structure-CloudOperatingModel/Cloud%20Operating%20Model.dotx)
