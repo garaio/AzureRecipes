@@ -1,11 +1,11 @@
 # Resource Structuring and Naming
-GARAIO AG usually realized custom applications for customers which are integrated into their application landscape on Azure. This requires an agreement on some conventions regarding the structure and setup of the application components. Ideally this is also ensured and supported with policies.
+GARAIO AG usually realizes custom applications for customers which are integrated into their application landscape on Azure. This requires an agreement on some conventions regarding the structure and setup of the application components. Ideally this is also ensured and supported with policies.
 
 Generally we recommend to rely on Microsofts proposals for such conventions as much as possible (these have a general scope): https://docs.microsoft.com/en-us/azure/cloud-adoption-framework/ready/azure-best-practices.
-For mentionned project realizations following conditions typically apply:
-* For simplicity the customer often only provides one subscription
+For mentioned project realizations following conditions typically apply:
+* For simplicity, the customer often only provides one subscription
 * The setup and definition of the Azure resources is part of the application and completely managed in code
-* As the ability to run resources on developer systems is very limited, developers needs to be able to setup isolated application deployments highly flexible (but still consistent)
+* As the ability to run resources on developer systems is very limited, developers need to be able to setup isolated application deployments highly flexible (but still consistent)
 
 To better support these requirements the following adaptions and specializations have proved to be reasonable.
 

@@ -1,21 +1,21 @@
 # Resource Tagging
 Tags set on resources help to understand who created it, when it was and to which context it belongs. This mainly compensates the fact that the Activity Log becomes overwhelming and stores it's data (even if connected to a Log Analytics Workspace) for a limited amount of time only.
 
-GARAIO AG usually realized custom applications for customers which are integrated into their application landscape on Azure. This requires an agreement on conventions regarding the application of tags. Ideally this is also ensured and supported with policies.
+GARAIO AG usually realizes custom applications for customers which are integrated into their application landscape on Azure. This requires an agreement on conventions regarding the application of tags. Ideally this is also ensured and supported with policies.
 
 Generally we recommend to rely on Microsofts proposals for such conventions as much as possible (these have a general scope): https://docs.microsoft.com/en-us/azure/cloud-adoption-framework/ready/azure-best-practices/naming-and-tagging#metadata-tags.
-For mentionned project realizations following conditions typically apply:
+For mentioned project realizations following conditions typically apply:
 * The setup and definition of the Azure resources is part of the application and completely managed in code
 * The deployment is usually done to a Resource Group and fully correlates with it (i.e. all resources of Resource Group have the same origin and are created or updated within the same operation)
 
-This is a standard which should be applied to all non-project related ressources and a template which can be used to discuss and setup a project specific definition during the setup of a project.
+This is a standard which should be applied to all non-project related resources and a template which can be used to discuss and setup a project specific definition during the setup of a project.
 
 ## General Best Practices
 * Apply meaningful tags only and prevent confusion with information that is given by structure of resources (with subscription and resource group)
 * Name key of tags following the **PascalCase** pattern
 
 ## Tagging Concept
-The mainly relevant artefact for management purposes are Resource Groups. These must have tags defined to identify its purpose, context and history. Resources in these groups automatically inherit these tags but may always override its value or have additional tags defined on it. The automatical inheritance of tag values helps to identify orphaned resources (i.e. not included anymore in deployments) or to indicate its orgin when resources are manually moved from another Resource Group.
+The mainly relevant artefacts for management purposes are Resource Groups. These must have tags defined to identify its purpose, context and history. Resources in these groups automatically inherit these tags but may always override its value or have additional tags defined on it. The automatic inheritance of tag values helps to identify orphaned resources (i.e. not included anymore in deployments) or to indicate its origin when resources are manually moved from another Resource Group.
 
 ## Tags
 
