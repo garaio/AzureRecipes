@@ -1,0 +1,8 @@
+let
+    Source = Table.FromRows(Json.Document(Binary.Decompress(Binary.FromText("hVLNboMwDH4XzlWkPULXe7n0NNSDSRxqKdjICaJ9+4aJsQIbPfr7sf1ZrqqixRihwcujw5M4LK6HqrDCScEmUYMtUDg6p1m25rqbMJ77tkbdUBIT/PiMaANMERIJn6HdDNlXZ7zkj32PJ43pfeuYFDHta5IM/KbLQDF+UffXvZZKK31mHt+iDjUKG/GeLEGYl51wCyFsApgaG+LSn6Z6SSK7FVX3FBxxY7LNLZGX6DM2R/1VraO5AUMYGR9EdPySJYzDNOjfG4xVOYbGT7lf8J53uD4B", BinaryEncoding.Base64), Compression.Deflate)), let _t = ((type nullable text) meta [Serialized.Text = true]) in type table [Property = _t]),
+    #"Changed Type" = Table.TransformColumnTypes(Source,{{"Property", type text}}),
+	#"Added DisplayName" = Table.AddColumn(#"Changed Type", "DisplayName", each Text.Replace([Property], ".", " > ")),
+    #"Splitted CamelCase" = Table.TransformColumns(#"Added DisplayName", {{"DisplayName", each Text.Combine(Splitter.SplitTextByPositions(List.Combine({{0}, Text.PositionOfAny(_, {"A".."Z"}, Occurrence.All)})) (_), " "), type text}}),
+    #"Capitalized Each Word" = Table.TransformColumns(#"Splitted CamelCase",{{"DisplayName", Text.Proper, type text}})
+in
+    #"Capitalized Each Word"
