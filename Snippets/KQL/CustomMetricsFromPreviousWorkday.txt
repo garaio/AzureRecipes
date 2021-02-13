@@ -1,0 +1,3 @@
+customMetrics
+| where timestamp >= case(dayofweek(now()) == time(0.00:00:00), ago(3d), dayofweek(now()) == time(6.00:00:00), ago(2d), ago(1d))
+| where name == "CustomMetricName Count"
