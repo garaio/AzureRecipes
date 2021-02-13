@@ -9,4 +9,4 @@ steps:
     azureSubscription: 'ARM Service Connection'
     scriptType: ps
     scriptLocation: inlineScript
-    inlineScript: 'az group create --location "$(resourceLocation)" --name "$(resourceGroupName)" --tags (''DeployedAt=''+(Get-Date -Format "yyyy-MM-dd")) ''DeployedBy=$(Build.RequestedFor)'' ''DeployedFrom=$(System.TeamProject)'''
+    inlineScript: 'az group create --location "$(resourceLocation)" --name "$(resourceGroupName)" --tags (''DeployedAt=''+(Get-Date -Format "yyyy-MM-dd")) ''DeployedBy=$(Build.RequestedForEmail)'' ''DeployedFrom=$(System.TeamProject)'''

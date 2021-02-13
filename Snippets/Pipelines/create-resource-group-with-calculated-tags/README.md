@@ -7,7 +7,7 @@ Despite this task is simple, it may be tricky to inject some values calculated w
     azureSubscription: 'ARM Service Connection'
     scriptType: ps
     scriptLocation: inlineScript
-    inlineScript: 'az group create --location "$(resourceLocation)" --name "$(resourceGroupName)" --tags (''DeployedAt=''+(Get-Date -Format "yyyy-MM-dd")) ''DeployedBy=$(Build.RequestedFor)'' ''DeployedFrom=$(System.TeamProject)'''
+    inlineScript: 'az group create --location "$(resourceLocation)" --name "$(resourceGroupName)" --tags (''DeployedAt=''+(Get-Date -Format "yyyy-MM-dd")) ''DeployedBy=$(Build.RequestedForEmail)'' ''DeployedFrom=$(System.TeamProject)'''
 ```
 
 It is also possible to use it in classic pipelines as follows:
