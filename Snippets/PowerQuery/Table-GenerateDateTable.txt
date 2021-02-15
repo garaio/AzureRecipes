@@ -12,6 +12,7 @@ let
     #"Inserted Day" = Table.AddColumn(#"Inserted Month Name", "Day", each Date.Day([Date]), Int64.Type),
     #"Inserted Day Name" = Table.AddColumn(#"Inserted Day", "Day Name", each Date.DayOfWeekName([Date]), type text),
     #"Inserted Month Year Name" = Table.AddColumn(#"Inserted Day Name", "Month Year Name", each [Month Name] & " " & Text.From([Year])),
-    #"Inserted Day Month Name" = Table.AddColumn(#"Inserted Month Year Name", "Day Month Name", each Date.ToText([Date], "dd.MM"))
+    #"Inserted Day Month Name" = Table.AddColumn(#"Inserted Month Year Name", "Day Month Name", each Date.ToText([Date], "dd.MM")),
+    #"Added Week" = Table.AddColumn(#"Inserted Day Month Name", "Week", each "KW" & Number.ToText(Date.WeekOfYear([Date], Day.Monday)))
 in
-    #"Inserted Day Month Name"
+    #"Added Week"
