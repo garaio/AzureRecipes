@@ -1,0 +1,41 @@
+{
+  "body": {
+    "AffectedData": [
+      {
+        "ObjectType": "TestData",
+        "AffectedDataIdentifier": "a9f23fe8-ef73-4315-82a5-deb811105f06",
+        "EventAction": "Create",
+        "EventActionDetails": null,
+        "AdditionalData": {}
+      }
+    ],
+    "UtcTimeStamp": "2019-01-21T15:58:01.9542028Z",
+    "EventCategory": "DataEntity",
+    "AdditionalData": {}
+  },
+  "contentType": null,
+  "correlationId": null,
+  "deadLetterSource": null,
+  "deliveryCount": 1,
+  "enqueuedSequenceNumber": 238,
+  "enqueuedTimeUtc": "2019-01-21T15:58:03.109Z",
+  "expiresAtUtc": "9999-12-31T23:59:59.9999999",
+  "forcePersistence": false,
+  "isBodyConsumed": false,
+  "label": null,
+  "lockedUntilUtc": null,
+  "lockToken": null,
+  "messageId": "ed8fc1cdedc64ba68b3fbd6d75be70f3",
+  "partitionKey": null,
+  "properties": {},
+  "replyTo": null,
+  "replyToSessionId": null,
+  "scheduledEnqueueTimeUtc": "0001-01-01T00:00:00",
+  "sequenceNumber": 3940649673949422,
+  "sessionId": null,
+  "size": 988,
+  "state": 0,
+  "timeToLive": "10675199.02:48:05.4775807",
+  "to": null,
+  "viaPartitionKey": null
+}

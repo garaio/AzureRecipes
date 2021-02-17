@@ -1,0 +1,9 @@
+{
+    "IsEncrypted": false,
+    "Values": {
+        "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+        "ServiceBusConnectionString": "",
+        "RenewalIntervalInSeconds": "45",
+        "MaxRetryNumber": "20"
+    }
+}
