@@ -1,0 +1,11 @@
+{
+    "Image:psd": "PSD",
+    "Image:*": "PHOTO",
+    "Movie:*": "VIDEO",
+    "*:pdf": "PDF",
+    "MS PowerPoint:*": "PRESENTATION",
+    "MS Excel:*": "EXCEL",
+    "MS Word:doc": "DOC",
+    "MS Word:docx": "DOCX",
+	"*": "OTHER"
+}
