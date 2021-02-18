@@ -70,7 +70,7 @@
         ],
 
         "logicAppFtpDemoName": "[concat(parameters('resourceNamePrefix'), '-', 'ftp-la', '-', parameters('resourceNameSuffix'))]",
-        "logicAppFtpDemoDefUri": "[concat(variables('storageAccountUri'), variables('blobContainerDeployment'), '/LogicApps/', 'ftp-demo.json')]",
+        "logicAppFtpDemoDefUri": "[concat(variables('storageAccountUri'), variables('blobContainerDeployment'), '/LogicApps/', 'ftp-demo.json')]"
     },
     "resources": [
         {
@@ -221,9 +221,10 @@
             "apiVersion": "2017-04-01",
             "location": "[resourceGroup().location]",
             "sku": {
-                "name": "[parameter('serviceBusSku')]",
-                "tier": "[parameter('serviceBusSku')]"
+                "name": "[parameters('serviceBusSku')]",
+                "tier": "[parameters('serviceBusSku')]"
             },
+            "properties": {},
             "dependsOn": []
         },
         {
@@ -235,16 +236,16 @@
             ],
             "properties": {
                 "lockDuration": "PT1M",
-                "maxSizeInMegabytes": "1024",
-                "requiresDuplicateDetection": "false",
-                "requiresSession": "false",
+                "maxSizeInMegabytes": 1024,
+                "requiresDuplicateDetection": false,
+                "requiresSession": false,
                 "defaultMessageTimeToLive": "P10675199DT2H48M5.4775807S",
-                "deadLetteringOnMessageExpiration": "false",
+                "deadLetteringOnMessageExpiration": false,
                 "duplicateDetectionHistoryTimeWindow": "PT10M",
-                "maxDeliveryCount": "10",
+                "maxDeliveryCount": 10,
                 "autoDeleteOnIdle": "P10675199DT2H48M5.4775807S",
-                "enablePartitioning": "false",
-                "enableExpress": "false"
+                "enablePartitioning": false,
+                "enableExpress": false
             },
             "copy": {
                 "name": "servicebusqueuescopy",
