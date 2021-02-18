@@ -25,6 +25,7 @@ Some quickstart templates for projects with standardized architectures.
 | Architecture | Purpose | Description | Link |
 |--------------|---------|-------------|------|
 | Serverless | General applications | Base resources including Storage Account, Log Analytics Workspace, Application Insights and Key Vault | [Show](./Blueprints/serverless-base-resources) |
+| Integration Pipeline | Integration scenarios | Exchange and transform data between systems in a robust and asynchronous way, based on Service Bus, Logic Apps and Functions | [Show](./Blueprints/integration-pipeline) |
 
 ### Snippets
 Directly reusable code artefacts for development, deployment or monitoring / analytics grouped by type of language or format.

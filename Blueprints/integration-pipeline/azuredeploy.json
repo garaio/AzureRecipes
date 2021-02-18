@@ -1,0 +1,326 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "resourceNamePrefix": {
+            "type": "string",
+            "defaultValue": "customer-project",
+            "metadata": {
+                "description": "The prefix will be used for every parameter that represents a resource name. See the description of the parameter."
+            }
+        },
+        "resourceNameSuffix": {
+            "type": "string",
+            "metadata": {
+                "description": "The suffix will be appended to every parameter that represents a resource name. See the description of the parameter."
+            }
+        },
+        "serviceBusSku": {
+            "type": "string",
+            "defaultValue": "Standard",
+            "allowedValues": [
+                "Basic",
+                "Standard",
+                "Premium"
+            ]
+        },
+        "deployLogicApps": {
+            "type": "bool",
+            "defaultValue": false,
+            "metadata": {
+                "description": "Generate logic app resources based on linked templates"
+            }
+        }
+    },
+    "variables": {
+        "logAnalyticsWsName": "[concat(parameters('resourceNamePrefix'), '-', 'law', '-', parameters('resourceNameSuffix'))]",
+        "appInsightsName": "[concat(parameters('resourceNamePrefix'), '-', 'ai', '-', parameters('resourceNameSuffix'))]",
+
+        "keyVaultName": "[concat(parameters('resourceNamePrefix'), '-kv', '-', parameters('resourceNameSuffix'))]",        
+        "keyVaultSecretStorageAccountConnectionString": "storageAccountConnectionString",
+        "keyVaultSecretServiceBusConnectionString": "ServiceBusConnectionString",
+
+        "blobContainerConfig": "config",
+        "blobContainerDeployment": "deployment",        
+
+        "storageAccountName": "[replace(concat(parameters('resourceNamePrefix'), '-', 'sa', '-', parameters('resourceNameSuffix')), '-', '')]",
+        "storageAccountBlobs": [
+            {
+                "name": "[variables('blobContainerConfig')]",
+                "publicAccess": "None"
+            },
+            {
+                "name": "[variables('blobContainerDeployment')]",
+                "publicAccess": "None"
+            }
+        ],
+        "storageAccountFunctionSasParams": {
+            "signedServices": "b",
+            "signedResourceTypes": "o",
+            "signedPermission": "r",
+            "signedExpiry": "2050-01-01T00:00:00Z"
+        },
+        "storageAccountUri": "[concat('https://', variables('storageAccountName'), '.blob.core.windows.net/')]",
+
+        "serviceBusNamespaceName": "[concat(parameters('resourceNamePrefix'), '-', 'sb', '-', parameters('resourceNameSuffix'))]",
+        "serviceBusQueues": [
+            {
+                "name": "demo"
+            }
+        ],
+
+        "logicAppFtpDemoName": "[concat(parameters('resourceNamePrefix'), '-', 'ftp-la', '-', parameters('resourceNameSuffix'))]",
+        "logicAppFtpDemoDefUri": "[concat(variables('storageAccountUri'), variables('blobContainerDeployment'), '/LogicApps/', 'ftp-demo.json')]",
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "name": "[variables('storageAccountName')]",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "Standard_LRS",
+                "tier": "Standard"
+            },
+            "kind": "StorageV2",
+            "apiVersion": "2019-06-01",
+            "tags": {},
+            "scale": null,
+            "properties": {
+                "networkAcls": {
+                    "bypass": "AzureServices",
+                    "virtualNetworkRules": [],
+                    "ipRules": [],
+                    "defaultAction": "Allow"
+                },
+                "supportsHttpsTrafficOnly": true,
+                "encryption": {
+                    "services": {
+                        "file": {
+                            "enabled": true
+                        },
+                        "blob": {
+                            "enabled": true
+                        }
+                    },
+                    "keySource": "Microsoft.Storage"
+                },
+                "accessTier": "Hot"
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+            "name": "[concat(variables('storageAccountName'), '/default/', variables('storageAccountBlobs')[copyIndex()].name)]",
+            "apiVersion": "2019-06-01",
+            "properties": {
+                "publicAccess": "[variables('storageAccountBlobs')[copyIndex()].publicAccess]"
+            },
+            "copy": {
+                "name": "storageaccountblobscopy",
+                "count": "[length(variables('storageAccountBlobs'))]"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.OperationalInsights/workspaces",
+            "name": "[variables('logAnalyticsWsName')]",
+            "apiVersion": "2020-08-01",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "sku": {
+                    "name": "pergb2018"
+                },
+				"retentionInDays": 30
+            }
+        },
+        {
+            "type": "Microsoft.Insights/components",
+            "apiVersion": "2020-02-02-preview",
+            "name": "[variables('appInsightsName')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]"
+            ],
+            "location": "[resourceGroup().location]",
+            "kind": "web",
+            "properties": {
+                "ApplicationId": "[variables('appInsightsName')]",
+                "Application_Type": "web",
+                "WorkspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]"
+            }
+        },     
+        {
+            "type": "Microsoft.KeyVault/vaults",
+            "name": "[variables('keyVaultName')]",
+            "apiVersion": "2019-09-01",
+            "location": "[resourceGroup().location]",
+            "tags": {},
+            "scale": null,
+            "properties": {
+                "sku": {
+                    "family": "A",
+                    "name": "standard"
+                },
+                "tenantId": "[subscription().tenantId]",
+                "enabledForTemplateDeployment": true,
+                "accessPolicies": []
+            }
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults/providers/diagnosticSettings",
+            "apiVersion": "2017-05-01-preview",
+            "name": "[concat(variables('keyVaultName'), '/Microsoft.Insights/', 'LogAnalytics')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]",
+                "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]"
+            ],
+            "properties": {
+                "name": "LogAnalytics",
+                "workspaceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]",
+                "logs": [
+                    {
+                        "category": "AuditEvent",
+                        "enabled": true
+                    }
+                ],
+                "metrics": [
+                    {
+                        "category": "AllMetrics",
+                        "enabled": true
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults/secrets",
+            "name": "[concat(variables('keyVaultName'), '/', variables('keyVaultSecretStorageAccountConnectionString'))]",
+            "apiVersion": "2019-09-01",
+            "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]",
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+            ],
+            "properties": {
+                "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2019-06-01').keys[0].value)]"
+            }
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults/secrets",
+            "name": "[concat(variables('keyVaultName'), '/', variables('keyVaultSecretServiceBusConnectionString'))]",
+            "apiVersion": "2019-09-01",
+            "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]",
+                "[resourceId('Microsoft.ServiceBus/namespaces', variables('serviceBusNamespaceName'))]"
+            ],
+            "properties": {
+                "value": "[listkeys(resourceId('Microsoft.ServiceBus/namespaces/authorizationRules', variables('serviceBusNamespaceName'), 'RootManageSharedAccessKey'), '2017-04-01').primaryConnectionString]"
+            }
+        },
+        {
+            "type": "Microsoft.ServiceBus/namespaces",
+            "name": "[variables('serviceBusNamespaceName')]",
+            "apiVersion": "2017-04-01",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "[parameter('serviceBusSku')]",
+                "tier": "[parameter('serviceBusSku')]"
+            },
+            "dependsOn": []
+        },
+        {
+            "type": "Microsoft.ServiceBus/namespaces/queues",
+            "name": "[concat(variables('serviceBusNamespaceName'), '/', variables('serviceBusQueues')[copyIndex()].name)]",
+            "apiVersion": "2017-04-01",
+            "dependsOn": [
+                "[resourceId('Microsoft.ServiceBus/namespaces', variables('serviceBusNamespaceName'))]"
+            ],
+            "properties": {
+                "lockDuration": "PT1M",
+                "maxSizeInMegabytes": "1024",
+                "requiresDuplicateDetection": "false",
+                "requiresSession": "false",
+                "defaultMessageTimeToLive": "P10675199DT2H48M5.4775807S",
+                "deadLetteringOnMessageExpiration": "false",
+                "duplicateDetectionHistoryTimeWindow": "PT10M",
+                "maxDeliveryCount": "10",
+                "autoDeleteOnIdle": "P10675199DT2H48M5.4775807S",
+                "enablePartitioning": "false",
+                "enableExpress": "false"
+            },
+            "copy": {
+                "name": "servicebusqueuescopy",
+                "count": "[length(variables('serviceBusQueues'))]"
+            }
+        },
+        {
+            "type": "Microsoft.ServiceBus/namespaces/providers/diagnosticSettings",
+            "name": "[concat(variables('serviceBusNamespaceName'), '/Microsoft.Insights/', 'LogAnalytics')]",
+            "apiVersion": "2017-05-01-preview",
+            "dependsOn": [
+                "[resourceId('Microsoft.ServiceBus/namespaces', variables('serviceBusNamespaceName'))]",
+                "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]"
+            ],
+            "properties": {
+                "name": "LogAnalytics",
+                "workspaceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]",
+                "logs": [
+                    {
+                        "category": "OperationalLogs",
+                        "enabled": true
+                    }
+                ],
+                "metrics": [
+                    {
+                        "category": "AllMetrics",
+                        "enabled": true
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "name": "[variables('logicAppFtpDemoName')]",
+            "condition": "[parameters('deployLogicApps')]",
+            "apiVersion": "2020-10-01",
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[concat(variables('logicAppFtpDemoDefUri'), '?', listAccountSas(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2019-06-01', variables('storageAccountFunctionSasParams')).accountSasToken)]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "LogicAppName": { "value": "[variables('logicAppFtpDemoName')]" }
+                }
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Logic/workflows/providers/diagnosticSettings",
+            "name": "[concat(variables('logicAppFtpDemoName'), '/Microsoft.Insights/', 'LogAnalytics')]",
+            "condition": "[parameters('deployLogicApps')]",
+            "apiVersion": "2017-05-01-preview",
+            "dependsOn": [
+                "[resourceId('Microsoft.Resources/deployments', variables('logicAppFtpDemoName'))]",
+                "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]"
+            ],
+            "properties": {
+                "name": "LogAnalytics",
+                "workspaceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]",
+                "logs": [
+                    {
+                        "category": "WorkflowRuntime",
+                        "enabled": true
+                    }
+                ],
+                "metrics": [
+                    {
+                        "category": "AllMetrics",
+                        "enabled": true
+                    }
+                ]
+            }
+        }
+    ],
+    "outputs": {}
+}
