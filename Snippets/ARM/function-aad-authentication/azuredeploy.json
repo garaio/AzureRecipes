@@ -8,7 +8,7 @@
 			"type": "Microsoft.Web/sites",
 			"kind": "functionapp",
 			"name": "<function-name>",
-			"apiVersion": "2018-11-01",
+			"apiVersion": "2020-09-01",
 			"location": "[resourceGroup().location]",
 			"properties": {
 				"enabled": true,
@@ -44,7 +44,7 @@
 		{
 			"type": "Microsoft.Web/sites/config",
 			"name": "[concat(<function-name>, '/appsettings')]",
-			"apiVersion": "2019-08-01",
+			"apiVersion": "2020-09-01",
 			"dependsOn": [
 				"[resourceId('Microsoft.Web/sites', <function-name>)]"
 			],
@@ -60,7 +60,7 @@
 		{
 			"name": "[concat(<function-name>, '/authsettings')]",
 			"type": "Microsoft.Web/sites/config",
-			"apiVersion": "2019-08-01",
+			"apiVersion": "2020-09-01",
 			"dependsOn": [
 				"[resourceId('Microsoft.Web/sites', <function-name>)]"
 			],

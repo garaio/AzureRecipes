@@ -192,7 +192,7 @@
                 "accessPolicies": [
                     {
                         "tenantId": "[subscription().tenantId]",
-                        "objectId": "[reference(resourceId('Microsoft.Web/sites', variables('templateFuncName')), '2019-08-01', 'Full').identity.principalId]",
+                        "objectId": "[reference(resourceId('Microsoft.Web/sites', variables('templateFuncName')), '2020-09-01', 'Full').identity.principalId]",
                         "permissions": {
                             "keys": [ "get" ],
                             "secrets": [ "get" ]
@@ -221,7 +221,7 @@
             "type": "Microsoft.Web/sites",
             "kind": "functionapp",
             "name": "[variables('templateFuncName')]",
-            "apiVersion": "2018-11-01",
+            "apiVersion": "2020-09-01",
             "location": "[resourceGroup().location]",
             "scale": null,
             "properties": {
@@ -256,7 +256,7 @@
         {
             "type": "Microsoft.Web/sites/config",
             "name": "[concat(variables('templateFuncName'), '/appsettings')]",
-            "apiVersion": "2019-08-01",
+            "apiVersion": "2020-09-01",
             "dependsOn": [
                 "[resourceId('Microsoft.Web/sites', variables('templateFuncName'))]",
                 "[resourceId('Microsoft.KeyVault/vaults/secrets', variables('keyVaultName'), variables('keyVaultSecretStorageAccountConnectionString'))]"
