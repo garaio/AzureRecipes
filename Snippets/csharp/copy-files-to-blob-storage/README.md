@@ -7,12 +7,13 @@ For such a solution you usually build sort of a synchronisation service which st
 
 # Getting Started
 Ensure that following Nuget packes are installed:
-* `Flurl` (tested with 2.8.2)
-* `Flurl.Http` (tested with 2.4.2)
-* `Microsoft.Azure.WebJobs.Extensions` (tested with 3.0.6)
-* `Microsoft.Azure.WebJobs.Extensions.Storage` (tested with 4.0.3)
-* `Microsoft.Azure.WebJobs.Script.ExtensionsMetadataGenerator` (tested with 1.2.0)
-* `Microsoft.NET.Sdk.Functions` (tested with 3.0.9)
-* `MimeMapping` (tested with 1.0.1.30)
+* `Microsoft.NET.Sdk.Functions` (tested with 3.0.11)
+* `Azure.Storage.Blobs` (tested with 12.8.0)
+* `MimeMapping` (tested with 1.0.1.37)
+* For sample with download of a web resource: `Flurl.Http` (tested with 3.0.1)
 
-Then you can adapt the [function `CopyFilesFunc`](./CopyFilesFunc.cs) in your Function App.
+Then you can adapt the [function `CopyFilesFunc`](./FunctionApp/Functions/CopyFilesFunc.cs) in your Function App.
+
+# References
+* [MSDN Overview Blob Storage Client Library v12](https://docs.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-dotnet)
+* [MSDN Manage blob properties and metadata with .NET](https://docs.microsoft.com/en-us/azure/storage/blobs/storage-blob-properties-metadata?tabs=dotnet#resources-for-development-with-net)
