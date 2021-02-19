@@ -4,7 +4,7 @@ Especially for integration scenarios there is often the need to provide a simple
 The snippet demonstrates a usage in an Azure Function, but it can be easily used in any C# code without any dependencies other than Newtonsoft JSON.
 
 # Getting Started
-Create mapping configurations like this ([`demo-content-type-mapping`](./demo-content-type-mapping.json)):
+Create mapping configurations like this ([`demo-content-type-mapping`](./FunctionApp/config/demo-content-type-mapping.json)):
 ```json
 {
     "Image:psd": "PSD",
@@ -31,4 +31,6 @@ Mapping<string> contentTypeMapping = Mapping<string>.CreateFromFileContent(mappi
 
 string contentType = contentTypeMapping.GetMatchOrDefault("Movie", "mp4"); // Returns VIDEO
 ```
+
+The main class is [`Mapping`](./FunctionApp/Common/Mapping.cs)
 

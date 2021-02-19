@@ -1,23 +1,22 @@
-using System;
-using System.Diagnostics.CodeAnalysis;
-using System.IO;
-using System.Threading.Tasks;
+using FunctionApp.Common;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Blob;
+using System.Diagnostics.CodeAnalysis;
+using System.Threading.Tasks;
 
 namespace FunctionApp.Functions
 {
     public static class DemoResolverFunc
     {
         [SuppressMessage("Microsoft.Performance", "IDE0060:ReviewUnusedParameters")]
-        [FunctionName(nameof(DemoResolverFunc))]
-        public static async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)] HttpRequest req,
+        [FunctionName(nameof(Get))]
+        public static async Task<IActionResult> Get(
+            [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = Constants.Routes.Demo)] HttpRequest req,
             ILogger log)
         {
             log.LogInformation($"Resolve sample mapping triggered");
@@ -25,7 +24,7 @@ namespace FunctionApp.Functions
             CloudBlobClient blobClient = CloudStorageAccount.Parse(Configurations.StorageConnectionString).CreateCloudBlobClient();
             CloudBlobContainer container = blobClient.GetContainerReference(Constants.Configurations.ConfigContainer);
             CloudBlockBlob blob = container.GetBlockBlobReference("demo-content-type-mapping.json");
-
+            
             string mappingFileContent = await blob.DownloadTextAsync();
             Mapping<string> contentTypeMapping = Mapping<string>.CreateFromFileContent(mappingFileContent);
 
