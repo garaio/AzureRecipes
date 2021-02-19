@@ -10,6 +10,44 @@ Ensure that following Nuget packes are installed:
 
 Then you can adapt the [function `GetFilesFunc`](./FunctionApp/Functions/GetFilesFunc.cs) in your Function App.
 
+```csharp
+var blobContainer = new BlobContainerClient(Configurations.StorageConnectionString, Configurations.FilesContainer);
+
+if (!await blobContainer.ExistsAsync())
+{
+    return new NoContentResult();
+}
+
+if (!blobContainer.CanGenerateSasUri)
+{
+    return new UnauthorizedResult();
+}
+
+var results = new List<FileInfo>();
+
+// List all blobs in the container
+await foreach (BlobItem blobItem in blobContainer.GetBlobsAsync())
+{
+    var blobClient = blobContainer.GetBlobClient(blobItem.Name);
+    var sasBuilder = new BlobSasBuilder()
+    {
+        BlobContainerName = Configurations.FilesContainer,
+        BlobName = blobClient.Name,
+        Resource = "b",
+        ExpiresOn = DateTimeOffset.UtcNow.AddHours(1)
+    };
+    sasBuilder.SetPermissions(BlobSasPermissions.Read);
+
+    Uri sasUri = blobClient.GenerateSasUri(sasBuilder);
+
+    results.Add(new FileInfo
+    {
+        Name = blobItem.Name,
+        Uri = sasUri.AbsoluteUri
+    });
+}
+```
+
 # References
 * [MSDN Overview Blob Storage Client Library v12](https://docs.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-dotnet)
 * [MSDN Create a service SAS for a container or blob](https://docs.microsoft.com/en-us/azure/storage/blobs/sas-service-create?tabs=dotnet#create-a-service-sas-for-a-blob)
