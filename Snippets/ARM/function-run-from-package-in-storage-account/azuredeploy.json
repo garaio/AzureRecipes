@@ -262,7 +262,7 @@
                 "[resourceId('Microsoft.KeyVault/vaults/secrets', variables('keyVaultName'), variables('keyVaultSecretStorageAccountConnectionString'))]"
             ],
             "properties": {
-                "AzureWebJobsStorage": "[concat('@Microsoft.KeyVault(SecretUri=', reference(resourceId('Microsoft.KeyVault/vaults/secrets', variables('keyVaultName'), variables('keyVaultSecretStorageAccountConnectionString'))).secretUriWithVersion, ')')]",
+                "AzureWebJobsStorage": "[concat('@Microsoft.KeyVault(VaultName=', variables('keyVaultName'), ';SecretName=', variables('keyVaultSecretStorageAccountConnectionString'), ')')]",
                 "AzureWebJobsDisableHomepage": true,
                 "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2019-06-01').keys[0].value)]",
                 "APPINSIGHTS_INSTRUMENTATIONKEY": "[reference(concat('Microsoft.Insights/components/', variables('appInsightsName'))).InstrumentationKey]",
@@ -274,7 +274,7 @@
                 "WEBSITE_RUN_FROM_PACKAGE": "[concat(variables('storageAccountBlobUri'), variables('blobContainerDeployment'), variables('templateFuncPackagePath'), '?', listAccountSas(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2019-06-01', variables('storageAccountFunctionSasParams')).accountSasToken)]",
                 "WEBSITE_TIME_ZONE": "W. Europe Standard Time",
                 "WEBSITE_CONTENTSHARE": "[variables('templateFuncName')]",
-                "StorageConnectionString": "[concat('@Microsoft.KeyVault(SecretUri=', reference(resourceId('Microsoft.KeyVault/vaults/secrets', variables('keyVaultName'), variables('keyVaultSecretStorageAccountConnectionString'))).secretUriWithVersion, ')')]",
+                "StorageConnectionString": "[concat('@Microsoft.KeyVault(VaultName=', variables('keyVaultName'), ';SecretName=', variables('keyVaultSecretStorageAccountConnectionString'), ')')]",
                 "ConfigContainerName": "[variables('blobContainerConfig')]"
             }
         }

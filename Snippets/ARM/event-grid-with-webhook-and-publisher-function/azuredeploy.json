@@ -238,7 +238,7 @@
                 "[resourceId('Microsoft.KeyVault/vaults/secrets', variables('keyVaultName'), variables('keyVaultSecretStorageAccountConnectionString'))]"
             ],
             "properties": {
-                "AzureWebJobsStorage": "[concat('@Microsoft.KeyVault(SecretUri=', reference(resourceId('Microsoft.KeyVault/vaults/secrets', variables('keyVaultName'), variables('keyVaultSecretStorageAccountConnectionString'))).secretUriWithVersion, ')')]",
+                "AzureWebJobsStorage": "[concat('@Microsoft.KeyVault(VaultName=', variables('keyVaultName'), ';SecretName=', variables('keyVaultSecretStorageAccountConnectionString'), ')')]",
                 "AzureWebJobsDisableHomepage": true,
                 "APPINSIGHTS_INSTRUMENTATIONKEY": "[reference(concat('Microsoft.Insights/components/', variables('appInsightsName'))).InstrumentationKey]",
                 "APPINSIGHTS_PROFILERFEATURE_VERSION": "1.0.0",
@@ -249,7 +249,7 @@
                 "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2019-06-01').keys[0].value)]",
                 "WEBSITE_CONTENTSHARE": "[variables('templateFuncName')]",
                 "WEBSITE_TIME_ZONE": "W. Europe Standard Time",
-                "StorageConnectionString": "[concat('@Microsoft.KeyVault(SecretUri=', reference(resourceId('Microsoft.KeyVault/vaults/secrets', variables('keyVaultName'), variables('keyVaultSecretStorageAccountConnectionString'))).secretUriWithVersion, ')')]",
+                "StorageConnectionString": "[concat('@Microsoft.KeyVault(VaultName=', variables('keyVaultName'), ';SecretName=', variables('keyVaultSecretStorageAccountConnectionString'), ')')]",
                 "EventGridTopicEndpoint": "[reference(resourceId('Microsoft.EventGrid/topics', variables('eventGridTopicName'))).endpoint]",
                 "EventGridTopicKey": "[listKeys(resourceId('Microsoft.EventGrid/topics', variables('eventGridTopicName')), '2020-04-01-preview').key1]"
             }
