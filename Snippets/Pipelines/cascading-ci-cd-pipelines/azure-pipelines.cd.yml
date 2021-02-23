@@ -139,4 +139,4 @@ stages:
                     scriptType: bash
                     scriptLocation: inlineScript
                     inlineScript: |
-                      az cdn endpoint purge -g $(azureResourceGroupName) -n $(cdnEndpointName) --profile-name $(cdnProfileName) --content-paths "/*"
+                      az cdn endpoint purge -g $(azureResourceGroupName) -n $(cdnEndpointName) --profile-name $(cdnProfileName) --content-paths "/* --no-wait"
