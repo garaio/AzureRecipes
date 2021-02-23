@@ -10,7 +10,7 @@ namespace Common.Model
             Id = NewId;
         }
 
-        [JsonProperty("id")]
+        [JsonProperty(PropertyName = "id")]
         public string Id { get; set; }
 
         public string PartitionKey { get; set; }
