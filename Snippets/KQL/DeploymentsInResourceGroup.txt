@@ -1,12 +1,15 @@
 AzureActivity 
-| where ResourceGroup == "<resource-group-name>"
-| where ResourceProviderValue == "Microsoft.Resources"
-| where ActivityStatusValue == "Accepted"
-| where ActivitySubstatusValue == "Created"
-| order by TimeGenerated desc
-| project TimeGenerated, CorrelationId, Caller, CallerIpAddress, ResourceGroup, Name=Resource
-| join (AzureActivity
-| where ActivityStatus == "Started"
-| where ResourceProviderValue != "Microsoft.Resources"
-| summarize Resources=make_list(ResourceId) by CorrelationId) on CorrelationId
-| project TimeGenerated, Caller, CallerIpAddress, ResourceGroup, Name, Resources
+    | where ResourceGroup =~ "<resource-group-name>"
+    | where ResourceProviderValue =~ "Microsoft.Resources"
+    | where ActivityStatusValue =~ "Accept"
+    | where ActivitySubstatusValue =~ "Created"
+    | order by TimeGenerated desc
+    | extend Name = parse_json(Properties).resource
+    | project TimeGenerated, CorrelationId, Caller, CallerIpAddress, ResourceGroup = tolower(ResourceGroup), Name
+    | join (AzureActivity
+    | where ActivityStatusValue =~ "Start"
+    | where ResourceProviderValue !~ "Microsoft.Resources"
+    | extend Resource = tolower(_ResourceId)
+    | distinct Resource, CorrelationId
+    | summarize Resources=make_list(Resource) by CorrelationId) on CorrelationId
+    | project TimeGenerated, Caller, CallerIpAddress, ResourceGroup, Name, Resources
