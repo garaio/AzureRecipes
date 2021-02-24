@@ -1,4 +1,4 @@
-﻿# Search Engine
+﻿# SPA / API Application
 This blueprint contains the basic resources for UI applications provided for customers or employees. It consists of a Single-page application (framework agnostic) statically hosted in a Storage Account and provided via a CDN which enables the configuration of a custom root or sub-domain as well as the definition of routing rules (e.g. HTTP to HTTPS, client-side routing). As a backend service it includes a Function App which provides HTTP-trigger based functions as simple REST API's and a Cosmos DB as database (can be easily exchanged with any other PaaS database service on Azure). Optionally, user authentication with Active Directory (either the regular AAD or AAD B2C) can be enabled for the Function.
 
 ## Architecture
