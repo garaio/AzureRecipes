@@ -53,6 +53,7 @@
 				"AzureWebJobsDisableHomepage": true,
 				"WEBSITE_CONTENTAZUREFILECONNECTIONSTRING": "<storage-account-connection-string>",
 				"WEBSITE_CONTENTSHARE": "<function-name>",
+                "WEBSITE_TIME_ZONE": "W. Europe Standard Time",
 				"APPINSIGHTS_INSTRUMENTATIONKEY": "<app-insights-instrumentation-key>",
 				"FUNCTIONS_EXTENSION_VERSION": "~3"
 			}

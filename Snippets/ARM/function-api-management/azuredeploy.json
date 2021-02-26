@@ -181,7 +181,8 @@
                 "DiagnosticServices_EXTENSION_VERSION": "~3",
                 "ApplicationInsightsAgent_EXTENSION_VERSION": "~2",
 				"FUNCTIONS_EXTENSION_VERSION": "~3",
-                "WEBSITE_CONTENTSHARE": "[variables('templateFuncName')]"
+                "WEBSITE_CONTENTSHARE": "[variables('templateFuncName')]",
+                "WEBSITE_TIME_ZONE": "W. Europe Standard Time"
             }
         },
         {

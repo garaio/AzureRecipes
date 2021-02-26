@@ -51,6 +51,7 @@
 			"properties": {
 				"AzureWebJobsStorage": "<storage-account-connection-string>",
 				"AzureWebJobsDisableHomepage": true,
+                "WEBSITE_TIME_ZONE": "W. Europe Standard Time",
 				"WEBSITE_CONTENTAZUREFILECONNECTIONSTRING": "<storage-account-connection-string>",
 				"WEBSITE_CONTENTSHARE": "<function-name>",
 				"APPINSIGHTS_INSTRUMENTATIONKEY": "<app-insights-instrumentation-key>",
