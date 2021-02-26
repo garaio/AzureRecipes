@@ -1,0 +1,674 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "resourceNamePrefix": {
+            "type": "string",
+            "defaultValue": "customer-project",
+            "metadata": {
+                "description": "The prefix will be used for every parameter that represents a resource name. See the description of the parameter."
+            }
+        },
+        "resourceNameSuffix": {
+            "type": "string",
+            "metadata": {
+                "description": "The suffix will be appended to every parameter that represents a resource name. See the description of the parameter."
+            }
+        },
+        "botSku": {
+            "type": "string",
+            "defaultValue": "F0",
+            "allowedValues": [
+                "F0",
+                "S1"
+            ]
+        },
+        "botAppId": {
+            "type": "string",
+            "metadata": {
+                "description": "Client ID of the App Registration"
+            }
+        },
+        "botAppSecret": {
+            "type": "securestring",
+            "metadata": {
+                "description": "Client secret of the App Registration"
+            }
+        },
+        "botDisplayName": {
+            "defaultValue": "GARAIO-Blueprint",
+            "type": "string",
+            "metadata": {
+                "description": "Name displayed in the chat window"
+            }
+        },
+        "luisAppId": {
+            "type": "string",
+            "metadata": {
+                "description": "ID of the LUIS application (empty on initial deployment)"
+            }
+        },
+        "luisSku": {
+            "type": "string",
+            "defaultValue": "F0",
+            "allowedValues": [
+                "F0",
+                "S0"
+            ]
+        },
+        "luisLocation": {
+            "type": "string",
+            "defaultValue": "westeurope",
+            "allowedValues": [
+                "westus",
+                "westeurope"
+            ]
+        },
+        "qnaApiKey": {
+            "type": "securestring",
+            "metadata": {
+                "description": "API key to manage and edit knowledge base with indexer function, displayed on https://www.qnamaker.ai/UserSettings (empty on initial deployment)"
+            }
+        },
+        "qnaKnowledgebaseId": {
+            "type": "string",
+            "metadata": {
+                "description": "ID of the QnA Maker knowledge base (empty on initial deployment)"
+            }
+        },
+        "qnaMakerLocation": {
+            "type": "string",
+            "defaultValue": "northeurope",
+            "allowedValues": [
+                "westus",
+                "southcentralus",
+                "northeurope"
+            ]
+        },
+        "qnaMakerSku": {
+            "type": "string",
+            "defaultValue": "F0",
+            "allowedValues": [
+                "F0",
+                "S0"
+            ]
+        },
+        "qnaSearchSku": {
+            "type": "string",
+            "defaultValue": "free",
+            "allowedValues": [
+                "free",
+                "basic",
+                "standard"
+            ]
+        },
+        "textAnalyticsSku": {
+            "type": "string",
+            "defaultValue": "F0",
+            "allowedValues": [
+                "F0",
+                "S",
+                "S0",
+                "S1",
+                "S2",
+                "S3",
+                "S4"
+            ]
+        }
+    },
+    "variables": {
+        "logAnalyticsWsName": "[concat(parameters('resourceNamePrefix'), '-', 'law', '-', parameters('resourceNameSuffix'))]",
+        "appInsightsName": "[concat(parameters('resourceNamePrefix'), '-', 'ai', '-', parameters('resourceNameSuffix'))]",
+		
+        "keyVaultName": "[concat(parameters('resourceNamePrefix'), '-kv', '-', parameters('resourceNameSuffix'))]",        
+        "keyVaultSecretStorageAccountConnectionString": "storageAccountConnectionString",
+        "keyVaultSecretCosmosDbConnectionString": "cosmosDbConnectionString",
+        "keyVaultSecretBotAppSecret": "botAppSecret",
+
+        "blobContainerConfig": "config",
+        "blobContainerDeployment": "deployment",        
+        "blobContainerQnaData": "qna",        
+
+        "storageAccountName": "[replace(concat(parameters('resourceNamePrefix'), '-', 'sa', '-', parameters('resourceNameSuffix')), '-', '')]",
+        "storageAccountBlobs": [
+            {
+                "name": "[variables('blobContainerConfig')]",
+                "publicAccess": "None"
+            },
+            {
+                "name": "[variables('blobContainerDeployment')]",
+                "publicAccess": "None"
+            },
+            {
+                "name": "[variables('blobContainerQnaData')]",
+                "publicAccess": "None"
+            }
+        ],
+        "storageAccountBlobUri": "[concat('https://', variables('storageAccountName'), '.blob.core.windows.net/')]",
+        "storageAccountFunctionSasParams": {
+            "signedServices": "b",
+            "signedResourceTypes": "o",
+            "signedPermission": "r",
+            "signedExpiry": "2050-01-01T00:00:00Z"
+        },
+        
+        "appServicePlanName": "[concat(parameters('resourceNamePrefix'), '-', 'asp', '-', parameters('resourceNameSuffix'))]",
+        "appServicePlanSku": {
+            "name": "B1",
+            "tier": "Basic",
+            "size": "B1",
+            "family": "B",
+            "capacity": 1
+        },
+
+        "botName": "[concat(parameters('resourceNamePrefix'), '-', 'wab', '-', parameters('resourceNameSuffix'))]",
+        "botSiteName": "[concat(parameters('resourceNamePrefix'), '-', 'wab', '-', parameters('resourceNameSuffix'))]",
+        "botEndpoint": "[concat('https://', variables('botSiteName'), '.azurewebsites.net', '/api/messages')]",
+
+        "indexerFuncName": "[concat(parameters('resourceNamePrefix'), '-', 'indexer-f', '-', parameters('resourceNameSuffix'))]",
+        "indexerFuncPackagePath": "/Customer.Project.IndexerFuncApp.zip",
+        "indexerFuncJobsSchedule": "0 30 0 * * 1-5",
+
+        "cosmosDbAccountName": "[concat(parameters('resourceNamePrefix'), '-', 'cdb', '-', parameters('resourceNameSuffix'))]",
+        
+        "textAnalyticsName": "[concat(parameters('resourceNamePrefix'), '-', 'ta', '-', parameters('resourceNameSuffix'))]",
+        "textAnalyticsEndpointHostName": "[concat('https://', resourceGroup().location, '.api.cognitive.microsoft.com')]",
+        "luisPredictionName": "[concat(parameters('resourceNamePrefix'), '-', 'luis', '-', parameters('resourceNameSuffix'))]",
+        "luisAuthoringName": "[concat(parameters('resourceNamePrefix'), '-', 'luis-auth', '-', parameters('resourceNameSuffix'))]",
+        "luisEndpointHostName": "[concat('https://', parameters('luisLocation'), '.api.cognitive.microsoft.com')]",
+        "qnaMakerName": "[concat(parameters('resourceNamePrefix'), '-', 'qna', '-', parameters('resourceNameSuffix'))]",
+        "qnaSearchName": "[concat(parameters('resourceNamePrefix'), '-', 'qna-cs', '-', parameters('resourceNameSuffix'))]",
+        "qnaEndpointHostName": "[concat('https://', variables('qnaMakerName'), '.cognitiveservices.azure.com/qnamaker/v5.0-preview.1')]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "name": "[variables('storageAccountName')]",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "Standard_LRS",
+                "tier": "Standard"
+            },
+            "kind": "StorageV2",
+            "apiVersion": "2019-06-01",
+            "tags": {},
+            "scale": null,
+            "properties": {
+                "networkAcls": {
+                    "bypass": "AzureServices",
+                    "virtualNetworkRules": [],
+                    "ipRules": [],
+                    "defaultAction": "Allow"
+                },
+                "supportsHttpsTrafficOnly": true,
+                "encryption": {
+                    "services": {
+                        "file": {
+                            "enabled": true
+                        },
+                        "blob": {
+                            "enabled": true
+                        }
+                    },
+                    "keySource": "Microsoft.Storage"
+                },
+                "accessTier": "Hot"
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+            "name": "[concat(variables('storageAccountName'), '/default/', variables('storageAccountBlobs')[copyIndex()].name)]",
+            "apiVersion": "2019-06-01",
+            "properties": {
+                "publicAccess": "[variables('storageAccountBlobs')[copyIndex()].publicAccess]"
+            },
+            "copy": {
+                "name": "storageaccountblobscopy",
+                "count": "[length(variables('storageAccountBlobs'))]"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.OperationalInsights/workspaces",
+            "name": "[variables('logAnalyticsWsName')]",
+            "apiVersion": "2020-08-01",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "sku": {
+                    "name": "pergb2018"
+                },
+				"retentionInDays": 30
+            }
+        },
+        {
+            "type": "Microsoft.Insights/components",
+            "apiVersion": "2020-02-02-preview",
+            "name": "[variables('appInsightsName')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]"
+            ],
+            "location": "[resourceGroup().location]",
+            "kind": "web",
+            "properties": {
+                "ApplicationId": "[variables('appInsightsName')]",
+                "Application_Type": "web",
+                "WorkspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]"
+            }
+        },     
+        {
+            "type": "Microsoft.KeyVault/vaults",
+            "name": "[variables('keyVaultName')]",
+            "apiVersion": "2019-09-01",
+            "location": "[resourceGroup().location]",
+            "tags": {},
+            "scale": null,
+            "properties": {
+                "sku": {
+                    "family": "A",
+                    "name": "standard"
+                },
+                "tenantId": "[subscription().tenantId]",
+                "enabledForTemplateDeployment": true,
+                "accessPolicies": []
+            }
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults/providers/diagnosticSettings",
+            "apiVersion": "2017-05-01-preview",
+            "name": "[concat(variables('keyVaultName'), '/Microsoft.Insights/', 'LogAnalytics')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]",
+                "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]"
+            ],
+            "properties": {
+                "name": "LogAnalytics",
+                "workspaceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]",
+                "logs": [
+                    {
+                        "category": "AuditEvent",
+                        "enabled": true
+                    }
+                ],
+                "metrics": [
+                    {
+                        "category": "AllMetrics",
+                        "enabled": true
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults/secrets",
+            "name": "[concat(variables('keyVaultName'), '/', variables('keyVaultSecretStorageAccountConnectionString'))]",
+            "apiVersion": "2019-09-01",
+            "dependsOn": [
+                "[concat('Microsoft.KeyVault/vaults/', variables('keyVaultName'))]",
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+            ],
+            "properties": {
+                "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2019-06-01').keys[0].value)]"
+            }
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults/secrets",
+            "name": "[concat(variables('keyVaultName'), '/', variables('keyVaultSecretCosmosDbConnectionString'))]",
+            "apiVersion": "2019-09-01",
+            "dependsOn": [
+                "[concat('Microsoft.KeyVault/vaults/', variables('keyVaultName'))]",
+                "[resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosDbAccountName'))]"
+            ],
+            "properties": {
+                "value": "[listConnectionStrings(resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosDbAccountName')), '2020-04-01').connectionStrings[0].connectionString]"
+            }
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults/secrets",
+            "name": "[concat(variables('keyVaultName'), '/', variables('keyVaultSecretBotAppSecret'))]",
+            "apiVersion": "2019-09-01",
+            "dependsOn": [
+                "[concat('Microsoft.KeyVault/vaults/', variables('keyVaultName'))]"
+            ],
+            "properties": {
+                "value": "[parameters('botAppSecret')]"
+            }
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults/accessPolicies",
+            "name": "[concat(variables('keyVaultName'), '/add')]",
+            "apiVersion": "2019-09-01",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "accessPolicies": [
+                    {
+                        "tenantId": "[subscription().tenantId]",
+                        "objectId": "[reference(resourceId('Microsoft.Web/sites', variables('botSiteName')), '2020-09-01', 'Full').identity.principalId]",
+                        "permissions": {
+                            "keys": [ "get" ],
+                            "secrets": [ "get" ]
+                        }
+                    },
+                    {
+                        "tenantId": "[subscription().tenantId]",
+                        "objectId": "[reference(resourceId('Microsoft.Web/sites', variables('indexerFuncName')), '2020-09-01', 'Full').identity.principalId]",
+                        "permissions": {
+                            "keys": [ "get" ],
+                            "secrets": [ "get" ]
+                        }
+                    }
+                ]
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', variables('botSiteName'))]",
+                "[resourceId('Microsoft.Web/sites', variables('indexerFuncName'))]",
+                "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.DocumentDB/databaseAccounts",
+            "name": "[variables('cosmosDbAccountName')]",
+            "apiVersion": "2020-09-01",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "defaultExperience": "Core (SQL)",
+                "hidden-cosmos-mmspecial": "",
+                "CosmosAccountType": "Non-Production"
+            },
+            "kind": "GlobalDocumentDB",
+            "properties": {
+                "publicNetworkAccess": "Enabled",
+                "enableAutomaticFailover": false,
+                "enableMultipleWriteLocations": false,
+                "enableFreeTier": false,
+                "enableAnalyticalStorage": false,
+                "createMode": "Default",
+                "databaseAccountOfferType": "Standard",
+                "consistencyPolicy": {
+                    "defaultConsistencyLevel": "Session"
+                },
+                "locations": [
+                    {
+                        "locationName": "[resourceGroup().location]",
+                        "failoverPriority": 0,
+                        "isZoneRedundant": false
+                    }
+                ],
+                "capabilities": [
+                    {
+                        "name": "EnableServerless"
+                    }
+                ],
+                "backupPolicy": {
+                    "type": "Periodic",
+                    "periodicModeProperties": {
+                        "backupIntervalInMinutes": 240,
+                        "backupRetentionIntervalInHours": 8
+                    }
+                }
+            }
+        },
+        {
+            "type": "Microsoft.DocumentDB/databaseAccounts/providers/diagnosticSettings",
+            "name": "[concat(variables('cosmosDbAccountName'), '/Microsoft.Insights/', 'LogAnalytics')]",
+            "apiVersion": "2017-05-01-preview",
+            "dependsOn": [
+                "[resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosDbAccountName'))]",
+                "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]"
+            ],
+            "properties": {
+                "name": "LogAnalytics",
+                "workspaceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]",
+                "logs": [
+                    {
+                        "category": "QueryRuntimeStatistics",
+                        "enabled": true
+                    },
+                    {
+                        "category": "PartitionKeyStatistics",
+                        "enabled": true
+                    },
+                    {
+                        "category": "PartitionKeyRUConsumption",
+                        "enabled": true
+                    },
+                    {
+                        "category": "ControlPlaneRequests",
+                        "enabled": true
+                    }
+                ],
+                "metrics": [
+                    {
+                        "category": "Requests",
+                        "enabled": true
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.BotService/botServices",
+            "name": "[variables('botName')]",
+            "apiVersion": "2018-07-12",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', variables('botSiteName'))]",
+                "[resourceId('Microsoft.Insights/components', variables('appInsightsName'))]"
+            ],
+            "sku": {
+                "name": "[parameters('botSku')]"
+            },
+            "kind": "sdk",
+            "properties": {
+                "name": "[variables('botName')]",
+                "displayName": "[parameters('botDisplayName')]",
+                "endpoint": "[variables('botEndpoint')]",
+                "msaAppId": "[parameters('botAppId')]",
+                "developerAppInsightsApplicationId": "[variables('appInsightsName')]",
+                "developerAppInsightKey": "[reference(resourceId('Microsoft.Insights/components', variables('appInsightsName')), '2015-05-01').InstrumentationKey]"
+            },
+            "resources": []
+        },
+        {
+            "type": "Microsoft.Web/serverfarms",
+            "name": "[variables('appServicePlanName')]",
+            "apiVersion": "2020-09-01",
+            "location": "[resourceGroup().location]",
+            "sku": "[variables('appServicePlanSku')]",
+            "properties": {
+                "name": "[variables('appServicePlanName')]"
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites",
+            "name": "[variables('botSiteName')]",
+            "apiVersion": "2020-09-01",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]",
+                "[resourceId('Microsoft.Insights/components', variables('appInsightsName'))]",
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+            ],
+            "kind": "app",
+            "properties": {
+                "name": "[variables('botSiteName')]",
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms/', variables('appServicePlanName'))]",
+                "siteConfig": {
+                    "cors": {
+                        "allowedOrigins": [
+                            "https://botservice.hosting.portal.azure.net",
+                            "https://botservice-ms.hosting.portal.azure.net",
+                            "https://hosting.onecloud.azure-test.net/"
+                        ]
+                    },
+                    "alwaysOn": true
+                }
+            },
+            "identity": {
+                "type": "SystemAssigned"
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites/config",
+            "name": "[concat(variables('botSiteName'), '/appsettings')]",
+            "apiVersion": "2020-09-01",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', variables('botSiteName'))]",
+                "[resourceId('Microsoft.KeyVault/vaults/secrets', variables('keyVaultName'), variables('keyVaultSecretBotAppSecret'))]",
+                "[resourceId('Microsoft.KeyVault/vaults/secrets', variables('keyVaultName'), variables('keyVaultSecretStorageAccountConnectionString'))]",
+                "[resourceId('Microsoft.KeyVault/vaults/secrets', variables('keyVaultName'), variables('keyVaultSecretCosmosDbConnectionString'))]"
+            ],
+            "properties": {
+                "APPINSIGHTS_INSTRUMENTATIONKEY": "[reference(concat('Microsoft.Insights/components/', variables('appInsightsName'))).InstrumentationKey]",
+                "WEBSITE_NODE_DEFAULT_VERSION": "10.14.1",
+                "MicrosoftAppId": "[parameters('botAppId')]",
+                "MicrosoftAppPassword": "[concat('@Microsoft.KeyVault(VaultName=', variables('keyVaultName'), ';SecretName=', variables('keyVaultSecretBotAppSecret'), ')')]",
+                "BotDisplayName": "[parameters('botDisplayName')]",
+                "StorageConnectionString": "[concat('@Microsoft.KeyVault(VaultName=', variables('keyVaultName'), ';SecretName=', variables('keyVaultSecretStorageAccountConnectionString'), ')')]",
+                "CosmosDbConnectionString": "[concat('@Microsoft.KeyVault(VaultName=', variables('keyVaultName'), ';SecretName=', variables('keyVaultSecretCosmosDbConnectionString'), ')')]",
+                "StorageQnaDataContainerName": "[variables('blobContainerQnaData')]",
+                "LuisApiKeyDe": "[listKeys(resourceId('Microsoft.CognitiveServices/accounts', variables('luisPredictionName')),'2017-04-18').key1]",
+                "LuisAppIdDe": "[parameters('luisAppId')]",
+                "LuisEndpointHostNameDe": "[variables('luisEndpointHostName')]",
+                "QnaKnowledgebaseId": "[parameters('qnaKnowledgebaseId')]",
+                "QnaApiKey": "[parameters('qnaApiKey')]",
+                "QnaEndpointHostName": "[variables('qnaEndpointHostName')]",
+                "TextAnalyticsApiKey": "[listKeys(resourceId('Microsoft.CognitiveServices/accounts', variables('textAnalyticsName')),'2017-04-18').key1]",
+                "TextAnalyticsEndpointHostName": "[variables('textAnalyticsEndpointHostName')]"
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites",
+            "name": "[variables('indexerFuncName')]",
+            "apiVersion": "2020-09-01",
+            "location": "[resourceGroup().location]",
+            "kind": "functionapp",
+            "scale": null,
+            "properties": {
+                "enabled": true,
+                "hostNameSslStates": [
+                    {
+                        "name": "[concat(variables('indexerFuncName'),'.azurewebsites.net')]",
+                        "sslState": "Disabled",
+                        "hostType": "Standard"
+                    },
+                    {
+                        "name": "[concat(variables('indexerFuncName'),'.scm.azurewebsites.net')]",
+                        "sslState": "Disabled",
+                        "hostType": "Repository"
+                    }
+                ],
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]",
+                "clientAffinityEnabled": true,
+                "containerSize": 1536,
+                "dailyMemoryTimeQuota": 0,
+                "httpsOnly": true
+            },
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]",
+                "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]",
+                "[resourceId('Microsoft.Insights/components', variables('appInsightsName'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.Web/sites/config",
+            "name": "[concat(variables('indexerFuncName'), '/appsettings')]",
+            "apiVersion": "2020-09-01",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', variables('indexerFuncName'))]",
+                "[resourceId('Microsoft.KeyVault/vaults/secrets', variables('keyVaultName'), variables('keyVaultSecretStorageAccountConnectionString'))]"
+            ],
+            "properties": {
+                "AzureWebJobsStorage": "[concat('@Microsoft.KeyVault(VaultName=', variables('keyVaultName'), ';SecretName=', variables('keyVaultSecretStorageAccountConnectionString'), ')')]",
+                "AzureWebJobsDisableHomepage": true,
+                "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2019-06-01').keys[0].value)]",
+                "APPINSIGHTS_INSTRUMENTATIONKEY": "[reference(concat('Microsoft.Insights/components/', variables('appInsightsName'))).InstrumentationKey]",
+                "FUNCTIONS_EXTENSION_VERSION": "~3",
+                "WEBSITE_TIME_ZONE": "W. Europe Standard Time",
+                "WEBSITE_RUN_FROM_PACKAGE": "[concat(variables('storageAccountBlobUri'), variables('blobContainerDeployment'), variables('indexerFuncPackagePath'), '?', listAccountSas(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2019-06-01', variables('storageAccountFunctionSasParams')).accountSasToken)]",
+                "WEBSITE_CONTENTSHARE": "[variables('indexerFuncName')]",
+                "StorageConnectionString": "[concat('@Microsoft.KeyVault(VaultName=', variables('keyVaultName'), ';SecretName=', variables('keyVaultSecretStorageAccountConnectionString'), ')')]",
+                "ConfigContainerName": "[variables('blobContainerConfig')]",
+                "QnaDataContainerName": "[variables('blobContainerQnaData')]",
+                "QnaSubscriptionKey": "[listKeys(resourceId('Microsoft.CognitiveServices/accounts', variables('qnaMakerName')),'2017-04-18').key1]",
+                "QnaKnowledgebaseId": "[parameters('qnaKnowledgebaseId')]",
+                "JobsSchedule": "[variables('indexerFuncJobsSchedule')]"
+            }
+        },
+        {
+            "type": "Microsoft.Search/searchServices",
+            "name": "[variables('qnaSearchName')]",
+            "apiVersion": "2015-08-19",
+            "location": "[parameters('qnaMakerLocation')]",
+            "tags": {},
+            "properties": {
+                "replicaCount": 1,
+                "partitionCount": 1,
+                "hostingMode": "Default"
+            },
+            "sku": {
+                "name": "[parameters('qnaSearchSku')]"
+            }
+        },
+        {
+            "type": "Microsoft.CognitiveServices/accounts",
+            "name": "[variables('qnaMakerName')]",
+            "apiVersion": "2017-04-18",
+            "kind": "QnAMaker.v2",
+            "location": "[parameters('qnaMakerLocation')]",
+            "sku": {
+                "name": "[parameters('qnaMakerSku')]"
+            },
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "properties": {
+                "apiProperties": {
+                    "qnaAzureSearchEndpointId": "[resourceId('Microsoft.Search/searchServices', variables('qnaSearchName'))]",
+                    "qnaAzureSearchEndpointKey": "[listadminkeys(resourceId('Microsoft.Search/searchServices', variables('qnaSearchName')), '2015-08-19').primaryKey]"
+                },
+                "customSubDomainName": "[variables('qnaMakerName')]"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Search/searchServices', variables('qnaSearchName'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.CognitiveServices/accounts",
+            "name": "[variables('luisPredictionName')]",
+            "apiVersion": "2017-04-18",
+            "kind": "LUIS",
+            "location": "[parameters('luisLocation')]",
+            "sku": {
+                "name": "[parameters('luisSku')]"
+            },
+            "properties": {}
+        },
+        {
+            "type": "Microsoft.CognitiveServices/accounts",
+            "name": "[variables('luisAuthoringName')]",
+            "apiVersion": "2017-04-18",
+            "location": "[parameters('luisLocation')]",
+            "sku": {
+                "name": "F0"
+            },
+            "kind": "LUIS.Authoring",
+            "properties": {}
+        },
+        {
+            "type": "Microsoft.CognitiveServices/accounts",
+            "name": "[variables('textAnalyticsName')]",
+            "apiVersion": "2017-04-18",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "[parameters('textAnalyticsSku')]"
+            },
+            "kind": "TextAnalytics",
+            "properties": {}
+        }
+    ],
+    "outputs": {
+    }
+}

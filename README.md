@@ -28,6 +28,7 @@ Some quickstart templates for projects with standardized architectures.
 | Integration Pipeline | Integration scenarios | Exchange and transform data between systems in a robust and asynchronous way, based on Service Bus, Logic Apps and Functions | [Show](./Blueprints/integration-pipeline) |
 | Search Engine | Content-based solutions for customer or employees | Central, independent search engine that delivers results from multiple data sources and enriches them with intelligent suggestions | [Show](./Blueprints/search-engine) |
 | SPA / API Application | UI applications for customer or employees | Single-page application (framework agnostic) consuming a REST API connected to a database, optionally including Active Directory based user authentication | [Show](./Blueprints/spa-api-application) |
+| Bot Framework Application | Bots connected with enterprise systems for knowledge and processes | Bot Framework based App Service with Cognitive Services LUIS and QnA Maker, the latter being integrated with enterprise data sources | [Show](./Blueprints/virtual-agent) |
 
 ### Snippets
 Directly reusable code artefacts for development, deployment or monitoring / analytics grouped by type of language or format.
