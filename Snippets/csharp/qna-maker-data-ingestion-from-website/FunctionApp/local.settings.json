@@ -1,0 +1,21 @@
+{
+	"IsEncrypted": false,
+	"Values": {
+		"AzureWebJobsStorage": "UseDevelopmentStorage=true",
+		"FUNCTIONS_WORKER_RUNTIME": "dotnet",
+		"WEBSITE_TIME_ZONE": "W. Europe Standard Time",
+
+		"StorageConnectionString": "UseDevelopmentStorage=true",
+		"ConfigContainer": "config",
+		"WebsiteDataContainer": "qna",
+
+		"SyncWebsiteSchedule": "0 */30 * * * *",
+
+		"WebsiteCrawlerHost": "https://www.garaio.com",
+		"WebsiteCrawlerIgnoreList": "[\"\/jobs\/.*\",\"\/blog\/.*\",\"impressum\"]",
+		"WebsiteCrawlerDelayPerRequestMilliSeconds": "1000",
+
+		"QnASubscriptionKey": "<subscription-key>",
+		"QnAKnowledgebaseId": "<knwoledgebase-id>"
+	}
+}
