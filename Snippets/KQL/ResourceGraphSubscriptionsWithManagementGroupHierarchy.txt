@@ -1,0 +1,3 @@
+resourcecontainers
+| where type == "microsoft.resources/subscriptions"
+| project subscriptionId, name, managementGroups = parse_json(tags)["hidden-link-ArgMgTag"]
