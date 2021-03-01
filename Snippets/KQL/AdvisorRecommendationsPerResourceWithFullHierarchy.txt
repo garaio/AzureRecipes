@@ -1,0 +1,6 @@
+advisorresources
+| where type == "microsoft.advisor/recommendations"
+| join (resourcecontainers
+| where type == "microsoft.resources/subscriptions"
+| project subscriptionId, subscriptionName = name, managementGroups = parse_json(tags)["hidden-link-ArgMgTag"]) on subscriptionId
+| project subscriptionId, subscriptionName, managementGroups, resourceGroup, resourceType = properties.impactedField, resourceName = properties.impactedValue, recommendationTypeId = properties.recommendationTypeId, recommendationText = properties.shortDescription.solution, recommendationCategory = properties.category, recommendationImpact = properties.impact
