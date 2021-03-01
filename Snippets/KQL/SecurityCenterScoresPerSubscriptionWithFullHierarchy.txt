@@ -1,0 +1,6 @@
+resourcecontainers
+| where type == "microsoft.resources/subscriptions"
+| project subscriptionId, subscriptionName = name, managementGroups = parse_json(tags)["hidden-link-ArgMgTag"]
+| join (securityresources
+| where type == "microsoft.security/securescores") on subscriptionId
+| project subscriptionId, subscriptionName, managementGroups, scoreName = name, scoreWeight = properties.weight, scorePercentage = properties.score.percentage, scoreCurrentValue = properties.score.current, scoreMaxValue = properties.score.max

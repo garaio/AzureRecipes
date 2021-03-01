@@ -1,0 +1,6 @@
+resourcecontainers
+| where type == "microsoft.resources/subscriptions"
+| project subscriptionId, subscriptionName = name, managementGroups = parse_json(tags)["hidden-link-ArgMgTag"]
+| join (securityresources
+| where type == "microsoft.security/assessments") on subscriptionId
+| project subscriptionId, subscriptionName, managementGroups, assessmentId = name, resourceGroup, findingHeader = properties.displayName, findingDetails = properties.metadata.description, remediation = properties.metadata.remediationDescription, additionalData = properties.additionalData, status = properties.status.code, effort = properties.metadata.implementationEffort, severity = properties.metadata.severity, userImpact = properties.metadata.userImpact, category = properties.metadata.categories[0]
