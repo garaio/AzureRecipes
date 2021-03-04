@@ -51,6 +51,7 @@ This contains document structures and contents for technical reviews and project
 | Convention | Project Setup, Consulting | How to tag Azure resources for maintainability | [Show](./Templates/Convention-ResourceTagging.md) |
 | Structure | Cloud Strategy, Operations & Governance | Basic definition and framework for development and operation of IT applications on Azure, based on and adapted from the [Microsoft Cloud Adoption Framework](https://docs.microsoft.com/en-us/azure/cloud-adoption-framework/operating-model). | [Show](./Templates/Structure-CloudOperatingModel) |
 | Miscellaneous | Cloud Migrations | Various templates for visualisation, planning and decision-making to support enterprise-level application migration (templates are mostly in German) | [Show](./Templates/Miscellaneous-CloudMigrationResources) |
+| Review | Application Architecture & Implementation | Technical review of application architecture and implementation quality (focused on PaaS solutions) | [Show](./Templates/Review-AppArchitectureAndImplementation.md) |
 
 ### Knowledge
 In that folder various "Knowhow", "Tips & Tricks" and "Best Practices" content is collected, e.g. regarding setup of Azure service configurations or selection of most appropriate Azure Service for specific requirements.
