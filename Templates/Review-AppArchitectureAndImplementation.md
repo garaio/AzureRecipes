@@ -4,6 +4,7 @@ The following checklist can help to assess the realisation of an Azure applicati
 <!-- Note: Edit tables with https://www.tablesgenerator.com/markdown_tables (File > Paste table data) -->
 
 ## Subscription
+
 | Scope | Check | Notes | Result |
 |-------|-------|-------|--------|
 | Security Center | Plan configured | At least free plan should be activated, standard plan (with Azure Defender) depending on architecture and used components. If architecture includes IaaS resources (VM, VNET) this is highly recommended |  |
@@ -12,6 +13,7 @@ The following checklist can help to assess the realisation of an Azure applicati
 | Partner Information | Partner reference configured on subscription | This is particularly applicable if the partner link has not already been made [at the tenant level](https://docs.microsoft.com/en-us/azure/cost-management-billing/manage/link-partner-id) |  |
 
 ## Resources
+
 | Scope | Check | Notes | Result |
 |-------|-------|-------|--------|
 | Naming & Tagging | All resources named and tagged following the convention defined by the customer (e.g. in [Cloud Operating Model](./Structure-CloudOperatingModel)) or according to [Microsoft recommendations](./Convention-ResourceStructuringAndNaming.md) |  |  |
@@ -20,6 +22,7 @@ The following checklist can help to assess the realisation of an Azure applicati
 | Structuring | The structuring with Resource Groups supports foreseeable later extensions (e.g. additional languages) and scaling measures | Typical shortcoming: Apps can only be moved to an App Service Plan in the same Resource Group |  |
 
 ## DevOps Aspects
+
 | Scope | Check | Notes | Result |
 |-------|-------|-------|--------|
 | Infrastructure as Code (IaC) | All resource deployments and configurations are managed based on script(s) | One-time administrations (e.g. user or access configurations) may be excluded if those manual steps are clearly documented |  |
@@ -32,6 +35,7 @@ The following checklist can help to assess the realisation of an Azure applicati
 | Causality | Resources are not defined or supplied from multiple sources | This mainly involves Function Apps (all included functions from same Visual Studio project and with same deployment process) and API Management. Rule: In a disaster recovery situation, a resource must be recoverable with one process. |  |
 
 ## Security
+
 | Scope | Check | Notes | Result |
 |-------|-------|-------|--------|
 | Identity | Managed Identity assigned to all [(supported) resources](https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/services-support-managed-identities) having connections with each other and used for authorisation | This mainly includes components executing business logic such as App Service based resources, Logic Apps or Data Factory Pipelines |  |
@@ -39,6 +43,7 @@ The following checklist can help to assess the realisation of an Azure applicati
 | TLS | TLS (HTTPS) is enforced wherever possible | Mainly includes Storage Account configuration and App Service based resources |  |
 
 ## Diagnostics & Monitoring
+
 | Scope | Check | Notes | Result |
 |-------|-------|-------|--------|
 | Logging | Diagnostic settings for all (supported) resources set to one Log Analytics Workspace (per application & environment) with all relevant event types which may support analytics | Also [Application Insights are workspace-based](https://docs.microsoft.com/en-us/azure/azure-monitor/app/create-workspace-resource) |  |
@@ -48,6 +53,7 @@ The following checklist can help to assess the realisation of an Azure applicati
 | Error Handling | Enduring runtime errors are escalated and an according process is available | Typical checks are Logic Apps (with a number of automatic resubmits) and Service Bus Dead Letter Queue handling |  |
 
 ## Availability & Resilience
+
 | Scope | Check | Notes | Result |
 |-------|-------|-------|--------|
 | Cost Optimisation | [Capacity reservations](https://azure.microsoft.com/en-us/reservations/) (mainly for productive environment) examined including dimensioning and proposed to owner | Beside reserved instances for VM's, capacity reservations are mostly available for data storage services (Log Analytics Workspace / Sentinel, Synapse, Cosmos and SQL databases and others) |  |
@@ -66,6 +72,7 @@ The following checklist can help to assess the realisation of an Azure applicati
 | Resource Protection | Critical production resources are protected with locks, if this risk is not mitigated by RBAC |  |  |
 
 ## Other
+
 | Scope | Check | Notes | Result |
 |-------|-------|-------|--------|
 | Advisor | The Azure Advisor Recommendations are examined and reasonable proposals are implemented |  |  |

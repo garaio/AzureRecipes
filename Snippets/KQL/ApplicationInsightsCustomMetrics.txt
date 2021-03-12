@@ -1,5 +1,5 @@
 customMetrics
-| where operation_Id != ""
+| where operation_Id != "" and operation_Name != ""
 | project timestamp, name, value, appName, opName=operation_Name, customDimensions
 | evaluate bag_unpack(customDimensions)
 | order by timestamp desc
