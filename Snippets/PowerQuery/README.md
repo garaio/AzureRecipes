@@ -6,6 +6,7 @@ General resources:
 <!-- Note: Edit tables with https://www.tablesgenerator.com/markdown_tables -->
 
 ## Contents
+
 | Reference | Problem / Solution | Related | Link |
 |---|---|---|---|
 | Table | Use a central date-table to properly correlate data and allow time-based drill-down functionality and filtering | - | [Table-GenerateDateTable](./Table-GenerateDateTable.txt) |

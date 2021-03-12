@@ -5,6 +5,7 @@ General resources:
 <!-- Note: Edit tables with https://www.tablesgenerator.com/markdown_tables -->
 
 ## Contents
+
 | Service(s)                      | Architecture                | Problem / Solution                      | Related | Link                            |
 |---------------------------------|-----------------------------|-----------------------------------------|---------|---------------------------------|
 | - | - | Get a list of all available resource locations with its identifier | - | [GetAvailableLocationNames](./GetAvailableLocationNames.txt) |

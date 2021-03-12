@@ -7,6 +7,7 @@ General resources:
 <!-- Note: Edit tables with https://www.tablesgenerator.com/markdown_tables -->
 
 ## Contents
+
 | Service(s) | Level | Architecture | Problem / Solution | Related | Link |
 |---------------------------------|---------------------------------|-----------------------------|-----------------------------------------|---------|---------------------------------|
 | App Service (Function, Web App) | Resource Group | API for Client applications | Enforcing AAD-based user authentication | - | [function-aad-authentication](./function-aad-authentication) |

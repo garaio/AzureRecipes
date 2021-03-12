@@ -6,6 +6,7 @@ General resources:
 <!-- Note: Edit tables with https://www.tablesgenerator.com/markdown_tables -->
 
 ## Contents
+
 | Service(s)                      | Architecture                | Problem / Solution                      | Related | Link                            |
 |---------------------------------|-----------------------------|-----------------------------------------|---------|---------------------------------|
 | API Management | - | List all failed request details for analytics | - | [ApiManagementFailedRequestDetails](./ApiManagementFailedRequestDetails.txt) |
