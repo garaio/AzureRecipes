@@ -1,0 +1,1 @@
+Recent5WeekOrDefault = IF(DATEDIFF(Dates[Date], TODAY(), DAY) < (28 + WEEKDAY(TODAY(), 2)), "KW" & FORMAT(WEEKNUM(Dates[Date], 2), "00"), "older")
