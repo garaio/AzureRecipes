@@ -11,8 +11,9 @@ let
     #"Inserted Month Name" = Table.AddColumn(#"Inserted Month", "Month Name", each Date.MonthName([Date]), type text),
     #"Inserted Day" = Table.AddColumn(#"Inserted Month Name", "Day", each Date.Day([Date]), Int64.Type),
     #"Inserted Day Name" = Table.AddColumn(#"Inserted Day", "Day Name", each Date.DayOfWeekName([Date]), type text),
-    #"Inserted Month Year Name" = Table.AddColumn(#"Inserted Day Name", "Month Year Name", each [Month Name] & " " & Text.From([Year])),
+    #"Inserted Weekday Number" = Table.AddColumn(#"Inserted Day Name", "Weekday Number", each Date.DayOfWeek([Date], 1) + 1, type number),
+    #"Inserted Month Year Name" = Table.AddColumn(#"Inserted Weekday Number", "Month Year Name", each [Month Name] & " " & Text.From([Year])),
     #"Inserted Day Month Name" = Table.AddColumn(#"Inserted Month Year Name", "Day Month Name", each Date.ToText([Date], "dd.MM")),
-    #"Added Week" = Table.AddColumn(#"Inserted Day Month Name", "Week", each "KW" & Number.ToText(Date.WeekOfYear([Date], Day.Monday), Text.Repeat("0",2)))
+    #"Inserted Calendar Week" = Table.AddColumn(#"Inserted Day Month Name", "Week", each "KW" & Number.ToText(Date.WeekOfYear([Date], Day.Monday), Text.Repeat("0",2)))
 in
-    #"Added Week"
+    #"Inserted Calendar Week"
