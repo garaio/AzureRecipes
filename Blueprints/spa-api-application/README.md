@@ -12,8 +12,8 @@ As a best practice, the single-page application as well as the Function App is b
 
 For a CI/CD process based on Azure DevOps pipelines you may use [this snippet as a basis](../../Snippets/Pipelines/cascading-ci-cd-pipelines).
 
-### User Authentication in Function
-For development and local testing you may consider [this snippet](../../Snippets/csharp/function-user-auth-token-local).
+### Built-in Authentication in Function
+App Services and Functions support [built-in authentication](https://docs.microsoft.com/en-us/azure/app-service/overview-authentication-authorization) (sometimes referred to as "Easy Auth") which can be used to generate tokens for the user (delegated access) or the application itself to access other API's. For development and local testing you may consider [this snippet](../../Snippets/csharp/function-built-in-auth-token-for-graph-api).
 
 ### Cosmos DB
 The deployment generates a [Cosmos DB in serverless tier](https://docs.microsoft.com/en-us/azure/cosmos-db/serverless) which is a simple approach during development. For production deployment this should be examined as well as the configuration of backup / disaster recovery functionality.
