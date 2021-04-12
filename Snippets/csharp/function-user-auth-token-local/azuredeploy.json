@@ -289,10 +289,16 @@
                         "registration": {
                             "openIdIssuer": "[concat('https://sts.windows.net/', parameters('funcAppAuthClientTenantId'), '/v2.0')]",
                             "clientId": "[parameters('funcAppAuthClientId')]",
-							"isAutoProvisioned": true
-                        }
+							"clientSecretSettingName": "MICROSOFT_PROVIDER_AUTHENTICATION_SECRET"
+                        },
+						"isAutoProvisioned": true
                     }
-                }
+                },
+				"login": {
+					"tokenStore": {
+						"enabled": true
+					}
+				}
             }
         }
 	],
