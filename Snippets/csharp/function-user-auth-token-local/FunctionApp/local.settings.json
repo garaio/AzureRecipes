@@ -6,8 +6,11 @@
 
 		"StorageConnectionString": "UseDevelopmentStorage=true",
 
-		"FunctionAuthAppId": "00000000-0000-0000-0000-000000000000",
-		"FunctionAuthAppSecret": "<secret>",
-		"FunctionAuthTenantId": "00000000-0000-0000-0000-000000000000"
+		"WEBSITE_AUTH_ENABLED": "true",
+		"WEBSITE_AUTH_CLIENT_ID": "00000000-0000-0000-0000-000000000000",
+		"WEBSITE_AUTH_OPENID_ISSUER": "https://sts.windows.net/00000000-0000-0000-0000-000000000000",
+		"MICROSOFT_PROVIDER_AUTHENTICATION_SECRET": "<secret>",
+
+		"LoadFuncSchedule": "0 */5 * * * *"
 	}
 }

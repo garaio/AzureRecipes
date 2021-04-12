@@ -7,24 +7,29 @@ using System.Threading.Tasks;
 
 namespace FunctionApp
 {
-	public static class FunctionHelper
+    public static class FunctionHelper
 	{
-		public static async Task<string> ObtainTokenAsync()
+		/// <summary>
+		/// Gathers a non-cached token from Microsoft login (rather for testing use cases)
+		/// </summary>
+		public static async Task<string> ObtainTokenAsync(string scope)
 		{
-			using HttpClient client = new HttpClient();
+			if (!Configurations.BuiltInAuth.IsEnabled)
+				return null;
+
+			using HttpClient client = new();
 
 			client.BaseAddress = new Uri("https://login.microsoftonline.com", UriKind.Absolute);
 
-			using FormUrlEncodedContent form = new FormUrlEncodedContent(new[]
+			using FormUrlEncodedContent form = new(new[]
 			{
-				new KeyValuePair<string, string>("client_id", Environment.GetEnvironmentVariable(Constants.Configurations.FunctionAuthAppId)),
-				new KeyValuePair<string, string>("client_secret", Environment.GetEnvironmentVariable(Constants.Configurations.FunctionAuthAppSecret)),
-				new KeyValuePair<string, string>("scope", "https://graph.microsoft.com/.default"),
+				new KeyValuePair<string, string>("client_id", Configurations.BuiltInAuth.ClientId),
+				new KeyValuePair<string, string>("client_secret", Configurations.BuiltInAuth.ClientSecret),
+				new KeyValuePair<string, string>("scope", scope),
 				new KeyValuePair<string, string>("grant_type", "client_credentials"),
-			});
-
-			Uri authUrl = new Uri(Environment.GetEnvironmentVariable(Constants.Configurations.FunctionAuthTenantId) + "/oauth2/v2.0/token", UriKind.Relative);
-
+			}) ;
+			
+			Uri authUrl = new(Configurations.BuiltInAuth.TenantId + "/oauth2/v2.0/token", UriKind.Relative);
 			HttpResponseMessage response = await client.PostAsync(authUrl, form).ConfigureAwait(false);
 
 			Stream responseStream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
