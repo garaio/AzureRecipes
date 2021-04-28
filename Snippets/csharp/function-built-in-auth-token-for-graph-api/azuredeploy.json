@@ -1,7 +1,7 @@
 {
-	"$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-	"contentVersion": "1.0.0.0",
-	"parameters": {
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
         "resourceNamePrefix": {
             "type": "string",
             "defaultValue": "customer-project",
@@ -27,22 +27,22 @@
             "defaultValue": "[subscription().tenantId]",
             "type": "string"
         }
-	},
-	"variables": {
-		"logAnalyticsWsName": "[concat(parameters('resourceNamePrefix'), '-', 'law', '-', parameters('resourceNameSuffix'))]",
+    },
+    "variables": {
+        "logAnalyticsWsName": "[concat(parameters('resourceNamePrefix'), '-', 'law', '-', parameters('resourceNameSuffix'))]",
         "appInsightsName": "[concat(parameters('resourceNamePrefix'), '-', 'ai', '-', parameters('resourceNameSuffix'))]",
-		
+        
         "keyVaultName": "[concat(parameters('resourceNamePrefix'), '-kv', '-', parameters('resourceNameSuffix'))]",        
         "keyVaultSecretStorageAccountConnectionString": "storageAccountConnectionString",
         "keyVaultSecretFuncAppAuthClientSecret": "funcAppAuthClientSecret",
 
         "storageAccountName": "[replace(concat(parameters('resourceNamePrefix'), '-', 'sa', '-', parameters('resourceNameSuffix')), '-', '')]",
-		
+        
         "appServicePlanName": "[concat(parameters('resourceNamePrefix'), '-', 'asp', '-', parameters('resourceNameSuffix'))]",
 
         "serviceFuncName": "[concat(parameters('resourceNamePrefix'), '-', 'service-f', '-', parameters('resourceNameSuffix'))]"
-	},
-	"resources": [
+    },
+    "resources": [
         {
             "type": "Microsoft.Storage/storageAccounts",
             "name": "[variables('storageAccountName')]",
@@ -84,7 +84,7 @@
                 "sku": {
                     "name": "pergb2018"
                 },
-				"retentionInDays": 30
+                "retentionInDays": 30
             }
         },
         {
@@ -258,7 +258,7 @@
                 "WEBSITE_CONTENTSHARE": "[variables('serviceFuncName')]",
                 "MICROSOFT_PROVIDER_AUTHENTICATION_SECRET": "[concat('@Microsoft.KeyVault(VaultName=', variables('keyVaultName'), ';SecretName=', variables('keyVaultSecretFuncAppAuthClientSecret'), ')')]",
                 "StorageConnectionString": "[concat('@Microsoft.KeyVault(VaultName=', variables('keyVaultName'), ';SecretName=', variables('keyVaultSecretStorageAccountConnectionString'), ')')]",
-				"LoadFuncSchedule": "0 */5 * * * *"
+                "LoadFuncSchedule": "0 */5 * * * *"
             }
         },
         {
@@ -269,7 +269,7 @@
                 "[resourceId('Microsoft.Web/sites', variables('serviceFuncName'))]"
             ],
             "properties": {
-				"platform": {
+                "platform": {
                     "enabled": true
                 },
                 "globalValidation": {
@@ -281,18 +281,18 @@
                         "registration": {
                             "openIdIssuer": "[concat('https://sts.windows.net/', parameters('funcAppAuthClientTenantId'), '/v2.0')]",
                             "clientId": "[parameters('funcAppAuthClientId')]",
-							"clientSecretSettingName": "MICROSOFT_PROVIDER_AUTHENTICATION_SECRET"
+                            "clientSecretSettingName": "MICROSOFT_PROVIDER_AUTHENTICATION_SECRET"
                         },
-						"isAutoProvisioned": true
+                        "isAutoProvisioned": true
                     }
                 },
-				"login": {
-					"tokenStore": {
-						"enabled": true
-					}
-				}
+                "login": {
+                    "tokenStore": {
+                        "enabled": true
+                    }
+                }
             }
         }
-	],
-	"outputs": {}
+    ],
+    "outputs": {}
 }
