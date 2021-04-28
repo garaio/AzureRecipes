@@ -62,15 +62,13 @@
                         {
                             "type": "Microsoft.Storage/storageAccounts",
                             "name": "[variables('storageAccountName')]",
+                            "apiVersion": "2019-06-01",
                             "location": "[parameters('location')]",
                             "sku": {
                                 "name": "Standard_LRS",
                                 "tier": "Standard"
                             },
                             "kind": "StorageV2",
-                            "apiVersion": "2019-06-01",
-                            "tags": {},
-                            "scale": null,
                             "properties": {
                                 "networkAcls": {
                                     "bypass": "AzureServices",

@@ -49,7 +49,6 @@
             "location": "[resourceGroup().location]",
             "kind": "web",
             "properties": {
-                "ApplicationId": "[variables('appInsightsName')]",
                 "Application_Type": "web",
                 "WorkspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]"
             }

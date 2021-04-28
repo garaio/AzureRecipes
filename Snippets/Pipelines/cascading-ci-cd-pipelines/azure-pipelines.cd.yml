@@ -1,7 +1,25 @@
 trigger: none
 
+parameters:
+  - name: suffix
+    type: string
+    default: 'd'
 variables:
-  - group: Develop
+  - group: Release
+  - name: deploymentFolderName
+    value: 'Customer.Project.Deployment'
+  - name: frontendFolderName
+    value: 'Customer.Project.Frontend'
+  - name: resourceNameSuffix
+    value: '${{ parameters.suffix }}'
+  - name: resourceGroupName
+    value: '$(resourceNamePrefix)-$(resourceNameSuffix)'
+  - name: prefixUnhyphenated
+    value: '$[replace(variables[''resourceNamePrefix''],''-'','''')]'
+  - name: storageAccountName
+    value: '$(prefixUnhyphenated)sa$(resourceNameSuffix)'
+  - name: currentDate
+    value: '$[format(''{0:yyyy}-{0:MM}-{0:dd}'', pipeline.startTime)]'
 
 resources:
   containers:
@@ -30,38 +48,37 @@ stages:
               steps:
                 - download: CI-Pipeline
 
-                - task: AzureResourceManagerTemplateDeployment@3
+                - task: AzureCLI@2
                   displayName: 'Create Resource Group'
                   inputs:
-                    azureResourceManagerConnection: '$(armSubscription)'
-                    subscriptionId: '$(azureSubscriptionId)'
-                    resourceGroupName: '$(azureResourceGroupName)'
-                    location: '$(azureResourceLocation)'
-                    templateLocation: 'URL of the file'
-                    csmFileLink: 'https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/100-blank-template/azuredeploy.json'
+                    azureSubscription: '$(armServiceConnection)'
+                    scriptType: bash
+                    scriptLocation: inlineScript
+                    inlineScript: |
+                      az group create --location $(resourceLocation) --name $(resourceGroupName) --tags 'DeployedAt=$(currentDate)' 'DeployedBy=$(Build.RequestedForEmail)' 'DeployedFrom=$(System.TeamProject)'
 
                 - task: AzureCLI@2
                   displayName: 'Create Storage Account for Artifact'
                   inputs:
-                    azureSubscription: '$(armSubscription)'
+                    azureSubscription: '$(armServiceConnection)'
                     scriptType: bash
                     scriptLocation: inlineScript
                     inlineScript: |
-                      az storage account create --name $(storageAccountName) --resource-group $(azureResourceGroupName)
+                      az storage account create --name $(storageAccountName) --resource-group $(resourceGroupName)
 
                 - task: AzureCLI@2
                   displayName: 'Create Storage Container'
                   inputs:
-                    azureSubscription: '$(armSubscription)'
+                    azureSubscription: '$(armServiceConnection)'
                     scriptType: bash
                     scriptLocation: inlineScript
                     inlineScript: |
-                      az storage container create --name $(blobContainerDeployment) --account-name $(storageAccountName) --resource-group $(azureResourceGroupName)
+                      az storage container create --name $(blobContainerDeployment) --account-name $(storageAccountName) --resource-group $(resourceGroupName)
 
                 - task: AzureCLI@2
                   displayName: 'Copying to Storage Container'
                   inputs:
-                    azureSubscription: '$(armSubscription)'
+                    azureSubscription: '$(armServiceConnection)'
                     scriptType: bash
                     scriptLocation: inlineScript
                     inlineScript: |
@@ -70,23 +87,24 @@ stages:
                 - task: AzureResourceManagerTemplateDeployment@3
                   displayName: 'Deploy ARM Template (ResourceGroup)'
                   inputs:
-                    azureResourceManagerConnection: '$(armSubscription)'
-                    subscriptionId: '$(azureSubscriptionId)'
-                    resourceGroupName: '$(azureResourceGroupName)'
-                    location: '$(azureResourceLocation)'
-                    csmFile: '$(Pipeline.Workspace)/CI-Pipeline/drop/$(backendDeploymentFolderName)/azuredeploy.json'
-                    csmParametersFile: '$(Pipeline.Workspace)/CI-Pipeline/drop/$(backendDeploymentFolderName)/azuredeploy.parameters.json'
+                    azureResourceManagerConnection: '$(armServiceConnection)'
+                    subscriptionId: '$(subscriptionId)'
+                    resourceGroupName: '$(resourceGroupName)'
+                    location: '$(resourceLocation)'
+                    csmFile: '$(Pipeline.Workspace)/CI-Pipeline/drop/$(deploymentFolderName)/azuredeploy.json'
+                    csmParametersFile: '$(Pipeline.Workspace)/CI-Pipeline/drop/$(deploymentFolderName)/azuredeploy.parameters.json'
                     overrideParameters: '-resourceNamePrefix "$(resourceNamePrefix)" -resourceNameSuffix "$(resourceNameSuffix)" -serviceFuncKeySecret "$(serviceFuncKeySecret)"'
+                    deploymentMode: 'Incremental'
+                    deploymentName: 'Customer-Project-$(Build.BuildId)-$(Environment.Name)'
 
-                - task: AzureResourceManagerTemplateDeployment@3
-                  displayName: 'Deploy ARM Template (serviceFuncKeySecret)'
+                - task: AzureCLI@2
+                  displayName: 'Set Function Key'
                   inputs:
-                    azureResourceManagerConnection: '$(armSubscription)'
-                    subscriptionId: '$(azureSubscriptionId)'
-                    resourceGroupName: '$(azureResourceGroupName)'
-                    location: '$(azureResourceLocation)'
-                    csmFile: '$(Pipeline.Workspace)/CI-Pipeline/drop/$(backendDeploymentFolderName)/azurepostdeploy.json'
-                    overrideParameters: '-resourceNamePrefix "$(resourceNamePrefix)" -resourceNameSuffix "$(resourceNameSuffix)" -deployServiceFuncKey true -serviceFuncKeySecret "$(serviceFuncKeySecret)"'
+                    azureSubscription: '$(armServiceConnection)'
+                    scriptType: bash
+                    scriptLocation: inlineScript
+                    inlineScript: |
+                      az functionapp keys set --name $(serviceFuncName) --resource-group $(resourceGroupName) --key-name client --key-type functionKeys --key-value $(serviceFuncKeySecret)
 
       - deployment: deploy_frontend
         dependsOn: deploy_backend
@@ -101,11 +119,11 @@ stages:
                 - task: AzureCLI@2
                   displayName: 'Create Storage Container'
                   inputs:
-                    azureSubscription: '$(armSubscription)'
+                    azureSubscription: '$(armServiceConnection)'
                     scriptType: bash
                     scriptLocation: inlineScript
                     inlineScript: |
-                      az storage container create --name '$web' --account-name $(storageAccountName) --resource-group $(azureResourceGroupName)
+                      az storage container create --name '$web' --account-name $(storageAccountName) --resource-group $(resourceGroupName)
 
                 - task: FileTransform@1
                   displayName: 'Transforming configuration'
@@ -117,7 +135,7 @@ stages:
                 - task: AzureCLI@2
                   displayName: 'Copying to Storage'
                   inputs:
-                    azureSubscription: '$(armSubscription)'
+                    azureSubscription: '$(armServiceConnection)'
                     scriptType: bash
                     scriptLocation: inlineScript
                     inlineScript: |
@@ -126,7 +144,7 @@ stages:
                 - task: AzureCLI@2
                   displayName: 'Set static website'
                   inputs:
-                    azureSubscription: '$(armSubscription)'
+                    azureSubscription: '$(armServiceConnection)'
                     scriptType: bash
                     scriptLocation: inlineScript
                     inlineScript: |
@@ -135,8 +153,8 @@ stages:
                 - task: AzureCLI@2
                   displayName: 'Purge CDN'
                   inputs:
-                    azureSubscription: '$(armSubscription)'
+                    azureSubscription: '$(armServiceConnection)'
                     scriptType: bash
                     scriptLocation: inlineScript
                     inlineScript: |
-                      az cdn endpoint purge -g $(azureResourceGroupName) -n $(cdnEndpointName) --profile-name $(cdnProfileName) --content-paths "/* --no-wait"
+                      az cdn endpoint purge -g $(resourceGroupName) -n $(cdnEndpointName) --profile-name $(cdnProfileName) --content-paths "/* --no-wait"

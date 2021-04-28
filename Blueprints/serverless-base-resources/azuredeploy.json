@@ -42,15 +42,13 @@
         {
             "type": "Microsoft.Storage/storageAccounts",
             "name": "[variables('storageAccountName')]",
+            "apiVersion": "2019-06-01",
             "location": "[resourceGroup().location]",
             "sku": {
                 "name": "Standard_LRS",
                 "tier": "Standard"
             },
             "kind": "StorageV2",
-            "apiVersion": "2019-06-01",
-            "tags": {},
-            "scale": null,
             "properties": {
                 "networkAcls": {
                     "bypass": "AzureServices",
@@ -110,7 +108,6 @@
             "location": "[resourceGroup().location]",
             "kind": "web",
             "properties": {
-                "ApplicationId": "[variables('appInsightsName')]",
                 "Application_Type": "web",
                 "WorkspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]"
             }
@@ -120,8 +117,6 @@
             "name": "[variables('keyVaultName')]",
             "apiVersion": "2019-09-01",
             "location": "[resourceGroup().location]",
-            "tags": {},
-            "scale": null,
             "properties": {
                 "sku": {
                     "family": "A",

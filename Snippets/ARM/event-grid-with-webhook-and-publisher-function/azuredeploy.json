@@ -48,8 +48,6 @@
                 "tier": "Standard"
             },
             "kind": "StorageV2",
-            "tags": {},
-            "scale": null,
             "properties": {
                 "networkAcls": {
                     "bypass": "AzureServices",
@@ -94,7 +92,6 @@
                 "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]"
             ],
             "properties": {
-                "ApplicationId": "[variables('appInsightsName')]",
                 "Application_Type": "web",
                 "WorkspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]"
             }
@@ -104,8 +101,6 @@
             "name": "[variables('keyVaultName')]",
             "apiVersion": "2019-09-01",
             "location": "[resourceGroup().location]",
-            "tags": {},
-            "scale": null,
             "properties": {
                 "sku": {
                     "family": "A",
@@ -145,7 +140,6 @@
             "type": "Microsoft.KeyVault/vaults/accessPolicies",
             "name": "[concat(variables('keyVaultName'), '/add')]",
             "apiVersion": "2019-09-01",
-            "location": "[resourceGroup().location]",
             "dependsOn": [
                 "[resourceId('Microsoft.Web/sites', variables('templateFuncName'))]",
                 "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]"
@@ -182,7 +176,6 @@
             "location": "[resourceGroup().location]",
             "sku": "[variables('appServicePlanSku')]",
             "properties": {
-                "name": "[variables('appServicePlanName')]"
             }
         },
         {
@@ -191,7 +184,6 @@
             "kind": "functionapp",
             "apiVersion": "2020-09-01",
             "location": "[resourceGroup().location]",
-            "scale": null,
             "dependsOn": [
                 "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]",
                 "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]",

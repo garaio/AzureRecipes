@@ -47,7 +47,7 @@
     "variables": {
         "logAnalyticsWsName": "[concat(parameters('resourceNamePrefix'), '-', 'law', '-', parameters('resourceNameSuffix'))]",
         "appInsightsName": "[concat(parameters('resourceNamePrefix'), '-', 'ai', '-', parameters('resourceNameSuffix'))]",
-		
+        
         "keyVaultName": "[concat(parameters('resourceNamePrefix'), '-kv', '-', parameters('resourceNameSuffix'))]",        
         "keyVaultSecretStorageAccountConnectionString": "storageAccountConnectionString",
         "keyVaultSecretCosmosDbConnectionString": "cosmosDbConnectionString",
@@ -75,9 +75,9 @@
         },
         "storageAccountRegionalCodes": {
             "fakeLocation": "z0",
-			"westeurope": "z6",
-			"switzerlandnorth": "z1"
-		},  
+            "westeurope": "z6",
+            "switzerlandnorth": "z1"
+        },  
 
         "cdnProfileName": "[concat(parameters('resourceNamePrefix'), '-', 'cdn', '-', parameters('resourceNameSuffix'))]",
         "cdnEndpointName": "[concat(parameters('resourceNamePrefix'), '-', 'cdn-ep', '-', parameters('resourceNameSuffix'))]",
@@ -95,15 +95,13 @@
         {
             "type": "Microsoft.Storage/storageAccounts",
             "name": "[variables('storageAccountName')]",
+            "apiVersion": "2019-06-01",
             "location": "[resourceGroup().location]",
             "sku": {
                 "name": "Standard_LRS",
                 "tier": "Standard"
             },
             "kind": "StorageV2",
-            "apiVersion": "2019-06-01",
-            "tags": {},
-            "scale": null,
             "properties": {
                 "networkAcls": {
                     "bypass": "AzureServices",
@@ -150,7 +148,7 @@
                 "sku": {
                     "name": "pergb2018"
                 },
-				"retentionInDays": 30
+                "retentionInDays": 30
             }
         },
         {
@@ -163,7 +161,6 @@
             "location": "[resourceGroup().location]",
             "kind": "web",
             "properties": {
-                "ApplicationId": "[variables('appInsightsName')]",
                 "Application_Type": "web",
                 "WorkspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]"
             }
@@ -173,8 +170,6 @@
             "name": "[variables('keyVaultName')]",
             "apiVersion": "2019-09-01",
             "location": "[resourceGroup().location]",
-            "tags": {},
-            "scale": null,
             "properties": {
                 "sku": {
                     "family": "A",
@@ -238,7 +233,6 @@
             "type": "Microsoft.KeyVault/vaults/accessPolicies",
             "name": "[concat(variables('keyVaultName'), '/add')]",
             "apiVersion": "2019-09-01",
-            "location": "[resourceGroup().location]",
             "properties": {
                 "accessPolicies": [
                     {
@@ -347,7 +341,6 @@
                 "tier": "Dynamic"
             },
             "properties": {
-                "name": "[variables('appServicePlanName')]"
             }
         },
         {
@@ -357,14 +350,13 @@
             "apiVersion": "2020-09-01",
             "location": "[resourceGroup().location]",
             "sku": {
-				"name": "EP1",
-				"tier": "ElasticPremium"
-			},
-			"kind": "elastic",
-			"properties": {
-				"maximumElasticWorkerCount": 20,
-				"name": "[variables('appServicePlanName')]"
-			}
+                "name": "EP1",
+                "tier": "ElasticPremium"
+            },
+            "kind": "elastic",
+            "properties": {
+                "maximumElasticWorkerCount": 20
+            }
         },
         {
             "type": "Microsoft.Web/sites",
@@ -372,7 +364,6 @@
             "apiVersion": "2020-09-01",
             "location": "[resourceGroup().location]",
             "kind": "functionapp",
-            "scale": null,
             "properties": {
                 "enabled": true,
                 "hostNameSslStates": [

@@ -4,6 +4,14 @@ trigger:
 
 variables:
   - group: Build
+  - name: deploymentFolderName
+    value: 'Customer.Project.Deployment'
+  - name: frontendFolderName
+    value: 'Customer.Project.Frontend'
+  - name: resourceGroupName
+    value: '$(resourceNamePrefix)-$(resourceNameSuffix)'
+  - name: currentDate
+    value: '$[format(''{0:yyyy}-{0:MM}-{0:dd}'', pipeline.startTime)]'
 
 resources:
   containers:
@@ -41,7 +49,7 @@ stages:
           inputs:
             command: test
             projects: '**/*[Tt]ests/*.csproj'
-            arguments: '--configuration $(BuildConfiguration)'
+            arguments: '--configuration $(buildConfiguration)'
 
         - task: DotNetCoreCLI@2
           displayName: Publish
@@ -52,18 +60,27 @@ stages:
             arguments: '--configuration $(buildConfiguration) --output $(build.artifactstagingdirectory)'
             zipAfterPublish: True
 
+        - task: AzureCLI@2
+          displayName: 'Create Resource Group'
+          inputs:
+            azureSubscription: '$(armServiceConnection)'
+            scriptType: bash
+            scriptLocation: inlineScript
+            inlineScript: |
+              az group create --location $(resourceLocation) --name $(resourceGroupName) --tags 'DeployedAt=$(currentDate)' 'DeployedBy=$(Build.RequestedForEmail)' 'DeployedFrom=$(System.TeamProject)'
+
         - task: AzureResourceManagerTemplateDeployment@3
           displayName: 'Validate ARM Template'
           inputs:
-            azureResourceManagerConnection: '$(armSubscription)'
-            subscriptionId: '$(azureSubscriptionId)'
-            resourceGroupName: '$(azureResourceGroupName)'
-            location: '$(azureResourceLocation)'
-            csmFile: '$(backendDeploymentFolderName)/azuredeploy.json'
-            csmParametersFile: '$(backendDeploymentFolderName)/azuredeploy.parameters.json'
+            azureResourceManagerConnection: '$(armServiceConnection)'
+            subscriptionId: '$(subscriptionId)'
+            resourceGroupName: '$(resourceGroupName)'
+            location: '$(resourceLocation)'
+            csmFile: '$(deploymentFolderName)/azuredeploy.json'
+            csmParametersFile: '$(deploymentFolderName)/azuredeploy.parameters.json'
             overrideParameters: '-resourceNameSuffix "build"'
-            deploymentMode: Validation
-          continueOnError: false
+            deploymentMode: 'Validation'
+          continueOnError: true
 
         - task: PublishBuildArtifacts@1
           displayName: 'Publish Artifact'
@@ -106,4 +123,3 @@ stages:
         displayName: 'Publish Artifact'
         inputs:
           PathtoPublish: '$(build.artifactStagingDirectory)'
-      
