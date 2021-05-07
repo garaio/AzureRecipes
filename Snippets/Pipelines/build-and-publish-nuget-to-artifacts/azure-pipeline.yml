@@ -1,0 +1,81 @@
+trigger: none
+
+parameters:
+  - name: artifactFeedName
+    type: string
+    default: 'My-Azure-DevOps-Feed'
+
+variables:
+  versionMajor: 0
+  versionMinor: 1
+  buildVersion: '$(versionMajor).$(versionMinor).$(Build.BuildID)'
+  nugetVersion: '$(versionMajor).$(versionMinor).$(Build.BuildID)'
+  buildConfiguration: 'Release'
+  modelProjectName: 'Library'
+  feedName: ${{ parameters.artifactFeedName }}
+
+resources:
+  containers:
+    - container: linux
+      image: ubuntu-16.04
+
+stages:
+  - stage: build
+    displayName: 'Build'
+    dependsOn: []
+    jobs:
+      - job: build_model
+        displayName: 'Model Build'
+        pool:
+          vimImage: 'ubuntu-16.04'
+        steps:
+          - task: DotNetCoreCLI@2
+            displayName: Restore
+            inputs:
+              command: restore
+              projects: '**/$(modelProjectName).csproj'
+
+          - task: DotNetCoreCLI@2
+            displayName: Build
+            inputs:
+              command: build
+              projects: '**/$(modelProjectName).csproj'
+              arguments: '--configuration $(buildConfiguration) /p:Version=$(buildVersion)'
+
+          - task: DotNetCoreCLI@2
+            displayName: Pack
+            inputs:
+              command: pack
+              packagesToPack: '**/$(modelProjectName).csproj'
+              nobuild: true
+              versioningScheme: 'byEnvVar'
+              versionEnvVar: nugetVersion
+            
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish Artifact'
+            inputs:
+              PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+  
+  - stage: publish
+    displayName: 'Publish Nuget Packages'
+    dependsOn: build
+    jobs:
+    - job: publish_model
+      displayName: 'Publish'
+      pool:
+        vimImage: 'ubuntu-16.04'
+      steps:      
+        - download: current
+          displayName: 'Download Artifact'
+
+        - task: NuGetAuthenticate@0
+          displayName: 'NuGet Authenticate'
+
+        - task: NuGetCommand@2
+          displayName: 'NuGet push'
+          inputs:
+            command: push
+            nuGetFeedType: internal
+            packagesToPush: '$(Pipeline.Workspace)/drop/*.nupkg'
+            publishVstsFeed: '$(System.TeamProject)/$(feedName)'
+            allowPackageConflicts: true

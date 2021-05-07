@@ -20,7 +20,7 @@ Deploy your bot service to Azure (no special configurations or prerequists neces
 The module can be integrated to the single-spa shell as any other module. If [Content Security Policy (CSP)](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP) is configured in the shell application (meta property in `index.html` or `index.ejs`), make sure it allows to access the directline API. The definition may look like:
 
 ```html
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' https: localhost:*; script-src 'unsafe-inline' https: localhost:*; connect-src https: localhost:* ws://localhost:* ws://realtime-notifications.service.signalr.net ws://gxp-portal-signalr-d.service.signalr.net wss://directline.botframework.com ; style-src 'unsafe-inline' https:; object-src 'none'; font-src 'self' data:; img-src 'self' data: blob:">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' https: localhost:*; script-src 'unsafe-inline' https: localhost:*; connect-src https: localhost:* ws://localhost:* ws://realtime-notifications.service.signalr.net ws://*.service.signalr.net wss://directline.botframework.com ; style-src 'unsafe-inline' https:; object-src 'none'; font-src 'self' data:; img-src 'self' data: blob:">
 ```
 
 # References

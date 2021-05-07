@@ -1,0 +1,12 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <PackageId>GARAIO.AzureRecipes.Library</PackageId>
+    <Authors>GARAIO AG</Authors>
+    <Description>Demonstration</Description>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+
+</Project>
