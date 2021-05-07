@@ -41,6 +41,7 @@ Directly reusable code artefacts for development, deployment or monitoring / ana
 | KQL  | [Kusto Query Language](https://docs.microsoft.com/en-us/azure/data-explorer/kusto/query/) snippets used for analytics in various services such as Application Insights, Log Analytics Workspace or Data Explorer | [Show](./Snippets/KQL)  |
 | Pipelines  | Azure DevOps pipelines or pipeline tasks in either YAML or JSON format | [Show](./Snippets/Pipelines)  |
 | PowerQuery | [PowerQuery M](https://docs.microsoft.com/en-us/powerquery-m/) or DAX artefacts used in Power BI (or e.g. Data Factory wrangling data flows)  | [Show](./Snippets/PowerQuery) |
+| Web | Mostly JavaScript-based or related code snippets used to interact with Azure Services  | [Show](./Snippets/Web) |
 
 ### Templates
 This contains document structures and contents for technical reviews and project-specific definition of guidelines or conventions.
