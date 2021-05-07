@@ -1,0 +1,12 @@
+{
+	"IsEncrypted": false,
+	"Values": {
+		"AzureWebJobsStorage": "UseDevelopmentStorage=true",
+		"FUNCTIONS_WORKER_RUNTIME": "dotnet",
+
+		"StorageConnectionString": "UseDevelopmentStorage=true",
+
+		"ServiceBusConnectionString": "Endpoint=sb://<your-sb-name>.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=<key>",
+		"ServiceBusQueueName": "triggers"
+	}
+}
