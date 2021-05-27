@@ -36,6 +36,19 @@
     },
     "resources": [
         {
+            "type": "Microsoft.Resources/deployments",
+            "name": "pid-d16e7b59-716a-407d-96db-18d1cac40407",
+            "apiVersion": "2020-06-01",
+            "properties": {
+                "mode": "Incremental",
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "resources": []
+                }
+            }
+        },
+        {
             "type": "Microsoft.Storage/storageAccounts",
             "name": "[variables('storageAccountName')]",
             "apiVersion": "2019-06-01",
@@ -76,7 +89,7 @@
                 "sku": {
                     "name": "pergb2018"
                 },
-				"retentionInDays": 30
+                "retentionInDays": 30
             }
         },
         {
@@ -145,7 +158,7 @@
                 "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2019-06-01').keys[0].value)]"
             }
         },
-		{
+        {
             "type": "Microsoft.Cdn/profiles",
             "name": "[variables('cdnProfileName')]",
             "apiVersion": "2020-04-15",
@@ -300,9 +313,9 @@
         }
     ],
     "outputs": {
-		"storageAccountWebEndpoint": {
+        "storageAccountWebEndpoint": {
             "type": "string",
             "value": "[reference(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2019-06-01', 'Full').properties.primaryEndpoints.web]"
         }
-	}
+    }
 }

@@ -27,6 +27,19 @@
     },
     "resources": [
         {
+            "type": "Microsoft.Resources/deployments",
+            "name": "pid-d16e7b59-716a-407d-96db-18d1cac40407",
+            "apiVersion": "2020-06-01",
+            "properties": {
+                "mode": "Incremental",
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "resources": []
+                }
+            }
+        },
+        {
             "type": "Microsoft.OperationalInsights/workspaces",
             "name": "[variables('logAnalyticsWsName')]",
             "apiVersion": "2020-08-01",
@@ -35,10 +48,10 @@
                 "sku": {
                     "name": "pergb2018"
                 },
-				"retentionInDays": 30
+                "retentionInDays": 30
             }
         },
-		{
+        {
             "type": "Microsoft.Insights/actionGroups",
             "name": "[variables('actionGrpAdminName')]",
             "apiVersion": "2019-03-01",
@@ -56,7 +69,7 @@
                 "smsReceivers": []
             }
         },
-		{
+        {
             "type": "Microsoft.Insights/scheduledqueryrules",
             "name": "[variables('alertRuleTamperingName')]",
             "apiVersion": "2018-04-16",
