@@ -1,22 +1,27 @@
-
 @description('The prefix will be used for every parameter that represents a resource name. See the description of the parameter.')
 param resourceNamePrefix string = 'customer-project'
 
-@description('The suffix will be appended to every resource name. You have to specify a unique, not yet used, value.')
+@description('The suffix will be appended to every parameter that represents a resource name. See the description of the parameter.')
 param resourceNameSuffix string
+
+@allowed([
+  'Basic'
+  'Standard'
+  'Premium'
+])
+param serviceBusSku string = 'Standard'
+
+@description('Generate logic app resources based on linked templates')
+param deployLogicApps bool = false
 
 var logAnalyticsWsName = '${resourceNamePrefix}-law-${resourceNameSuffix}'
 var appInsightsName = '${resourceNamePrefix}-ai-${resourceNameSuffix}'
-
 var keyVaultName = '${resourceNamePrefix}-kv-${resourceNameSuffix}'
 var keyVaultSecretStorageAccountConnectionString = 'storageAccountConnectionString'
-var keyVaultSecretServiceBusConnectionString = 'serviceBusConnectionString'
+var keyVaultSecretServiceBusConnectionString = 'ServiceBusConnectionString'
 
-var schedulerFuncName = '${resourceNamePrefix}-scheduler-f-${resourceNameSuffix}'
-var schedulerFuncPackagePath = '/FunctionApp.zip'
 var blobContainerConfig = 'config'
 var blobContainerDeployment = 'deployment'
-
 var storageAccountName = replace('${resourceNamePrefix}-sa-${resourceNameSuffix}', '-', '')
 var storageAccountBlobs = [
   {
@@ -32,21 +37,19 @@ var storageAccountFunctionSasParams = {
   signedServices: 'b'
   signedResourceTypes: 'o'
   signedPermission: 'r'
-  signedExpiry: '2050-01-01T00:00:00Z'
+  signedExpiry: '01.01.2050 00:00:00'
 }
-var storageAccountBlobUri = 'https://${storageAccountName}.blob.core.windows.net/'
-
-var appServicePlanName = '${resourceNamePrefix}-asp-${resourceNameSuffix}'
-var appServicePlanSku = {
-  name: 'Y1'
-  tier: 'Dynamic'
-}
+var storageAccountUri = 'https://${storageAccountName}.blob.core.windows.net/'
 
 var serviceBusNamespaceName = '${resourceNamePrefix}-sb-${resourceNameSuffix}'
-var serviceBusTriggersQueueName = 'triggers'
 var serviceBusQueues = [
-  serviceBusTriggersQueueName
+  {
+    name: 'demo'
+  }
 ]
+
+var logicAppFtpDemoName = '${resourceNamePrefix}-ftp-la-${resourceNameSuffix}'
+var logicAppFtpDemoDefUri = '${storageAccountUri}${blobContainerDeployment}/LogicApps/ftp-demo.json'
 
 resource partnerIdRes 'Microsoft.Resources/deployments@2020-06-01' = {
   name: 'pid-d16e7b59-716a-407d-96db-18d1cac40407'
@@ -74,7 +77,6 @@ resource storageAccountRes 'Microsoft.Storage/storageAccounts@2019-06-01' = {
       defaultAction: 'Allow'
     }
     supportsHttpsTrafficOnly: true
-    allowBlobPublicAccess: true
     encryption: {
       services: {
         file: {
@@ -158,35 +160,17 @@ resource keyVaultDiagnosticsRes 'Microsoft.Insights/diagnosticSettings@2017-05-0
   ]
 }
 
-resource keyVaultAccessSchedulerFuncRes 'Microsoft.KeyVault/vaults/accessPolicies@2019-09-01' = {
-  name: '${keyVaultRes.name}/add'
-  properties: {
-    accessPolicies: [
-      {
-        tenantId: subscription().tenantId
-        objectId: reference(schedulerFuncRes.id, '2019-08-01', 'Full').identity.principalId
-        permissions: {
-          keys: [
-            'get'
-          ]
-          secrets: [
-            'get'
-          ]
-        }
-      }
-    ]
-  }
-}
-
 resource keyVaultSecretStorageAccountConnectionStringRes 'Microsoft.KeyVault/vaults/secrets@2019-09-01' = {
-  name: '${keyVaultRes.name}/${keyVaultSecretStorageAccountConnectionString}'
+  parent: keyVaultRes
+  name: '${keyVaultSecretStorageAccountConnectionString}'
   properties: {
     value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccountName};AccountKey=${listKeys(storageAccountRes.id, '2019-06-01').keys[0].value}'
   }
 }
 
 resource keyVaultSecretServiceBusConnectionStringRes 'Microsoft.KeyVault/vaults/secrets@2019-09-01' = {
-  name: '${keyVaultRes.name}/${keyVaultSecretServiceBusConnectionString}'
+  parent: keyVaultRes
+  name: '${keyVaultSecretServiceBusConnectionString}'
   properties: {
     value: listkeys(resourceId('Microsoft.ServiceBus/namespaces/authorizationRules', serviceBusNamespaceName, 'RootManageSharedAccessKey'), '2017-04-01').primaryConnectionString
   }
@@ -195,19 +179,18 @@ resource keyVaultSecretServiceBusConnectionStringRes 'Microsoft.KeyVault/vaults/
   ]
 }
 
-resource serviceBusNamespaceRes 'Microsoft.ServiceBus/namespaces@2018-01-01-preview' = {
+resource serviceBusNamespaceRes 'Microsoft.ServiceBus/namespaces@2021-01-01-preview' = {
   name: serviceBusNamespaceName
   location: resourceGroup().location
   sku: {
-    name: 'Basic'
-    tier: 'Basic'
+    name: serviceBusSku
+    tier: serviceBusSku
   }
-  properties: {
-  }
+  properties: {}
 }
 
-resource serviceBusQueuesRes 'Microsoft.ServiceBus/namespaces/queues@2017-04-01' = [for item in serviceBusQueues: {
-  name: '${serviceBusNamespaceRes.name}/${item}'
+resource serviceBusQueuesRes 'Microsoft.ServiceBus/namespaces/queues@2021-01-01-preview' = [for item in serviceBusQueues: {
+  name: '${serviceBusNamespaceName}/${item.name}'
   properties: {
     lockDuration: 'PT1M'
     maxSizeInMegabytes: 1024
@@ -247,77 +230,41 @@ resource serviceBusNamespaceDiagnosticsRes 'Microsoft.Insights/diagnosticSetting
   ]
 }
 
-resource appServicePlanRes 'Microsoft.Web/serverfarms@2020-09-01' = {
-  name: appServicePlanName
-  location: resourceGroup().location
-  sku: appServicePlanSku
+resource logicAppFtpDemoRes 'Microsoft.Resources/deployments@2021-01-01' = if (deployLogicApps) {
+  name: logicAppFtpDemoName
   properties: {
-  }
-}
-
-resource schedulerFuncRes 'Microsoft.Web/sites@2020-09-01' = {
-  name: schedulerFuncName
-  kind: 'functionapp'
-  location: resourceGroup().location
-  properties: {
-    enabled: true
-    hostNameSslStates: [
-      {
-        name: '${schedulerFuncName}.azurewebsites.net'
-        sslState: 'Disabled'
-        hostType: 'Standard'
-      }
-      {
-        name: '${schedulerFuncName}.scm.azurewebsites.net'
-        sslState: 'Disabled'
-        hostType: 'Repository'
-      }
-    ]
-    serverFarmId: appServicePlanRes.id
-    clientAffinityEnabled: true
-    containerSize: 1536
-    dailyMemoryTimeQuota: 0
-    httpsOnly: true
-    siteConfig: {
-      cors: {
-        allowedOrigins: [
-          '*'
-        ]
-      }
+    mode: 'Incremental'
+    templateLink: {
+      uri: '${logicAppFtpDemoDefUri}?${listAccountSas(storageAccountRes.id, '2019-06-01', storageAccountFunctionSasParams).accountSasToken}'
     }
-  }
-  identity: {
-    type: 'SystemAssigned'
+    parameters: {
+      LogicAppName: logicAppFtpDemoName
+    }
   }
   dependsOn: [
     storageAccountRes
-    appInsightsRes
   ]
 }
 
-resource processFuncAppSettingsRes 'Microsoft.Web/sites/config@2020-09-01' = {
-  name: '${schedulerFuncRes.name}/appsettings'
+resource logicAppFtpDemoDiagnosticsRes 'Microsoft.Insights/diagnosticSettings@2017-05-01-preview' = {
+  name: 'LogAnalytics'
+  scope: logicAppFtpDemoRes
   properties: {
-    AzureWebJobsStorage: '@Microsoft.KeyVault(SecretUri=${keyVaultSecretStorageAccountConnectionStringRes.properties.secretUriWithVersion})'
-    AzureWebJobsDisableHomepage: true
-    WEBSITE_CONTENTAZUREFILECONNECTIONSTRING: 'DefaultEndpointsProtocol=https;AccountName=${storageAccountName};AccountKey=${listKeys(storageAccountRes.id, '2019-06-01').keys[0].value}'
-    APPINSIGHTS_INSTRUMENTATIONKEY: reference('Microsoft.Insights/components/${appInsightsName}').InstrumentationKey
-    APPINSIGHTS_PROFILERFEATURE_VERSION: '1.0.0'
-    APPINSIGHTS_SNAPSHOTFEATURE_VERSION: '1.0.0'
-    DiagnosticServices_EXTENSION_VERSION: '~3'
-    ApplicationInsightsAgent_EXTENSION_VERSION: '~2'
-    FUNCTIONS_EXTENSION_VERSION: '~3'
-    WEBSITE_TIME_ZONE: 'W. Europe Standard Time'
-    WEBSITE_RUN_FROM_PACKAGE: '${storageAccountBlobUri}${blobContainerDeployment}${schedulerFuncPackagePath}?${listAccountSas(storageAccountRes.id, '2019-06-01', storageAccountFunctionSasParams).accountSasToken}'
-    WEBSITE_CONTENTSHARE: schedulerFuncName
-    StorageConnectionString: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${keyVaultSecretStorageAccountConnectionString})'
-    ServiceBusConnectionString: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${keyVaultSecretServiceBusConnectionString})'
-    ServiceBusQueueName: serviceBusTriggersQueueName
+    workspaceId: logAnalyticsWsRes.id
+    logs: [
+      {
+        category: 'WorkflowRuntime'
+        enabled: true
+      }
+    ]
+    metrics: [
+      {
+        category: 'AllMetrics'
+        enabled: true
+      }
+    ]
   }
   dependsOn: [
-    keyVaultSecretStorageAccountConnectionStringRes
-    keyVaultSecretServiceBusConnectionStringRes
+    logicAppFtpDemoRes
   ]
 }
-
-output serviceBusConnectionString string = listkeys(resourceId('Microsoft.ServiceBus/namespaces/authorizationRules', serviceBusNamespaceName, 'RootManageSharedAccessKey'), '2017-04-01').primaryConnectionString

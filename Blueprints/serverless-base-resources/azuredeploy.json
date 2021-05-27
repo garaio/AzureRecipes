@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.3.539.46024",
-      "templateHash": "11603364087777091062"
+      "templateHash": "15452451734673037599"
     }
   },
   "parameters": {
@@ -44,6 +44,19 @@
     ]
   },
   "resources": [
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-06-01",
+      "name": "pid-d16e7b59-716a-407d-96db-18d1cac40407",
+      "properties": {
+        "mode": "Incremental",
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "resources": []
+        }
+      }
+    },
     {
       "type": "Microsoft.Storage/storageAccounts",
       "apiVersion": "2019-06-01",
@@ -166,31 +179,6 @@
         "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]",
         "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
       ]
-    },
-    {
-      "type": "Microsoft.Resources/deployments",
-      "apiVersion": "2019-10-01",
-      "name": "pid-d16e7b59-716a-407d-96db-18d1cac40407",
-      "properties": {
-        "expressionEvaluationOptions": {
-          "scope": "inner"
-        },
-        "mode": "Incremental",
-        "parameters": {},
-        "template": {
-          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-          "contentVersion": "1.0.0.0",
-          "metadata": {
-            "_generator": {
-              "name": "bicep",
-              "version": "0.3.539.46024",
-              "templateHash": "5951092464443635760"
-            }
-          },
-          "functions": [],
-          "resources": []
-        }
-      }
     }
   ]
 }

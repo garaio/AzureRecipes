@@ -23,9 +23,16 @@ var storageAccountBlobs = [
   }
 ]
 
-module partnerIdRes './partner-id.bicep' = {
+resource partnerIdRes 'Microsoft.Resources/deployments@2020-06-01' = {
   name: 'pid-d16e7b59-716a-407d-96db-18d1cac40407'
-  params: {}
+  properties: {
+    mode: 'Incremental'
+    template: {
+      '$schema': 'https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#'
+      contentVersion: '1.0.0.0'
+      resources: []
+    }
+  }
 }
 
 resource storageAccountRes 'Microsoft.Storage/storageAccounts@2019-06-01' = {

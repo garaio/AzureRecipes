@@ -1,429 +1,434 @@
 {
-    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-    "contentVersion": "1.0.0.0",
-    "parameters": {
-        "resourceNamePrefix": {
-            "type": "string",
-            "defaultValue": "customer-project",
-            "metadata": {
-                "description": "The prefix will be used for every parameter that represents a resource name. See the description of the parameter."
-            }
-        },
-        "resourceNameSuffix": {
-            "type": "string",
-            "metadata": {
-                "description": "The suffix will be appended to every parameter that represents a resource name. See the description of the parameter."
-            }
-        },
-        "cognitiveSearchSku": {
-            "type": "string",
-            "defaultValue": "basic",
-            "allowedValues": [
-                "free",
-                "basic",
-                "standard",
-                "standard2",
-                "standard3",
-                "storage_optimized_l1",
-                "storage_optimized_l2"
-            ]
-        },
-        "indexerFuncScheduleExpr": {
-            "type": "string",
-            "defaultValue": "0 */5 6-20 * * 1-6"
-        }
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.3.539.46024",
+      "templateHash": "1419413177445384138"
+    }
+  },
+  "parameters": {
+    "resourceNamePrefix": {
+      "type": "string",
+      "defaultValue": "customer-project",
+      "metadata": {
+        "description": "The prefix will be used for every parameter that represents a resource name. See the description of the parameter."
+      }
     },
-    "variables": {
-        "logAnalyticsWsName": "[concat(parameters('resourceNamePrefix'), '-', 'law', '-', parameters('resourceNameSuffix'))]",
-        "appInsightsName": "[concat(parameters('resourceNamePrefix'), '-', 'ai', '-', parameters('resourceNameSuffix'))]",
-        
-        "keyVaultName": "[concat(parameters('resourceNamePrefix'), '-kv', '-', parameters('resourceNameSuffix'))]",        
-        "keyVaultSecretStorageAccountConnectionString": "storageAccountConnectionString",
-        "keyVaultSecretSearchServiceApiKey": "searchServiceApiKey",
-
-        "blobContainerConfig": "config",
-        "blobContainerDeployment": "deployment",        
-
-        "storageAccountName": "[replace(concat(parameters('resourceNamePrefix'), '-', 'sa', '-', parameters('resourceNameSuffix')), '-', '')]",
-        "storageAccountBlobs": [
-            {
-                "name": "[variables('blobContainerConfig')]",
-                "publicAccess": "None"
-            },
-            {
-                "name": "[variables('blobContainerDeployment')]",
-                "publicAccess": "None"
-            }
-        ],
-        "storageAccountBlobUri": "[concat('https://', variables('storageAccountName'), '.blob.core.windows.net/')]",
-        "storageAccountFunctionSasParams": {
-            "signedServices": "b",
-            "signedResourceTypes": "o",
-            "signedPermission": "r",
-            "signedExpiry": "2050-01-01T00:00:00Z"
-        },
-        
-        "cognitiveSearchName": "[concat(parameters('resourceNamePrefix'), '-', 'cs', '-', parameters('resourceNameSuffix'))]",
-
-        "appServicePlanName": "[concat(parameters('resourceNamePrefix'), '-', 'asp', '-', parameters('resourceNameSuffix'))]",
-        "appServicePlanSku": {
-            "name": "Y1",
-            "tier": "Dynamic"
-        },
-
-        "indexerFuncName": "[concat(parameters('resourceNamePrefix'), '-', 'producer-f', '-', parameters('resourceNameSuffix'))]",
-        "indexerFuncPackagePath": "/Customer.Project.IndexerFuncApp.zip",
-
-        "searchFuncName": "[concat(parameters('resourceNamePrefix'), '-', 'consumer-f', '-', parameters('resourceNameSuffix'))]",
-        "searchFuncPackagePath": "/Customer.Project.SearchFuncApp.zip"
+    "resourceNameSuffix": {
+      "type": "string",
+      "metadata": {
+        "description": "The suffix will be appended to every parameter that represents a resource name. See the description of the parameter."
+      }
     },
-    "resources": [
-        {
-            "type": "Microsoft.Resources/deployments",
-            "name": "pid-d16e7b59-716a-407d-96db-18d1cac40407",
-            "apiVersion": "2020-06-01",
-            "properties": {
-                "mode": "Incremental",
-                "template": {
-                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
-                    "contentVersion": "1.0.0.0",
-                    "resources": []
-                }
-            }
-        },
-        {
-            "type": "Microsoft.Storage/storageAccounts",
-            "name": "[variables('storageAccountName')]",
-            "apiVersion": "2019-06-01",
-            "location": "[resourceGroup().location]",
-            "sku": {
-                "name": "Standard_LRS",
-                "tier": "Standard"
-            },
-            "kind": "StorageV2",
-            "properties": {
-                "networkAcls": {
-                    "bypass": "AzureServices",
-                    "virtualNetworkRules": [],
-                    "ipRules": [],
-                    "defaultAction": "Allow"
-                },
-                "supportsHttpsTrafficOnly": true,
-                "encryption": {
-                    "services": {
-                        "file": {
-                            "enabled": true
-                        },
-                        "blob": {
-                            "enabled": true
-                        }
-                    },
-                    "keySource": "Microsoft.Storage"
-                },
-                "accessTier": "Hot"
-            }
-        },
-        {
-            "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
-            "name": "[concat(variables('storageAccountName'), '/default/', variables('storageAccountBlobs')[copyIndex()].name)]",
-            "apiVersion": "2019-06-01",
-            "properties": {
-                "publicAccess": "[variables('storageAccountBlobs')[copyIndex()].publicAccess]"
-            },
-            "copy": {
-                "name": "storageaccountblobscopy",
-                "count": "[length(variables('storageAccountBlobs'))]"
-            },
-            "dependsOn": [
-                "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
-            ]
-        },
-        {
-            "type": "Microsoft.OperationalInsights/workspaces",
-            "name": "[variables('logAnalyticsWsName')]",
-            "apiVersion": "2020-08-01",
-            "location": "[resourceGroup().location]",
-            "properties": {
-                "sku": {
-                    "name": "pergb2018"
-                },
-                "retentionInDays": 30
-            }
-        },
-        {
-            "type": "Microsoft.Insights/components",
-            "apiVersion": "2020-02-02-preview",
-            "name": "[variables('appInsightsName')]",
-            "dependsOn": [
-                "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]"
-            ],
-            "location": "[resourceGroup().location]",
-            "kind": "web",
-            "properties": {
-                "Application_Type": "web",
-                "WorkspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]"
-            }
-        },     
-        {
-            "type": "Microsoft.KeyVault/vaults",
-            "name": "[variables('keyVaultName')]",
-            "apiVersion": "2019-09-01",
-            "location": "[resourceGroup().location]",
-            "properties": {
-                "sku": {
-                    "family": "A",
-                    "name": "standard"
-                },
-                "tenantId": "[subscription().tenantId]",
-                "enabledForTemplateDeployment": true,
-                "accessPolicies": []
-            }
-        },
-        {
-            "type": "Microsoft.KeyVault/vaults/providers/diagnosticSettings",
-            "apiVersion": "2017-05-01-preview",
-            "name": "[concat(variables('keyVaultName'), '/Microsoft.Insights/', 'LogAnalytics')]",
-            "dependsOn": [
-                "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]",
-                "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]"
-            ],
-            "properties": {
-                "name": "LogAnalytics",
-                "workspaceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]",
-                "logs": [
-                    {
-                        "category": "AuditEvent",
-                        "enabled": true
-                    }
-                ],
-                "metrics": [
-                    {
-                        "category": "AllMetrics",
-                        "enabled": true
-                    }
-                ]
-            }
-        },
-        {
-            "type": "Microsoft.KeyVault/vaults/secrets",
-            "name": "[concat(variables('keyVaultName'), '/', variables('keyVaultSecretStorageAccountConnectionString'))]",
-            "apiVersion": "2019-09-01",
-            "dependsOn": [
-                "[concat('Microsoft.KeyVault/vaults/', variables('keyVaultName'))]",
-                "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
-            ],
-            "properties": {
-                "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2019-06-01').keys[0].value)]"
-            }
-        },
-        {
-            "type": "Microsoft.KeyVault/vaults/secrets",
-            "name": "[concat(variables('keyVaultName'), '/', variables('keyVaultSecretSearchServiceApiKey'))]",
-            "apiVersion": "2019-09-01",
-            "dependsOn": [
-                "[concat('Microsoft.KeyVault/vaults/', variables('keyVaultName'))]",
-                "[resourceId('Microsoft.Search/searchServices', variables('cognitiveSearchName'))]"
-            ],
-            "properties": {
-                "value": "[listAdminKeys(resourceId('Microsoft.Search/searchServices', variables('cognitiveSearchName')), '2020-03-13').primaryKey]"
-            }
-        },
-        {
-            "type": "Microsoft.KeyVault/vaults/accessPolicies",
-            "name": "[concat(variables('keyVaultName'), '/add')]",
-            "apiVersion": "2019-09-01",
-            "properties": {
-                "accessPolicies": [
-                    {
-                        "tenantId": "[subscription().tenantId]",
-                        "objectId": "[reference(resourceId('Microsoft.Web/sites', variables('searchFuncName')), '2020-09-01', 'Full').identity.principalId]",
-                        "permissions": {
-                            "keys": [ "get" ],
-                            "secrets": [ "get" ]
-                        }
-                    },
-                    {
-                        "tenantId": "[subscription().tenantId]",
-                        "objectId": "[reference(resourceId('Microsoft.Web/sites', variables('indexerFuncName')), '2020-09-01', 'Full').identity.principalId]",
-                        "permissions": {
-                            "keys": [ "get" ],
-                            "secrets": [ "get" ]
-                        }
-                    }
-                ]
-            },
-            "dependsOn": [
-                "[resourceId('Microsoft.Web/sites', variables('searchFuncName'))]",
-                "[resourceId('Microsoft.Web/sites', variables('indexerFuncName'))]",
-                "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]"
-            ]
-        },
-        {
-            "type": "Microsoft.Search/searchServices",
-            "name": "[variables('cognitiveSearchName')]",
-            "apiVersion": "2020-03-13",
-            "location": "[resourceGroup().location]",
-            "sku": {
-                "name": "[parameters('cognitiveSearchSku')]"
-            },
-            "properties": {
-                "replicaCount": 1,
-                "partitionCount": 1
-            }
-        },
-        {
-            "type": "Microsoft.Search/searchServices/providers/diagnosticSettings",
-            "name": "[concat(variables('cognitiveSearchName'), '/Microsoft.Insights/', 'LogAnalytics')]",
-            "apiVersion": "2017-05-01-preview",
-            "dependsOn": [
-                "[resourceId('Microsoft.Search/searchServices', variables('cognitiveSearchName'))]",
-                "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]"
-            ],
-            "properties": {
-                "name": "LogAnalytics",
-                "workspaceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]",
-                "logs": [
-                    {
-                        "category": "OperationLogs",
-                        "enabled": true
-                    }
-                ],
-                "metrics": [
-                    {
-                        "category": "AllMetrics",
-                        "enabled": true
-                    }
-                ]
-            }
-        },
-        {
-            "type": "Microsoft.Web/serverfarms",
-            "name": "[variables('appServicePlanName')]",
-            "apiVersion": "2020-09-01",
-            "location": "[resourceGroup().location]",
-            "sku": "[variables('appServicePlanSku')]",
-            "properties": {
-            }
-        },
-        {
-            "type": "Microsoft.Web/sites",
-            "name": "[variables('searchFuncName')]",
-            "apiVersion": "2020-09-01",
-            "location": "[resourceGroup().location]",
-            "kind": "functionapp",
-            "properties": {
-                "enabled": true,
-                "hostNameSslStates": [
-                    {
-                        "name": "[concat(variables('searchFuncName'),'.azurewebsites.net')]",
-                        "sslState": "Disabled",
-                        "hostType": "Standard"
-                    },
-                    {
-                        "name": "[concat(variables('searchFuncName'),'.scm.azurewebsites.net')]",
-                        "sslState": "Disabled",
-                        "hostType": "Repository"
-                    }
-                ],
-                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]",
-                "clientAffinityEnabled": true,
-                "containerSize": 1536,
-                "dailyMemoryTimeQuota": 0,
-                "httpsOnly": true
-            },
-            "identity": {
-                "type": "SystemAssigned"
-            },
-            "dependsOn": [
-                "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]",
-                "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]",
-                "[resourceId('Microsoft.Insights/components', variables('appInsightsName'))]"
-            ]
-        },
-        {
-            "type": "Microsoft.Web/sites/config",
-            "name": "[concat(variables('searchFuncName'), '/appsettings')]",
-            "apiVersion": "2020-09-01",
-            "dependsOn": [
-                "[resourceId('Microsoft.Web/sites', variables('searchFuncName'))]",
-                "[resourceId('Microsoft.KeyVault/vaults/secrets', variables('keyVaultName'), variables('keyVaultSecretStorageAccountConnectionString'))]",
-                "[resourceId('Microsoft.KeyVault/vaults/secrets', variables('keyVaultName'), variables('keyVaultSecretSearchServiceApiKey'))]"
-            ],
-            "properties": {
-                "AzureWebJobsStorage": "[concat('@Microsoft.KeyVault(VaultName=', variables('keyVaultName'), ';SecretName=', variables('keyVaultSecretStorageAccountConnectionString'), ')')]",
-                "AzureWebJobsDisableHomepage": true,
-                "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2019-06-01').keys[0].value)]",
-                "APPINSIGHTS_INSTRUMENTATIONKEY": "[reference(concat('Microsoft.Insights/components/', variables('appInsightsName'))).InstrumentationKey]",
-                "FUNCTIONS_EXTENSION_VERSION": "~3",
-                "WEBSITE_TIME_ZONE": "W. Europe Standard Time",
-                "WEBSITE_RUN_FROM_PACKAGE": "[concat(variables('storageAccountBlobUri'), variables('blobContainerDeployment'), variables('searchFuncPackagePath'), '?', listAccountSas(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2019-06-01', variables('storageAccountFunctionSasParams')).accountSasToken)]",
-                "WEBSITE_CONTENTSHARE": "[variables('searchFuncName')]",
-                "StorageConnectionString": "[concat('@Microsoft.KeyVault(VaultName=', variables('keyVaultName'), ';SecretName=', variables('keyVaultSecretStorageAccountConnectionString'), ')')]",
-                "ConfigContainerName": "[variables('blobContainerConfig')]",
-                "SearchServiceName": "[variables('cognitiveSearchName')]",
-                "SearchServiceApiKey": "[concat('@Microsoft.KeyVault(VaultName=', variables('keyVaultName'), ';SecretName=', variables('keyVaultSecretSearchServiceApiKey'), ')')]"
-            }
-        },
-        {
-            "type": "Microsoft.Web/sites",
-            "name": "[variables('indexerFuncName')]",
-            "apiVersion": "2020-09-01",
-            "location": "[resourceGroup().location]",
-            "kind": "functionapp",
-            "properties": {
-                "enabled": true,
-                "hostNameSslStates": [
-                    {
-                        "name": "[concat(variables('indexerFuncName'),'.azurewebsites.net')]",
-                        "sslState": "Disabled",
-                        "hostType": "Standard"
-                    },
-                    {
-                        "name": "[concat(variables('indexerFuncName'),'.scm.azurewebsites.net')]",
-                        "sslState": "Disabled",
-                        "hostType": "Repository"
-                    }
-                ],
-                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]",
-                "clientAffinityEnabled": true,
-                "containerSize": 1536,
-                "dailyMemoryTimeQuota": 0,
-                "httpsOnly": true
-            },
-            "identity": {
-                "type": "SystemAssigned"
-            },
-            "dependsOn": [
-                "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]",
-                "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]",
-                "[resourceId('Microsoft.Insights/components', variables('appInsightsName'))]"
-            ]
-        },
-        {
-            "type": "Microsoft.Web/sites/config",
-            "name": "[concat(variables('indexerFuncName'), '/appsettings')]",
-            "apiVersion": "2020-09-01",
-            "dependsOn": [
-                "[resourceId('Microsoft.Web/sites', variables('indexerFuncName'))]",
-                "[resourceId('Microsoft.KeyVault/vaults/secrets', variables('keyVaultName'), variables('keyVaultSecretStorageAccountConnectionString'))]",
-                "[resourceId('Microsoft.KeyVault/vaults/secrets', variables('keyVaultName'), variables('keyVaultSecretSearchServiceApiKey'))]"
-            ],
-            "properties": {
-                "AzureWebJobsStorage": "[concat('@Microsoft.KeyVault(VaultName=', variables('keyVaultName'), ';SecretName=', variables('keyVaultSecretStorageAccountConnectionString'), ')')]",
-                "AzureWebJobsDisableHomepage": true,
-                "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2019-06-01').keys[0].value)]",
-                "APPINSIGHTS_INSTRUMENTATIONKEY": "[reference(concat('Microsoft.Insights/components/', variables('appInsightsName'))).InstrumentationKey]",
-                "FUNCTIONS_EXTENSION_VERSION": "~3",
-                "WEBSITE_TIME_ZONE": "W. Europe Standard Time",
-                "WEBSITE_RUN_FROM_PACKAGE": "[concat(variables('storageAccountBlobUri'), variables('blobContainerDeployment'), variables('indexerFuncPackagePath'), '?', listAccountSas(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2019-06-01', variables('storageAccountFunctionSasParams')).accountSasToken)]",
-                "WEBSITE_CONTENTSHARE": "[variables('indexerFuncName')]",
-                "StorageConnectionString": "[concat('@Microsoft.KeyVault(VaultName=', variables('keyVaultName'), ';SecretName=', variables('keyVaultSecretStorageAccountConnectionString'), ')')]",
-                "ConfigContainerName": "[variables('blobContainerConfig')]",
-                "SearchServiceName": "[variables('cognitiveSearchName')]",
-                "SearchServiceApiKey": "[concat('@Microsoft.KeyVault(VaultName=', variables('keyVaultName'), ';SecretName=', variables('keyVaultSecretSearchServiceApiKey'), ')')]",
-                "ScheduleExpression": "[parameters('indexerFuncScheduleExpr')]"
-            }
-        }
+    "cognitiveSearchSku": {
+      "type": "string",
+      "defaultValue": "basic",
+      "allowedValues": [
+        "free",
+        "basic",
+        "standard",
+        "standard2",
+        "standard3",
+        "storage_optimized_l1",
+        "storage_optimized_l2"
+      ]
+    },
+    "indexerFuncScheduleExpr": {
+      "type": "string",
+      "defaultValue": "0 */5 6-20 * * 1-6"
+    }
+  },
+  "functions": [],
+  "variables": {
+    "logAnalyticsWsName": "[format('{0}-law-{1}', parameters('resourceNamePrefix'), parameters('resourceNameSuffix'))]",
+    "appInsightsName": "[format('{0}-ai-{1}', parameters('resourceNamePrefix'), parameters('resourceNameSuffix'))]",
+    "keyVaultName": "[format('{0}-kv-{1}', parameters('resourceNamePrefix'), parameters('resourceNameSuffix'))]",
+    "keyVaultSecretStorageAccountConnectionString": "storageAccountConnectionString",
+    "keyVaultSecretSearchServiceApiKey": "searchServiceApiKey",
+    "blobContainerConfig": "config",
+    "blobContainerDeployment": "deployment",
+    "storageAccountName": "[replace(format('{0}-sa-{1}', parameters('resourceNamePrefix'), parameters('resourceNameSuffix')), '-', '')]",
+    "storageAccountBlobs": [
+      {
+        "name": "[variables('blobContainerConfig')]",
+        "publicAccess": "None"
+      },
+      {
+        "name": "[variables('blobContainerDeployment')]",
+        "publicAccess": "None"
+      }
     ],
-    "outputs": {}
+    "storageAccountBlobUri": "[format('https://{0}.blob.core.windows.net/', variables('storageAccountName'))]",
+    "storageAccountFunctionSasParams": {
+      "signedServices": "b",
+      "signedResourceTypes": "o",
+      "signedPermission": "r",
+      "signedExpiry": "01.01.2050 00:00:00"
+    },
+    "cognitiveSearchName": "[format('{0}-cs-{1}', parameters('resourceNamePrefix'), parameters('resourceNameSuffix'))]",
+    "appServicePlanName": "[format('{0}-asp-{1}', parameters('resourceNamePrefix'), parameters('resourceNameSuffix'))]",
+    "appServicePlanSku": {
+      "name": "Y1",
+      "tier": "Dynamic"
+    },
+    "indexerFuncName": "[format('{0}-producer-f-{1}', parameters('resourceNamePrefix'), parameters('resourceNameSuffix'))]",
+    "indexerFuncPackagePath": "/Customer.Project.IndexerFuncApp.zip",
+    "searchFuncName": "[format('{0}-consumer-f-{1}', parameters('resourceNamePrefix'), parameters('resourceNameSuffix'))]",
+    "searchFuncPackagePath": "/Customer.Project.SearchFuncApp.zip"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-06-01",
+      "name": "pid-d16e7b59-716a-407d-96db-18d1cac40407",
+      "properties": {
+        "mode": "Incremental",
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "resources": []
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2019-06-01",
+      "name": "[variables('storageAccountName')]",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "Standard_LRS",
+        "tier": "Standard"
+      },
+      "kind": "StorageV2",
+      "properties": {
+        "networkAcls": {
+          "bypass": "AzureServices",
+          "defaultAction": "Allow"
+        },
+        "supportsHttpsTrafficOnly": true,
+        "encryption": {
+          "services": {
+            "file": {
+              "enabled": true
+            },
+            "blob": {
+              "enabled": true
+            }
+          },
+          "keySource": "Microsoft.Storage"
+        },
+        "accessTier": "Hot"
+      }
+    },
+    {
+      "copy": {
+        "name": "storageAccountBlobContainerRes",
+        "count": "[length(variables('storageAccountBlobs'))]"
+      },
+      "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+      "apiVersion": "2019-06-01",
+      "name": "[format('{0}/default/{1}', variables('storageAccountName'), variables('storageAccountBlobs')[copyIndex()].name)]",
+      "properties": {
+        "publicAccess": "[variables('storageAccountBlobs')[copyIndex()].publicAccess]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.OperationalInsights/workspaces",
+      "apiVersion": "2020-08-01",
+      "name": "[variables('logAnalyticsWsName')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "sku": {
+          "name": "PerGB2018"
+        },
+        "retentionInDays": 30
+      }
+    },
+    {
+      "type": "Microsoft.Insights/components",
+      "apiVersion": "2020-02-02-preview",
+      "name": "[variables('appInsightsName')]",
+      "location": "[resourceGroup().location]",
+      "kind": "web",
+      "properties": {
+        "Application_Type": "web",
+        "WorkspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults",
+      "apiVersion": "2019-09-01",
+      "name": "[variables('keyVaultName')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "sku": {
+          "family": "A",
+          "name": "standard"
+        },
+        "tenantId": "[subscription().tenantId]",
+        "enabledForTemplateDeployment": true,
+        "accessPolicies": []
+      }
+    },
+    {
+      "type": "microsoft.insights/diagnosticSettings",
+      "apiVersion": "2017-05-01-preview",
+      "scope": "[format('Microsoft.KeyVault/vaults/{0}', variables('keyVaultName'))]",
+      "name": "LogAnalytics",
+      "properties": {
+        "workspaceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]",
+        "logs": [
+          {
+            "category": "AuditEvent",
+            "enabled": true
+          }
+        ],
+        "metrics": [
+          {
+            "category": "AllMetrics",
+            "enabled": true
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]",
+        "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults/secrets",
+      "apiVersion": "2019-09-01",
+      "name": "[format('{0}/{1}', variables('keyVaultName'), variables('keyVaultSecretStorageAccountConnectionString'))]",
+      "properties": {
+        "value": "[format('DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1}', variables('storageAccountName'), listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2019-06-01').keys[0].value)]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults/secrets",
+      "apiVersion": "2019-09-01",
+      "name": "[format('{0}/{1}', variables('keyVaultName'), variables('keyVaultSecretSearchServiceApiKey'))]",
+      "properties": {
+        "value": "[listAdminKeys(resourceId('Microsoft.Search/searchServices', variables('cognitiveSearchName')), '2020-03-13').primaryKey]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Search/searchServices', variables('cognitiveSearchName'))]",
+        "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults/accessPolicies",
+      "apiVersion": "2019-09-01",
+      "name": "[format('{0}/{1}', variables('keyVaultName'), 'add')]",
+      "properties": {
+        "accessPolicies": [
+          {
+            "tenantId": "[subscription().tenantId]",
+            "objectId": "[reference(resourceId('Microsoft.Web/sites', variables('searchFuncName')), '2020-09-01', 'Full').identity.principalId]",
+            "permissions": {
+              "keys": [
+                "get"
+              ],
+              "secrets": [
+                "get"
+              ]
+            }
+          },
+          {
+            "tenantId": "[subscription().tenantId]",
+            "objectId": "[reference(resourceId('Microsoft.Web/sites', variables('indexerFuncName')), '2020-09-01', 'Full').identity.principalId]",
+            "permissions": {
+              "keys": [
+                "get"
+              ],
+              "secrets": [
+                "get"
+              ]
+            }
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/sites', variables('indexerFuncName'))]",
+        "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]",
+        "[resourceId('Microsoft.Web/sites', variables('searchFuncName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Search/searchServices",
+      "apiVersion": "2020-08-01",
+      "name": "[variables('cognitiveSearchName')]",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "[parameters('cognitiveSearchSku')]"
+      },
+      "properties": {
+        "replicaCount": 1,
+        "partitionCount": 1
+      }
+    },
+    {
+      "type": "microsoft.insights/diagnosticSettings",
+      "apiVersion": "2017-05-01-preview",
+      "scope": "[format('Microsoft.Search/searchServices/{0}', variables('cognitiveSearchName'))]",
+      "name": "LogAnalytics",
+      "properties": {
+        "workspaceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]",
+        "logs": [
+          {
+            "category": "OperationLogs",
+            "enabled": true
+          }
+        ],
+        "metrics": [
+          {
+            "category": "AllMetrics",
+            "enabled": true
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Search/searchServices', variables('cognitiveSearchName'))]",
+        "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2020-09-01",
+      "name": "[variables('appServicePlanName')]",
+      "location": "[resourceGroup().location]",
+      "sku": "[variables('appServicePlanSku')]",
+      "properties": {}
+    },
+    {
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2020-09-01",
+      "name": "[variables('searchFuncName')]",
+      "location": "[resourceGroup().location]",
+      "kind": "functionapp",
+      "properties": {
+        "enabled": true,
+        "hostNameSslStates": [
+          {
+            "name": "[format('{0}.azurewebsites.net', variables('searchFuncName'))]",
+            "sslState": "Disabled",
+            "hostType": "Standard"
+          },
+          {
+            "name": "[format('{0}.scm.azurewebsites.net', variables('searchFuncName'))]",
+            "sslState": "Disabled",
+            "hostType": "Repository"
+          }
+        ],
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]",
+        "clientAffinityEnabled": true,
+        "containerSize": 1536,
+        "dailyMemoryTimeQuota": 0,
+        "httpsOnly": true
+      },
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Web/sites/config",
+      "apiVersion": "2020-09-01",
+      "name": "[format('{0}/{1}', variables('searchFuncName'), 'appsettings')]",
+      "properties": {
+        "AzureWebJobsStorage": "[format('@Microsoft.KeyVault(VaultName={0};SecretName={1})', variables('keyVaultName'), variables('keyVaultSecretStorageAccountConnectionString'))]",
+        "AzureWebJobsDisableHomepage": "true",
+        "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING": "[format('DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1}', variables('storageAccountName'), listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2019-06-01').keys[0].value)]",
+        "APPINSIGHTS_INSTRUMENTATIONKEY": "[reference(resourceId('Microsoft.Insights/components', variables('appInsightsName'))).InstrumentationKey]",
+        "FUNCTIONS_EXTENSION_VERSION": "~3",
+        "WEBSITE_TIME_ZONE": "W. Europe Standard Time",
+        "WEBSITE_RUN_FROM_PACKAGE": "[format('{0}{1}{2}?{3}', variables('storageAccountBlobUri'), variables('blobContainerDeployment'), variables('searchFuncPackagePath'), listAccountSas(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2019-06-01', variables('storageAccountFunctionSasParams')).accountSasToken)]",
+        "WEBSITE_CONTENTSHARE": "[variables('searchFuncName')]",
+        "StorageConnectionString": "[format('@Microsoft.KeyVault(VaultName={0};SecretName={1})', variables('keyVaultName'), variables('keyVaultSecretStorageAccountConnectionString'))]",
+        "ConfigContainerName": "[variables('blobContainerConfig')]",
+        "SearchServiceName": "[variables('cognitiveSearchName')]",
+        "SearchServiceApiKey": "[format('@Microsoft.KeyVault(VaultName={0};SecretName={1})', variables('keyVaultName'), variables('keyVaultSecretSearchServiceApiKey'))]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Insights/components', variables('appInsightsName'))]",
+        "[resourceId('Microsoft.KeyVault/vaults/secrets', variables('keyVaultName'), variables('keyVaultSecretSearchServiceApiKey'))]",
+        "[resourceId('Microsoft.KeyVault/vaults/secrets', variables('keyVaultName'), variables('keyVaultSecretStorageAccountConnectionString'))]",
+        "[resourceId('Microsoft.Web/sites', variables('searchFuncName'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2020-09-01",
+      "name": "[variables('indexerFuncName')]",
+      "location": "[resourceGroup().location]",
+      "kind": "functionapp",
+      "properties": {
+        "enabled": true,
+        "hostNameSslStates": [
+          {
+            "name": "[format('{0}.azurewebsites.net', variables('indexerFuncName'))]",
+            "sslState": "Disabled",
+            "hostType": "Standard"
+          },
+          {
+            "name": "[format('{0}.scm.azurewebsites.net', variables('indexerFuncName'))]",
+            "sslState": "Disabled",
+            "hostType": "Repository"
+          }
+        ],
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]",
+        "clientAffinityEnabled": true,
+        "containerSize": 1536,
+        "dailyMemoryTimeQuota": 0,
+        "httpsOnly": true
+      },
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Web/sites/config",
+      "apiVersion": "2020-09-01",
+      "name": "[format('{0}/{1}', variables('indexerFuncName'), 'appsettings')]",
+      "properties": {
+        "AzureWebJobsStorage": "[format('@Microsoft.KeyVault(VaultName={0};SecretName={1})', variables('keyVaultName'), variables('keyVaultSecretStorageAccountConnectionString'))]",
+        "AzureWebJobsDisableHomepage": "true",
+        "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING": "[format('DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1}', variables('storageAccountName'), listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2019-06-01').keys[0].value)]",
+        "APPINSIGHTS_INSTRUMENTATIONKEY": "[reference(resourceId('Microsoft.Insights/components', variables('appInsightsName'))).InstrumentationKey]",
+        "FUNCTIONS_EXTENSION_VERSION": "~3",
+        "WEBSITE_TIME_ZONE": "W. Europe Standard Time",
+        "WEBSITE_RUN_FROM_PACKAGE": "[format('{0}{1}{2}?{3}', variables('storageAccountBlobUri'), variables('blobContainerDeployment'), variables('indexerFuncPackagePath'), listAccountSas(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2019-06-01', variables('storageAccountFunctionSasParams')).accountSasToken)]",
+        "WEBSITE_CONTENTSHARE": "[variables('indexerFuncName')]",
+        "StorageConnectionString": "[format('@Microsoft.KeyVault(VaultName={0};SecretName={1})', variables('keyVaultName'), variables('keyVaultSecretStorageAccountConnectionString'))]",
+        "ConfigContainerName": "[variables('blobContainerConfig')]",
+        "SearchServiceName": "[variables('cognitiveSearchName')]",
+        "SearchServiceApiKey": "[format('@Microsoft.KeyVault(VaultName={0};SecretName={1})', variables('keyVaultName'), variables('keyVaultSecretSearchServiceApiKey'))]",
+        "ScheduleExpression": "[parameters('indexerFuncScheduleExpr')]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Insights/components', variables('appInsightsName'))]",
+        "[resourceId('Microsoft.Web/sites', variables('indexerFuncName'))]",
+        "[resourceId('Microsoft.KeyVault/vaults/secrets', variables('keyVaultName'), variables('keyVaultSecretSearchServiceApiKey'))]",
+        "[resourceId('Microsoft.KeyVault/vaults/secrets', variables('keyVaultName'), variables('keyVaultSecretStorageAccountConnectionString'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+      ]
+    }
+  ]
 }
