@@ -6,6 +6,7 @@ Consider [this knowledge base article for an overview of Bot Framework component
 ## Architecture
 ![Architecture](./Architecture.png)
 
+[![Get draw.io File](https://github.com/garaio/AzureRecipes/raw/master/Resources/getdrawiobutton.svg?sanitize=true)](./Architecture.drawio)
 [![Estimate](https://github.com/garaio/AzureRecipes/raw/master/Resources/estimatebutton.svg?sanitize=true)](https://azure.com/e/cc6ec55be5454a59901ffc8c69706d3f)
 
 ## Implementation Notes

@@ -4,6 +4,9 @@ This blueprint contains a basis for integration scenarios where various data bet
 ## Architecture
 ![Architecture](./Architecture.png)
 
+[![Get draw.io File](https://github.com/garaio/AzureRecipes/raw/master/Resources/getdrawiobutton.svg?sanitize=true)](./Architecture.drawio)
+[![Estimate](https://github.com/garaio/AzureRecipes/raw/master/Resources/estimatebutton.svg?sanitize=true)](https://azure.com/e/43a9da25d38a452088f04c8529fef1a8)
+
 ### Key Concepts
 * Integration processes are split up into steps which can be completely re-executed in case of failures. Each of those steps has its queue in the Service Bus and many processes may end with handing over the message to the next queue.
 * Non-processable events/messages end up in the dead letter queues of the Service Bus. This should be observed and handled accordingly
@@ -47,4 +50,4 @@ There is often the need to provide mappings or routing definitions in a configur
 
 ## Deployment
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fgaraio%2FAzureRecipes%2Fmaster%2FBlueprints%2Fintegration-pipeline%2Fazuredeploy.json)
-[![Visualize](https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/1-CONTRIBUTION-GUIDE/images/visualizebutton.svg?sanitize=true)](http://armviz.io/#/?load=https%3A%2F%2Fraw.githubusercontent.com%2Fgaraio%2FAzureRecipes%2Fmaster%2FBlueprints%2Fintegration-pipeline%2Fazuredeploy.json)
+[![Visualize](https://github.com/garaio/AzureRecipes/raw/master/Resources/visualizebutton.svg?sanitize=true)](http://armviz.io/#/?load=https%3A%2F%2Fraw.githubusercontent.com%2Fgaraio%2FAzureRecipes%2Fmaster%2FBlueprints%2Fintegration-pipeline%2Fazuredeploy.json)
