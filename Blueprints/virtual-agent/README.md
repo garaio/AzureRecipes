@@ -6,6 +6,8 @@ Consider [this knowledge base article for an overview of Bot Framework component
 ## Architecture
 ![Architecture](./Architecture.png)
 
+[![Estimate](https://github.com/garaio/AzureRecipes/raw/master/Resources/estimatebutton.svg?sanitize=true)](https://azure.com/e/cc6ec55be5454a59901ffc8c69706d3f)
+
 ## Implementation Notes
 ### Bot Framework Resources
 * [MSDN Azure Bot Service Documentation](https://docs.microsoft.com/en-us/azure/bot-service/?view=azure-bot-service-4.0)
@@ -22,4 +24,4 @@ Bot Framework solutions are normally built based on either the [Bot Framework So
 This deployment script contains some additional components as defined in the architecture and needs to be merged or validated with the deployment result from the template used.
 
 [![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fgaraio%2FAzureRecipes%2Fmaster%2FBlueprints%2Fvirtual-agent%2Fazuredeploy.json)
-[![Visualize](https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/1-CONTRIBUTION-GUIDE/images/visualizebutton.svg?sanitize=true)](http://armviz.io/#/?load=https%3A%2F%2Fraw.githubusercontent.com%2Fgaraio%2FAzureRecipes%2Fmaster%2FBlueprints%2Fvirtual-agent%2Fazuredeploy.json)
+[![Visualize](https://github.com/garaio/AzureRecipes/raw/master/Resources/visualizebutton.svg?sanitize=true)](http://armviz.io/#/?load=https%3A%2F%2Fraw.githubusercontent.com%2Fgaraio%2FAzureRecipes%2Fmaster%2FBlueprints%2Fvirtual-agent%2Fazuredeploy.json)
