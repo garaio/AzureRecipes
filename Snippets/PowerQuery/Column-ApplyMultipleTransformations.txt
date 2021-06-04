@@ -1,0 +1,1 @@
+= Table.TransformColumns(#"Clean Column",{{"Column", each Text.Lower(Text.Trim(Text.Clean(_))), type text}})
