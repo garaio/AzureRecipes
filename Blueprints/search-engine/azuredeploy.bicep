@@ -50,9 +50,9 @@ var appServicePlanSku = {
   name: 'Y1'
   tier: 'Dynamic'
 }
-var indexerFuncName = '${resourceNamePrefix}-producer-f-${resourceNameSuffix}'
+var indexerFuncName = '${resourceNamePrefix}-indexer-f-${resourceNameSuffix}'
 var indexerFuncPackagePath = '/Customer.Project.IndexerFuncApp.zip'
-var searchFuncName = '${resourceNamePrefix}-consumer-f-${resourceNameSuffix}'
+var searchFuncName = '${resourceNamePrefix}-search-f-${resourceNameSuffix}'
 var searchFuncPackagePath = '/Customer.Project.SearchFuncApp.zip'
 
 resource partnerIdRes 'Microsoft.Resources/deployments@2020-06-01' = {

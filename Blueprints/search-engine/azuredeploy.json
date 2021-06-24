@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.3.539.46024",
-      "templateHash": "1419413177445384138"
+      "templateHash": "1533869896860416166"
     }
   },
   "parameters": {
@@ -73,9 +73,9 @@
       "name": "Y1",
       "tier": "Dynamic"
     },
-    "indexerFuncName": "[format('{0}-producer-f-{1}', parameters('resourceNamePrefix'), parameters('resourceNameSuffix'))]",
+    "indexerFuncName": "[format('{0}-indexer-f-{1}', parameters('resourceNamePrefix'), parameters('resourceNameSuffix'))]",
     "indexerFuncPackagePath": "/Customer.Project.IndexerFuncApp.zip",
-    "searchFuncName": "[format('{0}-consumer-f-{1}', parameters('resourceNamePrefix'), parameters('resourceNameSuffix'))]",
+    "searchFuncName": "[format('{0}-search-f-{1}', parameters('resourceNamePrefix'), parameters('resourceNameSuffix'))]",
     "searchFuncPackagePath": "/Customer.Project.SearchFuncApp.zip"
   },
   "resources": [
