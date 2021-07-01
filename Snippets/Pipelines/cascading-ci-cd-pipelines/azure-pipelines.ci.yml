@@ -67,7 +67,7 @@ stages:
             scriptType: bash
             scriptLocation: inlineScript
             inlineScript: |
-              az group create --location $(resourceLocation) --name $(resourceGroupName) --tags 'DeployedAt=$(currentDate)' 'DeployedBy=$(Build.RequestedForEmail)' 'DeployedFrom=$(System.TeamProject)'
+              az group create --location $(resourceLocation) --name $(resourceGroupName) --tags 'DeployedAt=$(currentDate)' 'DeployedBy=$(Build.RequestedFor)' 'DeployedFrom=$(System.TeamProject)'
 
         - task: AzureResourceManagerTemplateDeployment@3
           displayName: 'Validate ARM Template'
