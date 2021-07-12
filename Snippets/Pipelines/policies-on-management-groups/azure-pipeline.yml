@@ -16,7 +16,7 @@ variables:
 resources:
   containers:
   - container: linux
-    image: ubuntu-16.04
+    image: ubuntu-latest
 
 stages:    
 - stage: deploy
@@ -26,7 +26,7 @@ stages:
     - deployment: deploy_policies
       displayName: 'Deploy Policies'
       pool:
-        vmImage: 'ubuntu-16.04'
+        vmImage: 'ubuntu-latest'
       environment: 'prod-mg-$(managementGroupId)'
       strategy:
         runOnce:

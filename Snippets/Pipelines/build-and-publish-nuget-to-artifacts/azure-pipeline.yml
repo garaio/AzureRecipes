@@ -17,7 +17,7 @@ variables:
 resources:
   containers:
     - container: linux
-      image: ubuntu-16.04
+      image: ubuntu-latest
 
 stages:
   - stage: build
@@ -27,7 +27,7 @@ stages:
       - job: build_model
         displayName: 'Model Build'
         pool:
-          vimImage: 'ubuntu-16.04'
+          vimImage: 'ubuntu-latest'
         steps:
           - task: DotNetCoreCLI@2
             displayName: Restore
@@ -63,7 +63,7 @@ stages:
     - job: publish_model
       displayName: 'Publish'
       pool:
-        vimImage: 'ubuntu-16.04'
+        vimImage: 'ubuntu-latest'
       steps:      
         - download: current
           displayName: 'Download Artifact'

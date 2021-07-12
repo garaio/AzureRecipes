@@ -16,7 +16,7 @@ variables:
 resources:
   containers:
   - container: linux
-    image: ubuntu-16.04
+    image: ubuntu-latest
 
 stages:
 - stage: backend
@@ -26,7 +26,7 @@ stages:
     - job: build_test
       displayName: "Build & Test"
       pool:
-        vimImage: "ubuntu-16.04"
+        vimImage: "ubuntu-latest"
       steps:
         - task: DotNetCoreCLI@2
           displayName: Restore
@@ -95,7 +95,7 @@ stages:
     - job: build_test
       displayName: "Build & Test"
       pool:
-        vimImage: "ubuntu-16.04"
+        vimImage: "ubuntu-latest"
 
       steps:
       - task: Npm@1
