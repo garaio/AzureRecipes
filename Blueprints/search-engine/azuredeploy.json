@@ -65,7 +65,7 @@
       "signedServices": "b",
       "signedResourceTypes": "o",
       "signedPermission": "r",
-      "signedExpiry": "01.01.2050 00:00:00"
+      "signedExpiry": "2050-01-01T00:00:00Z"
     },
     "cognitiveSearchName": "[format('{0}-cs-{1}', parameters('resourceNamePrefix'), parameters('resourceNameSuffix'))]",
     "appServicePlanName": "[format('{0}-asp-{1}', parameters('resourceNamePrefix'), parameters('resourceNameSuffix'))]",

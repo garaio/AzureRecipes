@@ -40,7 +40,7 @@ var storageAccountFunctionSasParams = {
   signedServices: 'b'
   signedResourceTypes: 'o'
   signedPermission: 'r'
-  signedExpiry: '01.01.2050 00:00:00'
+  signedExpiry: '2050-01-01T00:00:00Z'
 }
 
 var cognitiveSearchName = '${resourceNamePrefix}-cs-${resourceNameSuffix}'

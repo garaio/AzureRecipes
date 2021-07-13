@@ -63,7 +63,7 @@
       "signedServices": "b",
       "signedResourceTypes": "o",
       "signedPermission": "r",
-      "signedExpiry": "01.01.2050 00:00:00"
+      "signedExpiry": "2050-01-01T00:00:00Z"
     },
     "storageAccountUri": "[format('https://{0}.blob.core.windows.net/', variables('storageAccountName'))]",
     "serviceBusNamespaceName": "[format('{0}-sb-{1}', parameters('resourceNamePrefix'), parameters('resourceNameSuffix'))]",
