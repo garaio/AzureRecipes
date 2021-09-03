@@ -1,0 +1,161 @@
+parameters:
+  - name: envName
+    type: string
+    values:
+    - DEV
+    - TEST
+    - PROD
+  - name: resNameEnv
+    type: string
+  - name: releaseDate
+    type: string
+  - name: armServiceConnection
+    type: string
+
+jobs:
+  - deployment: services
+    displayName: 'Services'
+    pool:
+      vmImage: 'ubuntu-latest'
+    environment: ${{ parameters.envName }}
+    variables:
+      - group: Release - Common
+      - group: ${{ format('Release - {0}', parameters.envName) }}
+      - name: projectNamePrefix
+        value: 'Customer.Project.'
+      - name: deploymentFolderName
+        value: '${{ variables.projectNamePrefix }}Deployment'
+      - name: resourceGroupName
+        value: 'customer-project-${{ parameters.resNameEnv }}'
+      - name: storageAccountName
+        value: '${{ format(''customerproject{0}{1}'', ''sa'', lower(parameters.resNameEnv)) }}'
+      - name: blobContainerDeployment
+        value: 'deployment'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+            - task: AzureCLI@2
+              displayName: 'Create Resource Group'
+              inputs:
+                azureSubscription: '${{ parameters.armServiceConnection }}'
+                scriptType: bash
+                scriptLocation: inlineScript
+                inlineScript: |
+                  az group create --location $(resourceLocation) --name $(resourceGroupName) --tags 'DeployedAt=${{ parameters.releaseDate }}' 'DeployedBy=$(Build.RequestedFor)' 'DeployedFrom=$(System.TeamProject)'
+            
+            - task: AzureCLI@2
+              displayName: 'Create Storage Account for Artifact'
+              inputs:
+                azureSubscription: '${{ parameters.armServiceConnection }}'
+                scriptType: bash
+                scriptLocation: inlineScript
+                inlineScript: |
+                  az storage account create --name $(storageAccountName) --resource-group $(resourceGroupName)
+            
+            - task: AzureCLI@2
+              displayName: 'Create Storage Container'
+              inputs:
+                azureSubscription: '${{ parameters.armServiceConnection }}'
+                scriptType: bash
+                scriptLocation: inlineScript
+                inlineScript: |
+                  az storage container create --name $(blobContainerDeployment) --account-name $(storageAccountName) --resource-group $(resourceGroupName)
+            
+            - task: AzureCLI@2
+              displayName: 'Copying to Storage Container'
+              inputs:
+                azureSubscription: '${{ parameters.armServiceConnection }}'
+                scriptType: bash
+                scriptLocation: inlineScript
+                inlineScript: |
+                  az storage blob upload-batch -s $(Pipeline.Workspace)/CI-Pipeline/drop -d $(blobContainerDeployment) --account-name $(storageAccountName)
+            
+            - task: AzureResourceManagerTemplateDeployment@3
+              displayName: 'Deploy ARM Template (ResourceGroup)'
+              inputs:
+                azureResourceManagerConnection: '${{ parameters.armServiceConnection }}'
+                subscriptionId: '$(subscriptionId)'
+                resourceGroupName: '$(resourceGroupName)'
+                location: '$(resourceLocation)'
+                csmFile: '$(Pipeline.Workspace)/CI-Pipeline/drop/$(deploymentFolderName)/azuredeploy.json'
+                csmParametersFile: '$(Pipeline.Workspace)/CI-Pipeline/drop/$(deploymentFolderName)/azuredeploy.parameters.json'
+                overrideParameters: '-resourceNameEnv "${{ parameters.resNameEnv }}"'
+                deploymentMode: 'Incremental'
+                deploymentName: 'Customer-Project-$(Build.BuildId)-$(Environment.Name)'
+
+  - deployment: frontend
+    dependsOn: services
+    displayName: 'Frontend'
+    pool:
+      vmImage: 'ubuntu-latest'
+    environment: ${{ parameters.envName }}
+    variables:
+      - group: Release - Common
+      - group: ${{ format('Release - {0}', parameters.envName) }}
+      - name: projectNamePrefix
+        value: 'Customer.Project.'
+      - name: frontendFolderName
+        value: '${{ variables.projectNamePrefix }}Frontend'
+      - name: resourceGroupName
+        value: 'customer-project-${{ parameters.resNameEnv }}'
+      - name: storageAccountName
+        value: '${{ format(''customerproject{0}{1}'', ''sa'', lower(parameters.resNameEnv)) }}'
+      - name: blobContainerFrontendDeployment
+        value: '$web'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+            - task: AzureCLI@2
+              displayName: 'Create Storage Container'
+              inputs:
+                azureSubscription: '${{ parameters.armServiceConnection }}'
+                scriptType: bash
+                scriptLocation: inlineScript
+                inlineScript: |
+                  az storage container create --name '$(blobContainerFrontendDeployment)' --account-name $(storageAccountName) --resource-group $(resourceGroupName)
+
+            - task: FileTransform@1
+              displayName: 'Transforming configuration'
+              inputs:
+                folderPath: '$(Pipeline.Workspace)/CI-Pipeline/drop/$(frontendFolderName)'
+                fileType: json
+                targetFiles: config.json
+            
+            - task: AzureCLI@2
+              displayName: 'Copying to Storage'
+              inputs:
+                azureSubscription: '${{ parameters.armServiceConnection }}'
+                scriptType: bash
+                scriptLocation: inlineScript
+                inlineScript: |
+                  az storage blob upload-batch -s $(Pipeline.Workspace)/CI-Pipeline/drop/$(frontendFolderName) -d '$(blobContainerFrontendDeployment)' --account-name $(storageAccountName)
+            
+            - task: AzureCLI@2
+              displayName: 'Set static website'
+              inputs:
+                azureSubscription: '${{ parameters.armServiceConnection }}'
+                scriptType: bash
+                scriptLocation: inlineScript
+                inlineScript: |
+                  az storage blob service-properties update --account-name $(storageAccountName) --static-website --index-document index.html --404-document 404.html
+            
+            - task: AzureCLI@2
+              displayName: 'Purge CDN'
+              inputs:
+                azureSubscription: '${{ parameters.armServiceConnection }}'
+                scriptType: bash
+                scriptLocation: inlineScript
+                inlineScript: |
+                  az cdn endpoint purge -g $(resourceGroupName) -n $(cdnEndpointName) --profile-name $(cdnProfileName) --content-paths '/*' --no-wait
+            
+            - task: AzureCLI@2
+              displayName: 'Set Function Key'
+              inputs:
+                azureSubscription: '${{ parameters.armServiceConnection }}'
+                scriptType: bash
+                scriptLocation: inlineScript
+                inlineScript: |
+                  az functionapp restart --name $(serviceFuncName) --resource-group $(resourceGroupName)
+                  az functionapp keys set --name $(serviceFuncName) --resource-group $(resourceGroupName) --key-name client --key-type functionKeys --key-value $(serviceFuncKeySecret)

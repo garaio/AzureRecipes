@@ -1,0 +1,46 @@
+trigger: none
+
+parameters:
+  - name: resNameEnv
+    type: string
+    default: 'Dev'
+
+resources:
+  containers:
+    - container: linux
+      image: ubuntu-latest
+  pipelines:
+  - pipeline: CI-Pipeline
+    source: CI
+    trigger: 
+      branches:
+      - develop
+      - release/*
+
+variables:
+  - group: Release - Common
+  - name: currentDate
+    value: '$[format(''{0:yyyy}-{0:MM}-{0:dd}'', pipeline.startTime)]'
+
+stages:
+  - stage: deploy_dev
+    displayName: 'Deploy Dev Environment'
+    dependsOn: []
+    jobs:
+      - template: templates.deploy-to-stage.yml
+        parameters:
+          envName: 'DEV'
+          resNameEnv: '${{ parameters.resNameEnv }}'
+          releaseDate: '$(currentDate)'
+          armServiceConnection: 'ARM Service Connection DEV'
+
+  - stage: deploy_test
+    displayName: 'Deploy Test Environment'
+    dependsOn: deploy_dev
+    jobs:
+      - template: templates.deploy-to-stage.yml
+        parameters:
+          envName: 'TEST'
+          resNameEnv: 'Test'
+          releaseDate: '$(currentDate)'
+          armServiceConnection: 'ARM Service Connection TEST'
