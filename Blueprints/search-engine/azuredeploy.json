@@ -4,8 +4,8 @@
   "metadata": {
     "_generator": {
       "name": "bicep",
-      "version": "0.3.539.46024",
-      "templateHash": "1533869896860416166"
+      "version": "0.4.613.9944",
+      "templateHash": "14782391017015637682"
     }
   },
   "parameters": {
@@ -179,7 +179,7 @@
       }
     },
     {
-      "type": "microsoft.insights/diagnosticSettings",
+      "type": "Microsoft.Insights/diagnosticSettings",
       "apiVersion": "2017-05-01-preview",
       "scope": "[format('Microsoft.KeyVault/vaults/{0}', variables('keyVaultName'))]",
       "name": "LogAnalytics",
@@ -279,7 +279,7 @@
       }
     },
     {
-      "type": "microsoft.insights/diagnosticSettings",
+      "type": "Microsoft.Insights/diagnosticSettings",
       "apiVersion": "2017-05-01-preview",
       "scope": "[format('Microsoft.Search/searchServices/{0}', variables('cognitiveSearchName'))]",
       "name": "LogAnalytics",
@@ -354,6 +354,7 @@
         "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING": "[format('DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1}', variables('storageAccountName'), listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2019-06-01').keys[0].value)]",
         "APPINSIGHTS_INSTRUMENTATIONKEY": "[reference(resourceId('Microsoft.Insights/components', variables('appInsightsName'))).InstrumentationKey]",
         "FUNCTIONS_EXTENSION_VERSION": "~3",
+        "FUNCTIONS_WORKER_RUNTIME": "dotnet",
         "WEBSITE_TIME_ZONE": "W. Europe Standard Time",
         "WEBSITE_RUN_FROM_PACKAGE": "[format('{0}{1}{2}?{3}', variables('storageAccountBlobUri'), variables('blobContainerDeployment'), variables('searchFuncPackagePath'), listAccountSas(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2019-06-01', variables('storageAccountFunctionSasParams')).accountSasToken)]",
         "WEBSITE_CONTENTSHARE": "[variables('searchFuncName')]",
@@ -413,6 +414,7 @@
         "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING": "[format('DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1}', variables('storageAccountName'), listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2019-06-01').keys[0].value)]",
         "APPINSIGHTS_INSTRUMENTATIONKEY": "[reference(resourceId('Microsoft.Insights/components', variables('appInsightsName'))).InstrumentationKey]",
         "FUNCTIONS_EXTENSION_VERSION": "~3",
+        "FUNCTIONS_WORKER_RUNTIME": "dotnet",
         "WEBSITE_TIME_ZONE": "W. Europe Standard Time",
         "WEBSITE_RUN_FROM_PACKAGE": "[format('{0}{1}{2}?{3}', variables('storageAccountBlobUri'), variables('blobContainerDeployment'), variables('indexerFuncPackagePath'), listAccountSas(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2019-06-01', variables('storageAccountFunctionSasParams')).accountSasToken)]",
         "WEBSITE_CONTENTSHARE": "[variables('indexerFuncName')]",

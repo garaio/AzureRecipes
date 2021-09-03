@@ -267,6 +267,7 @@
                 "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2019-06-01').keys[0].value)]",
                 "APPINSIGHTS_INSTRUMENTATIONKEY": "[reference(concat('Microsoft.Insights/components/', variables('appInsightsName'))).InstrumentationKey]",
                 "FUNCTIONS_EXTENSION_VERSION": "~3",
+                "FUNCTIONS_WORKER_RUNTIME": "dotnet",
                 "WEBSITE_TIME_ZONE": "W. Europe Standard Time",
                 "WEBSITE_CONTENTSHARE": "[variables('serviceFuncName')]",
                 "MICROSOFT_PROVIDER_AUTHENTICATION_SECRET": "[concat('@Microsoft.KeyVault(VaultName=', variables('keyVaultName'), ';SecretName=', variables('keyVaultSecretFuncAppAuthClientSecret'), ')')]",

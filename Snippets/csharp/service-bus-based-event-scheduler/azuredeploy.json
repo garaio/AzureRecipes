@@ -4,8 +4,8 @@
   "metadata": {
     "_generator": {
       "name": "bicep",
-      "version": "0.3.539.46024",
-      "templateHash": "7222637726085264619"
+      "version": "0.4.613.9944",
+      "templateHash": "9601720882676038949"
     }
   },
   "parameters": {
@@ -165,7 +165,7 @@
       }
     },
     {
-      "type": "microsoft.insights/diagnosticSettings",
+      "type": "Microsoft.Insights/diagnosticSettings",
       "apiVersion": "2017-05-01-preview",
       "scope": "[format('Microsoft.KeyVault/vaults/{0}', variables('keyVaultName'))]",
       "name": "LogAnalytics",
@@ -273,7 +273,7 @@
       ]
     },
     {
-      "type": "microsoft.insights/diagnosticSettings",
+      "type": "Microsoft.Insights/diagnosticSettings",
       "apiVersion": "2017-05-01-preview",
       "scope": "[format('Microsoft.ServiceBus/namespaces/{0}', variables('serviceBusNamespaceName'))]",
       "name": "LogAnalytics",
@@ -361,6 +361,7 @@
         "DiagnosticServices_EXTENSION_VERSION": "~3",
         "ApplicationInsightsAgent_EXTENSION_VERSION": "~2",
         "FUNCTIONS_EXTENSION_VERSION": "~3",
+        "FUNCTIONS_WORKER_RUNTIME": "dotnet",
         "WEBSITE_TIME_ZONE": "W. Europe Standard Time",
         "WEBSITE_RUN_FROM_PACKAGE": "[format('{0}{1}{2}?{3}', variables('storageAccountBlobUri'), variables('blobContainerDeployment'), variables('schedulerFuncPackagePath'), listAccountSas(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2019-06-01', variables('storageAccountFunctionSasParams')).accountSasToken)]",
         "WEBSITE_CONTENTSHARE": "[variables('schedulerFuncName')]",
