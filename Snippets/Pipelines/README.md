@@ -13,3 +13,4 @@ General resources:
 | Resource Group | - | Create a resource group (e.g. prior to deployment of ARM templates) having tags consisting of calculated values (PowerShell) and pipeline variables | - | [create-resource-group-with-calculated-tags](./create-resource-group-with-calculated-tags) |
 | (any) | - | Download a file from any URL to the working directory of the agent | - | [download-file-from-url](./download-file-from-url) |
 | (none) | - | Build and create a Nuget package and publish it to an Artifact (feed) in same DevOps project | - | [build-and-publish-nuget-to-artifacts](./build-and-publish-nuget-to-artifacts) |
+| Container Registry / Instance | CaaS | Build and publish Docker container to Container Registry (CI pipeline) and deploy image to a Container Instance in a subsequent CD pipeline | - | [build-and-deploy-docker-to-container-instance](./build-and-deploy-docker-to-container-instance) |

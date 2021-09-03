@@ -1,0 +1,85 @@
+trigger:
+- develop
+- feature/*
+
+resources:
+- repo: self
+
+variables:
+  - name: deploymentFolderName
+    value: 'Deployment'
+  - name: dockerFilePath
+    value: '$(Build.SourcesDirectory)/DockerApp/Dockerfile'
+  - name: buildTag
+    value: '$(Build.BuildId)'
+  - name: dockerImageName
+    value: 'azurerecipe'
+
+  - name: resourceNamePrefix
+    value: 'customer-project'
+  - name: resourceNameSuffix
+    value: 'build'
+  - name: resourceGroupName
+    value: '$(resourceNamePrefix)-$(resourceNameSuffix)'
+  - name: resourceLocation
+    value: 'westeurope'
+  - name: containerRegistryLoginServer
+    value: 'azurerecipes.azurecr.io'
+  - name: containerRegistryServiceConnection
+    value: 'Container Registry Connection'
+  - name: armServiceConnection
+    value: 'ARM Service Connection'
+
+  - name: currentDate
+    value: '$[format(''{0:yyyy}-{0:MM}-{0:dd}'', pipeline.startTime)]'
+
+stages:
+- stage: build
+  displayName: 'Build and push docker image'
+  dependsOn: []
+  jobs:
+    - job: validate_arm
+      displayName: 'Validate ARM Template'
+      pool:
+        vmImage: 'ubuntu-latest'
+      steps:
+        - task: AzureCLI@2
+          displayName: 'Create Resource Group'
+          inputs:
+            azureSubscription: '$(armServiceConnection)'
+            scriptType: bash
+            scriptLocation: inlineScript
+            inlineScript: |
+              az group create --location $(resourceLocation) --name $(resourceGroupName) --tags 'DeployedAt=$(currentDate)' 'DeployedBy=$(Build.RequestedFor)' 'DeployedFrom=$(System.TeamProject)'
+
+        - task: AzureResourceManagerTemplateDeployment@3
+          displayName: 'Validate ARM Template'
+          inputs:
+            azureResourceManagerConnection: '$(armServiceConnection)'
+            resourceGroupName: '$(resourceGroupName)'
+            location: '$(resourceLocation)'
+            csmFile: '$(deploymentFolderName)/azuredeploy.instance.json'
+            csmParametersFile: '$(deploymentFolderName)/azuredeploy.parameters.json'
+            overrideParameters: '-resourceNameSuffix "$(resourceNameSuffix)"'
+            deploymentMode: 'Validation'
+          continueOnError: true
+
+        - task: PublishBuildArtifacts@1
+          displayName: 'Publish Artifact'
+          inputs:
+            PathtoPublish: '$(build.artifactstagingdirectory)'
+          condition: succeededOrFailed()
+
+    - job: push_image
+      displayName: 'Build and Push Image'
+      pool:
+        vmImage: 'ubuntu-latest'
+      steps:
+        - task: Docker@2
+          displayName: Build and push image to container registry
+          inputs:
+            command: buildAndPush
+            repository: $(dockerImageName)
+            dockerfile: $(dockerFilePath)
+            containerRegistry: $(containerRegistryServiceConnection)
+            tags: $(buildTag)
