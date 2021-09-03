@@ -18,7 +18,16 @@ param usePremiumFunctionPlan bool = false
 
 var logAnalyticsWsName = '${resourceNamePrefix}-law-${resourceNameSuffix}'
 var appInsightsName = '${resourceNamePrefix}-ai-${resourceNameSuffix}'
+
 var keyVaultName = '${resourceNamePrefix}-kv-${resourceNameSuffix}'
+var keyVaultAppPermissions = {
+  keys: [
+    'get'
+  ]
+  secrets: [
+    'get'
+  ]
+}
 var keyVaultSecretStorageAccountConnectionString = 'storageAccountConnectionString'
 var keyVaultSecretCosmosDbConnectionString = 'cosmosDbConnectionString'
 
@@ -35,7 +44,7 @@ var storageAccountBlobs = [
     publicAccess: 'None'
   }
 ]
-var storageAccountBlobUri = 'https://${storageAccountName}.blob.core.windows.net/'
+var storageAccountBlobUri = 'https://${storageAccountName}.blob.${environment().suffixes.storage}/'
 var storageAccountFunctionSasParams = {
   signedServices: 'b'
   signedResourceTypes: 'o'
@@ -50,7 +59,7 @@ var storageAccountRegionalCodes = {
 
 var cdnProfileName = '${resourceNamePrefix}-cdn-${resourceNameSuffix}'
 var cdnEndpointName = '${resourceNamePrefix}-cdn-ep-${resourceNameSuffix}'
-var cdnEndpointOriginHost = '${storageAccountName}.${storageAccountRegionalCodes[resourceGroup().location]}.web.core.windows.net'
+var cdnEndpointOriginHost = '${storageAccountName}.${storageAccountRegionalCodes[resourceGroup().location]}.web.${environment().suffixes.storage}'
 var cdnEndpointOriginName = '${storageAccountName}-static-website'
 
 var appServicePlanName = '${resourceNamePrefix}-asp-${resourceNameSuffix}'
@@ -76,7 +85,6 @@ resource storageAccountRes 'Microsoft.Storage/storageAccounts@2019-06-01' = {
   location: resourceGroup().location
   sku: {
     name: 'Standard_LRS'
-    tier: 'Standard'
   }
   kind: 'StorageV2'
   properties: {
@@ -170,7 +178,7 @@ resource keyVaultDiagnosticsRes 'Microsoft.Insights/diagnosticSettings@2017-05-0
 
 resource keyVaultSecretStorageAccountConnectionStringRes 'Microsoft.KeyVault/vaults/secrets@2019-09-01' = {
   parent: keyVaultRes
-  name: '${keyVaultSecretStorageAccountConnectionString}'
+  name: keyVaultSecretStorageAccountConnectionString
   properties: {
     value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccountName};AccountKey=${listKeys(storageAccountRes.id, '2019-06-01').keys[0].value}'
   }
@@ -178,7 +186,7 @@ resource keyVaultSecretStorageAccountConnectionStringRes 'Microsoft.KeyVault/vau
 
 resource keyVaultSecretCosmosDbConnectionStringRes 'Microsoft.KeyVault/vaults/secrets@2019-09-01' = {
   parent: keyVaultRes
-  name: '${keyVaultSecretCosmosDbConnectionString}'
+  name: keyVaultSecretCosmosDbConnectionString
   properties: {
     value: listConnectionStrings(cosmosDbAccountRes.id, '2020-04-01').connectionStrings[0].connectionString
   }
@@ -192,14 +200,7 @@ resource keyVaultAccessPoliciesRes 'Microsoft.KeyVault/vaults/accessPolicies@201
       {
         tenantId: subscription().tenantId
         objectId: reference(serviceFuncRes.id, '2019-08-01', 'Full').identity.principalId
-        permissions: {
-          keys: [
-            'get'
-          ]
-          secrets: [
-            'get'
-          ]
-        }
+        permissions: keyVaultAppPermissions
       }
     ]
   }
@@ -331,6 +332,8 @@ resource serviceFuncRes 'Microsoft.Web/sites@2020-09-01' = {
           '*'
         ]
       }
+      preWarmedInstanceCount: 1
+      minimumElasticInstanceCount: usePremiumFunctionPlan ? 1 : 0 // Required for benefit of Premium App Service Plan (schema is not up to date)
     }
   }
   identity: {
@@ -365,15 +368,34 @@ resource serviceFuncAppSettingsRes 'Microsoft.Web/sites/config@2020-09-01' = {
   ]
 }
 
+// Note: Ignore the validation errors, the schema is not up to date
 resource serviceFuncAuthSettingsRes 'Microsoft.Web/sites/config@2020-09-01' = if (deployUserAuth) {
   parent: serviceFuncRes
-  name: 'authsettings'
+  name: 'authsettingsV2'
   properties: {
-    enabled: true
-    unauthenticatedClientAction: 'RedirectToLoginPage'
-    defaultProvider: 'AzureActiveDirectory'
-    clientId: serviceAppId
-    issuer: (empty(aadB2cName) ? 'https://login.microsoftonline.com/${subscription().tenantId}' : 'https://${aadB2cName}.b2clogin.com/${aadB2cName}.onmicrosoft.com/v2.0/.well-known/openid-configuration?p=B2C_1_signupsignin')
+    platform: {
+      enabled: true
+    }
+    globalValidation: {
+      requireAuthentication: true
+      unauthenticatedClientAction: 'RedirectToLoginPage'
+      redirectToProvider: 'AzureActiveDirectory'
+    }
+    identityProviders: {
+      azureActiveDirectory: {
+        enabled: true
+        registration: {
+          openIdIssuer: (empty(aadB2cName) ? 'https://login.microsoftonline.com/${subscription().tenantId}' : 'https://${aadB2cName}.b2clogin.com/${aadB2cName}.onmicrosoft.com/v2.0/.well-known/openid-configuration?p=B2C_1_signupsignin')
+          clientId: serviceAppId
+        }
+        isAutoProvisioned: true
+      }
+    }
+    login: {
+      tokenStore: {
+        enabled: true
+      }
+    }
   }
 }
 
@@ -405,7 +427,7 @@ resource cdnProfileDiagnosticsRes 'Microsoft.Insights/diagnosticSettings@2017-05
 
 resource cdnEndpointRes 'Microsoft.Cdn/profiles/endpoints@2020-04-15' = {
   parent: cdnProfileRes
-  name: '${cdnEndpointName}'
+  name: cdnEndpointName
   location: resourceGroup().location
   properties: {
     originHostHeader: cdnEndpointOriginHost

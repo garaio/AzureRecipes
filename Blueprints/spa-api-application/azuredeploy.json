@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.4.613.9944",
-      "templateHash": "1327038724168027471"
+      "templateHash": "8596878553528597739"
     }
   },
   "parameters": {
@@ -56,6 +56,14 @@
     "logAnalyticsWsName": "[format('{0}-law-{1}', parameters('resourceNamePrefix'), parameters('resourceNameSuffix'))]",
     "appInsightsName": "[format('{0}-ai-{1}', parameters('resourceNamePrefix'), parameters('resourceNameSuffix'))]",
     "keyVaultName": "[format('{0}-kv-{1}', parameters('resourceNamePrefix'), parameters('resourceNameSuffix'))]",
+    "keyVaultAppPermissions": {
+      "keys": [
+        "get"
+      ],
+      "secrets": [
+        "get"
+      ]
+    },
     "keyVaultSecretStorageAccountConnectionString": "storageAccountConnectionString",
     "keyVaultSecretCosmosDbConnectionString": "cosmosDbConnectionString",
     "blobContainerConfig": "config",
@@ -71,7 +79,7 @@
         "publicAccess": "None"
       }
     ],
-    "storageAccountBlobUri": "[format('https://{0}.blob.core.windows.net/', variables('storageAccountName'))]",
+    "storageAccountBlobUri": "[format('https://{0}.blob.{1}/', variables('storageAccountName'), environment().suffixes.storage)]",
     "storageAccountFunctionSasParams": {
       "signedServices": "b",
       "signedResourceTypes": "o",
@@ -85,7 +93,7 @@
     },
     "cdnProfileName": "[format('{0}-cdn-{1}', parameters('resourceNamePrefix'), parameters('resourceNameSuffix'))]",
     "cdnEndpointName": "[format('{0}-cdn-ep-{1}', parameters('resourceNamePrefix'), parameters('resourceNameSuffix'))]",
-    "cdnEndpointOriginHost": "[format('{0}.{1}.web.core.windows.net', variables('storageAccountName'), variables('storageAccountRegionalCodes')[resourceGroup().location])]",
+    "cdnEndpointOriginHost": "[format('{0}.{1}.web.{2}', variables('storageAccountName'), variables('storageAccountRegionalCodes')[resourceGroup().location], environment().suffixes.storage)]",
     "cdnEndpointOriginName": "[format('{0}-static-website', variables('storageAccountName'))]",
     "appServicePlanName": "[format('{0}-asp-{1}', parameters('resourceNamePrefix'), parameters('resourceNameSuffix'))]",
     "serviceFuncName": "[format('{0}-service-f-{1}', parameters('resourceNamePrefix'), parameters('resourceNameSuffix'))]",
@@ -112,8 +120,7 @@
       "name": "[variables('storageAccountName')]",
       "location": "[resourceGroup().location]",
       "sku": {
-        "name": "Standard_LRS",
-        "tier": "Standard"
+        "name": "Standard_LRS"
       },
       "kind": "StorageV2",
       "properties": {
@@ -250,14 +257,7 @@
           {
             "tenantId": "[subscription().tenantId]",
             "objectId": "[reference(resourceId('Microsoft.Web/sites', variables('serviceFuncName')), '2019-08-01', 'Full').identity.principalId]",
-            "permissions": {
-              "keys": [
-                "get"
-              ],
-              "secrets": [
-                "get"
-              ]
-            }
+            "permissions": "[variables('keyVaultAppPermissions')]"
           }
         ]
       },
@@ -400,7 +400,9 @@
             "allowedOrigins": [
               "*"
             ]
-          }
+          },
+          "preWarmedInstanceCount": 1,
+          "minimumElasticInstanceCount": "[if(parameters('usePremiumFunctionPlan'), 1, 0)]"
         }
       },
       "identity": {
@@ -441,13 +443,31 @@
       "condition": "[parameters('deployUserAuth')]",
       "type": "Microsoft.Web/sites/config",
       "apiVersion": "2020-09-01",
-      "name": "[format('{0}/{1}', variables('serviceFuncName'), 'authsettings')]",
+      "name": "[format('{0}/{1}', variables('serviceFuncName'), 'authsettingsV2')]",
       "properties": {
-        "enabled": true,
-        "unauthenticatedClientAction": "RedirectToLoginPage",
-        "defaultProvider": "AzureActiveDirectory",
-        "clientId": "[parameters('serviceAppId')]",
-        "issuer": "[if(empty(parameters('aadB2cName')), format('https://login.microsoftonline.com/{0}', subscription().tenantId), format('https://{0}.b2clogin.com/{1}.onmicrosoft.com/v2.0/.well-known/openid-configuration?p=B2C_1_signupsignin', parameters('aadB2cName'), parameters('aadB2cName')))]"
+        "platform": {
+          "enabled": true
+        },
+        "globalValidation": {
+          "requireAuthentication": true,
+          "unauthenticatedClientAction": "RedirectToLoginPage",
+          "redirectToProvider": "AzureActiveDirectory"
+        },
+        "identityProviders": {
+          "azureActiveDirectory": {
+            "enabled": true,
+            "registration": {
+              "openIdIssuer": "[if(empty(parameters('aadB2cName')), format('https://login.microsoftonline.com/{0}', subscription().tenantId), format('https://{0}.b2clogin.com/{1}.onmicrosoft.com/v2.0/.well-known/openid-configuration?p=B2C_1_signupsignin', parameters('aadB2cName'), parameters('aadB2cName')))]",
+              "clientId": "[parameters('serviceAppId')]"
+            },
+            "isAutoProvisioned": true
+          }
+        },
+        "login": {
+          "tokenStore": {
+            "enabled": true
+          }
+        }
       },
       "dependsOn": [
         "[resourceId('Microsoft.Web/sites', variables('serviceFuncName'))]"
