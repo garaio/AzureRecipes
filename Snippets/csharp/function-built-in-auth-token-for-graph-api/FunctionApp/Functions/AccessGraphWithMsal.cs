@@ -1,6 +1,7 @@
 ﻿using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using Microsoft.Graph;
+using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
@@ -38,7 +39,9 @@ namespace FunctionApp.Functions
 				_graphClient = new GraphServiceClient(authProvider);
 			}
 
-			await _graphClient.Me.Request().GetAsync(cancellationToken);
+			// Assign application permission 'Organisation.Read.All' for testing
+			var organisation = await _graphClient.Organization.Request().GetAsync(cancellationToken);
+			Console.WriteLine(organisation);
 		}
 	}
 }

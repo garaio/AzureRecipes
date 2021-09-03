@@ -27,6 +27,10 @@ App Services and Functions has two built-in capabilities to generate an authenti
 # Getting Started
 Create an App Registration and assign in to Function (you may take [`azuredeploy.json`](./azuredeploy.json) as a basis). Create an additional secret on it and copy the according settings to `local.settings.json` (avoid to commit sensitive data to the source management).
 
+> Note 1: The provided sample functions require the API permission `Organisation.Read.All` for type **application**. Adjust permissions or called API method depending on your needs.
+
+> Note 2: This snippet works without any adjustments for both, **regular Active Directory (AAD) as well as AAD B2C**. Just specify the values for `ClientId`, `TenantId` and `Secret` for deployment of ARM template or in `local.settings.json`.
+
 ## Code
 The snippet provides do slightly different solutions represented by the two functions in the Function App. Both also work locally on a deployment machine without any special measures other than the configuration.
 * [AccessGraphWithSimpleAuth](./FunctionApp/Functions/AccessGraphWithSimpleAuth.cs)

@@ -293,7 +293,7 @@
                     "azureActiveDirectory": {
                         "enabled": true,
                         "registration": {
-                            "openIdIssuer": "[concat('https://sts.windows.net/', parameters('funcAppAuthClientTenantId'), '/v2.0')]",
+                            "openIdIssuer": "[concat('https://login.microsoftonline.com/', parameters('funcAppAuthClientTenantId'), '/oauth2/v2.0/authorize')]",
                             "clientId": "[parameters('funcAppAuthClientId')]",
                             "clientSecretSettingName": "MICROSOFT_PROVIDER_AUTHENTICATION_SECRET"
                         },

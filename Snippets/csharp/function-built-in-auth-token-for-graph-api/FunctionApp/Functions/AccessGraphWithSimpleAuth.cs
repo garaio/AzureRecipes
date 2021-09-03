@@ -43,7 +43,9 @@ namespace FunctionApp.Functions
 						return Task.CompletedTask;
 					}));
 
-			await graphClient.Me.Request().GetAsync(cancellationToken);
+			// Assign application permission 'Organisation.Read.All' for testing
+			var organisation = await graphClient.Organization.Request().GetAsync(cancellationToken);
+			Console.WriteLine(organisation);
 		}
 	}
 }
