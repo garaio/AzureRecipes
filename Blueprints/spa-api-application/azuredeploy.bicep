@@ -16,6 +16,20 @@ param aadB2cName string = ''
 @description('For production deployments use Premium App Service Plan which provides lower latency thanks to pre-warmed instances.')
 param usePremiumFunctionPlan bool = false
 
+@allowed([
+  'Free_F1'
+  'Standard_S1'
+])
+param signalRServiceSku string = 'Free_F1'
+param deploySignalRService bool = false
+
+@allowed([
+  'free'
+  'standard'
+])
+param appConfigStoreSku string = 'free'
+param deployAppConfigStore bool = false
+
 var logAnalyticsWsName = '${resourceNamePrefix}-law-${resourceNameSuffix}'
 var appInsightsName = '${resourceNamePrefix}-ai-${resourceNameSuffix}'
 
@@ -30,6 +44,8 @@ var keyVaultAppPermissions = {
 }
 var keyVaultSecretStorageAccountConnectionString = 'storageAccountConnectionString'
 var keyVaultSecretCosmosDbConnectionString = 'cosmosDbConnectionString'
+var keyVaultSecretSignalRConnectionString = 'signalRConnectionString'
+var keyVaultSecretAppConfigStoreConnectionString = 'appConfigStoreConnectionString'
 
 var blobContainerConfig = 'config'
 var blobContainerDeployment = 'deployment'
@@ -65,6 +81,10 @@ var cdnEndpointOriginName = '${storageAccountName}-static-website'
 var appServicePlanName = '${resourceNamePrefix}-asp-${resourceNameSuffix}'
 var serviceFuncName = '${resourceNamePrefix}-service-f-${resourceNameSuffix}'
 var serviceFuncPackagePath = '/Customer.Project.ServiceFuncApp.zip'
+
+var signalRServiceName = '${resourceNamePrefix}-sigr-${resourceNameSuffix}'
+
+var appConfigStoreName = '${resourceNamePrefix}-acs-${resourceNameSuffix}'
 
 var cosmosDbAccountName = '${resourceNamePrefix}-cdb-${resourceNameSuffix}'
 
@@ -189,6 +209,22 @@ resource keyVaultSecretCosmosDbConnectionStringRes 'Microsoft.KeyVault/vaults/se
   name: keyVaultSecretCosmosDbConnectionString
   properties: {
     value: listConnectionStrings(cosmosDbAccountRes.id, '2020-04-01').connectionStrings[0].connectionString
+  }
+}
+
+resource keyVaultSecretSignalRConnectionStringRes 'Microsoft.KeyVault/vaults/secrets@2019-09-01' = if(deploySignalRService) {
+  parent: keyVaultRes
+  name: keyVaultSecretSignalRConnectionString
+  properties: {
+    value: listKeys(signalRServiceRes.id, '2021-06-01-preview').primaryConnectionString
+  }
+}
+
+resource keyVaultSecretAppConfigStoreConnectionStringRes 'Microsoft.KeyVault/vaults/secrets@2019-09-01' = if(deployAppConfigStore) {
+  parent: keyVaultRes
+  name: keyVaultSecretAppConfigStoreConnectionString
+  properties: {
+    value: listKeys(appConfigStoreRes.id, '2021-03-01-preview').value[0].connectionString
   }
 }
 
@@ -359,12 +395,16 @@ resource serviceFuncAppSettingsRes 'Microsoft.Web/sites/config@2020-09-01' = {
     WEBSITE_RUN_FROM_PACKAGE: '${storageAccountBlobUri}${blobContainerDeployment}${serviceFuncPackagePath}?${listAccountSas(storageAccountRes.id, '2019-06-01', storageAccountFunctionSasParams).accountSasToken}'
     WEBSITE_CONTENTSHARE: serviceFuncName
     StorageConnectionString: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${keyVaultSecretStorageAccountConnectionString})'
-    CosmosDbConnectionString: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${keyVaultSecretCosmosDbConnectionString})'
     ConfigContainerName: blobContainerConfig
+    CosmosDbConnectionString: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${keyVaultSecretCosmosDbConnectionString})'
+    SignalRConnectionString: deploySignalRService ? '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${keyVaultSecretSignalRConnectionString})' : ''
+    AppConfigStoreConnectionString: deployAppConfigStore ? '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${keyVaultSecretAppConfigStoreConnectionString})' : ''
   }
   dependsOn: [
     keyVaultSecretStorageAccountConnectionStringRes
     keyVaultSecretCosmosDbConnectionStringRes
+    keyVaultSecretSignalRConnectionStringRes
+    keyVaultSecretAppConfigStoreConnectionStringRes
   ]
 }
 
@@ -543,4 +583,106 @@ resource cdnEndpointDiagnosticsRes 'Microsoft.Insights/diagnosticSettings@2017-0
   ]
 }
 
+resource signalRServiceRes 'Microsoft.SignalRService/signalR@2021-06-01-preview' = if(deploySignalRService) {
+  name: signalRServiceName
+  location: resourceGroup().location
+  sku: {
+    name: signalRServiceSku
+    capacity: 1
+  }
+  properties: {
+    features: [
+      {
+        flag: 'ServiceMode'
+        value: 'Serverless'
+      }
+      {
+        flag: 'EnableConnectivityLogs'
+        value: 'true'
+      }
+      {
+        flag: 'EnableMessagingLogs'
+        value: 'true'
+      }
+      {
+        flag: 'EnableLiveTrace'
+        value: 'true'
+      }
+    ]
+    cors: {
+      allowedOrigins: [
+        '*'
+      ]
+    }
+    tls: {
+      clientCertEnabled: false
+    }
+  }
+}
+
+resource signalRServiceDiagnosticsRes 'Microsoft.Insights/diagnosticSettings@2017-05-01-preview' = if(deploySignalRService) {
+  name: 'LogAnalytics'
+  scope: signalRServiceRes
+  properties: {
+    workspaceId: logAnalyticsWsRes.id
+    logs: [
+      {
+        category: 'AllLogs'
+        enabled: true
+      }
+    ]
+    metrics: [
+      {
+        category: 'AllMetrics'
+        enabled: true
+      }
+    ]
+  }
+  dependsOn: [
+    signalRServiceRes
+  ]
+}
+
+resource appConfigStoreRes 'Microsoft.AppConfiguration/configurationStores@2021-03-01-preview' = if(deployAppConfigStore) {
+  name: appConfigStoreName
+  location: resourceGroup().location
+  identity: {
+    type: 'SystemAssigned'
+  }
+  properties: {
+    disableLocalAuth: false
+  }
+  sku: {
+    name: appConfigStoreSku
+  }
+}
+
+resource appConfigStoreDiagnosticsRes 'Microsoft.Insights/diagnosticSettings@2017-05-01-preview' = if(deployAppConfigStore) {
+  name: 'LogAnalytics'
+  scope: appConfigStoreRes
+  properties: {
+    workspaceId: logAnalyticsWsRes.id
+    logs: [
+      {
+        category: 'HttpRequest'
+        enabled: true
+      }
+      {
+        category: 'Audit'
+        enabled: true
+      }
+    ]
+    metrics: [
+      {
+        category: 'AllMetrics'
+        enabled: true
+      }
+    ]
+  }
+  dependsOn: [
+    appConfigStoreRes
+  ]
+}
+
 output storageAccountWebEndpoint string = reference(storageAccountRes.id, '2019-06-01', 'Full').properties.primaryEndpoints.web
+output appInsightsInstrumentationKey string = appInsightsRes.properties.InstrumentationKey

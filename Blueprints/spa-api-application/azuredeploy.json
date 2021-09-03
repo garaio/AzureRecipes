@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.4.613.9944",
-      "templateHash": "8596878553528597739"
+      "templateHash": "17672163684789133507"
     }
   },
   "parameters": {
@@ -49,6 +49,30 @@
       "metadata": {
         "description": "For production deployments use Premium App Service Plan which provides lower latency thanks to pre-warmed instances."
       }
+    },
+    "signalRServiceSku": {
+      "type": "string",
+      "defaultValue": "Free_F1",
+      "allowedValues": [
+        "Free_F1",
+        "Standard_S1"
+      ]
+    },
+    "deploySignalRService": {
+      "type": "bool",
+      "defaultValue": false
+    },
+    "appConfigStoreSku": {
+      "type": "string",
+      "defaultValue": "free",
+      "allowedValues": [
+        "free",
+        "standard"
+      ]
+    },
+    "deployAppConfigStore": {
+      "type": "bool",
+      "defaultValue": false
     }
   },
   "functions": [],
@@ -66,6 +90,8 @@
     },
     "keyVaultSecretStorageAccountConnectionString": "storageAccountConnectionString",
     "keyVaultSecretCosmosDbConnectionString": "cosmosDbConnectionString",
+    "keyVaultSecretSignalRConnectionString": "signalRConnectionString",
+    "keyVaultSecretAppConfigStoreConnectionString": "appConfigStoreConnectionString",
     "blobContainerConfig": "config",
     "blobContainerDeployment": "deployment",
     "storageAccountName": "[replace(format('{0}-sa-{1}', parameters('resourceNamePrefix'), parameters('resourceNameSuffix')), '-', '')]",
@@ -98,6 +124,8 @@
     "appServicePlanName": "[format('{0}-asp-{1}', parameters('resourceNamePrefix'), parameters('resourceNameSuffix'))]",
     "serviceFuncName": "[format('{0}-service-f-{1}', parameters('resourceNamePrefix'), parameters('resourceNameSuffix'))]",
     "serviceFuncPackagePath": "/Customer.Project.ServiceFuncApp.zip",
+    "signalRServiceName": "[format('{0}-sigr-{1}', parameters('resourceNamePrefix'), parameters('resourceNameSuffix'))]",
+    "appConfigStoreName": "[format('{0}-acs-{1}', parameters('resourceNamePrefix'), parameters('resourceNameSuffix'))]",
     "cosmosDbAccountName": "[format('{0}-cdb-{1}', parameters('resourceNamePrefix'), parameters('resourceNameSuffix'))]"
   },
   "resources": [
@@ -245,6 +273,32 @@
       },
       "dependsOn": [
         "[resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosDbAccountName'))]",
+        "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]"
+      ]
+    },
+    {
+      "condition": "[parameters('deploySignalRService')]",
+      "type": "Microsoft.KeyVault/vaults/secrets",
+      "apiVersion": "2019-09-01",
+      "name": "[format('{0}/{1}', variables('keyVaultName'), variables('keyVaultSecretSignalRConnectionString'))]",
+      "properties": {
+        "value": "[listKeys(resourceId('Microsoft.SignalRService/signalR', variables('signalRServiceName')), '2021-06-01-preview').primaryConnectionString]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]",
+        "[resourceId('Microsoft.SignalRService/signalR', variables('signalRServiceName'))]"
+      ]
+    },
+    {
+      "condition": "[parameters('deployAppConfigStore')]",
+      "type": "Microsoft.KeyVault/vaults/secrets",
+      "apiVersion": "2019-09-01",
+      "name": "[format('{0}/{1}', variables('keyVaultName'), variables('keyVaultSecretAppConfigStoreConnectionString'))]",
+      "properties": {
+        "value": "[listKeys(resourceId('Microsoft.AppConfiguration/configurationStores', variables('appConfigStoreName')), '2021-03-01-preview').value[0].connectionString]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.AppConfiguration/configurationStores', variables('appConfigStoreName'))]",
         "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]"
       ]
     },
@@ -428,12 +482,16 @@
         "WEBSITE_RUN_FROM_PACKAGE": "[format('{0}{1}{2}?{3}', variables('storageAccountBlobUri'), variables('blobContainerDeployment'), variables('serviceFuncPackagePath'), listAccountSas(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2019-06-01', variables('storageAccountFunctionSasParams')).accountSasToken)]",
         "WEBSITE_CONTENTSHARE": "[variables('serviceFuncName')]",
         "StorageConnectionString": "[format('@Microsoft.KeyVault(VaultName={0};SecretName={1})', variables('keyVaultName'), variables('keyVaultSecretStorageAccountConnectionString'))]",
+        "ConfigContainerName": "[variables('blobContainerConfig')]",
         "CosmosDbConnectionString": "[format('@Microsoft.KeyVault(VaultName={0};SecretName={1})', variables('keyVaultName'), variables('keyVaultSecretCosmosDbConnectionString'))]",
-        "ConfigContainerName": "[variables('blobContainerConfig')]"
+        "SignalRConnectionString": "[if(parameters('deploySignalRService'), format('@Microsoft.KeyVault(VaultName={0};SecretName={1})', variables('keyVaultName'), variables('keyVaultSecretSignalRConnectionString')), '')]",
+        "AppConfigStoreConnectionString": "[if(parameters('deployAppConfigStore'), format('@Microsoft.KeyVault(VaultName={0};SecretName={1})', variables('keyVaultName'), variables('keyVaultSecretAppConfigStoreConnectionString')), '')]"
       },
       "dependsOn": [
         "[resourceId('Microsoft.Insights/components', variables('appInsightsName'))]",
+        "[resourceId('Microsoft.KeyVault/vaults/secrets', variables('keyVaultName'), variables('keyVaultSecretAppConfigStoreConnectionString'))]",
         "[resourceId('Microsoft.KeyVault/vaults/secrets', variables('keyVaultName'), variables('keyVaultSecretCosmosDbConnectionString'))]",
+        "[resourceId('Microsoft.KeyVault/vaults/secrets', variables('keyVaultName'), variables('keyVaultSecretSignalRConnectionString'))]",
         "[resourceId('Microsoft.KeyVault/vaults/secrets', variables('keyVaultName'), variables('keyVaultSecretStorageAccountConnectionString'))]",
         "[resourceId('Microsoft.Web/sites', variables('serviceFuncName'))]",
         "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
@@ -626,12 +684,127 @@
         "[resourceId('Microsoft.Cdn/profiles/endpoints', variables('cdnProfileName'), variables('cdnEndpointName'))]",
         "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]"
       ]
+    },
+    {
+      "condition": "[parameters('deploySignalRService')]",
+      "type": "Microsoft.SignalRService/signalR",
+      "apiVersion": "2021-06-01-preview",
+      "name": "[variables('signalRServiceName')]",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "[parameters('signalRServiceSku')]",
+        "capacity": 1
+      },
+      "properties": {
+        "features": [
+          {
+            "flag": "ServiceMode",
+            "value": "Serverless"
+          },
+          {
+            "flag": "EnableConnectivityLogs",
+            "value": "true"
+          },
+          {
+            "flag": "EnableMessagingLogs",
+            "value": "true"
+          },
+          {
+            "flag": "EnableLiveTrace",
+            "value": "true"
+          }
+        ],
+        "cors": {
+          "allowedOrigins": [
+            "*"
+          ]
+        },
+        "tls": {
+          "clientCertEnabled": false
+        }
+      }
+    },
+    {
+      "condition": "[parameters('deploySignalRService')]",
+      "type": "Microsoft.Insights/diagnosticSettings",
+      "apiVersion": "2017-05-01-preview",
+      "scope": "[format('Microsoft.SignalRService/signalR/{0}', variables('signalRServiceName'))]",
+      "name": "LogAnalytics",
+      "properties": {
+        "workspaceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]",
+        "logs": [
+          {
+            "category": "AllLogs",
+            "enabled": true
+          }
+        ],
+        "metrics": [
+          {
+            "category": "AllMetrics",
+            "enabled": true
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]",
+        "[resourceId('Microsoft.SignalRService/signalR', variables('signalRServiceName'))]"
+      ]
+    },
+    {
+      "condition": "[parameters('deployAppConfigStore')]",
+      "type": "Microsoft.AppConfiguration/configurationStores",
+      "apiVersion": "2021-03-01-preview",
+      "name": "[variables('appConfigStoreName')]",
+      "location": "[resourceGroup().location]",
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "properties": {
+        "disableLocalAuth": false
+      },
+      "sku": {
+        "name": "[parameters('appConfigStoreSku')]"
+      }
+    },
+    {
+      "condition": "[parameters('deployAppConfigStore')]",
+      "type": "Microsoft.Insights/diagnosticSettings",
+      "apiVersion": "2017-05-01-preview",
+      "scope": "[format('Microsoft.AppConfiguration/configurationStores/{0}', variables('appConfigStoreName'))]",
+      "name": "LogAnalytics",
+      "properties": {
+        "workspaceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]",
+        "logs": [
+          {
+            "category": "HttpRequest",
+            "enabled": true
+          },
+          {
+            "category": "Audit",
+            "enabled": true
+          }
+        ],
+        "metrics": [
+          {
+            "category": "AllMetrics",
+            "enabled": true
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.AppConfiguration/configurationStores', variables('appConfigStoreName'))]",
+        "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]"
+      ]
     }
   ],
   "outputs": {
     "storageAccountWebEndpoint": {
       "type": "string",
       "value": "[reference(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2019-06-01', 'Full').properties.primaryEndpoints.web]"
+    },
+    "appInsightsInstrumentationKey": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Insights/components', variables('appInsightsName'))).InstrumentationKey]"
     }
   }
 }
