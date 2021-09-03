@@ -39,17 +39,15 @@ var storageAccountFunctionSasParams = {
   signedPermission: 'r'
   signedExpiry: '2050-01-01T00:00:00Z'
 }
-var storageAccountUri = 'https://${storageAccountName}.blob.core.windows.net/'
+var storageAccountBlobUri = 'https://${storageAccountName}.blob.${environment().suffixes.storage}/'
 
 var serviceBusNamespaceName = '${resourceNamePrefix}-sb-${resourceNameSuffix}'
 var serviceBusQueues = [
-  {
-    name: 'demo'
-  }
+  'demo'
 ]
 
 var logicAppFtpDemoName = '${resourceNamePrefix}-ftp-la-${resourceNameSuffix}'
-var logicAppFtpDemoDefUri = '${storageAccountUri}${blobContainerDeployment}/LogicApps/ftp-demo.json'
+var logicAppFtpDemoDefUri = '${storageAccountBlobUri}${blobContainerDeployment}/LogicApps/ftp-demo.json'
 
 resource partnerIdRes 'Microsoft.Resources/deployments@2020-06-01' = {
   name: 'pid-d16e7b59-716a-407d-96db-18d1cac40407'
@@ -68,7 +66,6 @@ resource storageAccountRes 'Microsoft.Storage/storageAccounts@2019-06-01' = {
   location: resourceGroup().location
   sku: {
     name: 'Standard_LRS'
-    tier: 'Standard'
   }
   kind: 'StorageV2'
   properties: {
@@ -162,7 +159,7 @@ resource keyVaultDiagnosticsRes 'Microsoft.Insights/diagnosticSettings@2017-05-0
 
 resource keyVaultSecretStorageAccountConnectionStringRes 'Microsoft.KeyVault/vaults/secrets@2019-09-01' = {
   parent: keyVaultRes
-  name: '${keyVaultSecretStorageAccountConnectionString}'
+  name: keyVaultSecretStorageAccountConnectionString
   properties: {
     value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccountName};AccountKey=${listKeys(storageAccountRes.id, '2019-06-01').keys[0].value}'
   }
@@ -170,7 +167,7 @@ resource keyVaultSecretStorageAccountConnectionStringRes 'Microsoft.KeyVault/vau
 
 resource keyVaultSecretServiceBusConnectionStringRes 'Microsoft.KeyVault/vaults/secrets@2019-09-01' = {
   parent: keyVaultRes
-  name: '${keyVaultSecretServiceBusConnectionString}'
+  name: keyVaultSecretServiceBusConnectionString
   properties: {
     value: listkeys(resourceId('Microsoft.ServiceBus/namespaces/authorizationRules', serviceBusNamespaceName, 'RootManageSharedAccessKey'), '2017-04-01').primaryConnectionString
   }
@@ -190,7 +187,8 @@ resource serviceBusNamespaceRes 'Microsoft.ServiceBus/namespaces@2021-01-01-prev
 }
 
 resource serviceBusQueuesRes 'Microsoft.ServiceBus/namespaces/queues@2021-01-01-preview' = [for item in serviceBusQueues: {
-  name: '${serviceBusNamespaceName}/${item.name}'
+  parent: serviceBusNamespaceRes
+  name: item
   properties: {
     lockDuration: 'PT1M'
     maxSizeInMegabytes: 1024

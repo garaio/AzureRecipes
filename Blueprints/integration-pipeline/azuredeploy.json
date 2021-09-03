@@ -4,8 +4,8 @@
   "metadata": {
     "_generator": {
       "name": "bicep",
-      "version": "0.3.539.46024",
-      "templateHash": "14986551323379254671"
+      "version": "0.4.613.9944",
+      "templateHash": "8021177325002322731"
     }
   },
   "parameters": {
@@ -65,15 +65,13 @@
       "signedPermission": "r",
       "signedExpiry": "2050-01-01T00:00:00Z"
     },
-    "storageAccountUri": "[format('https://{0}.blob.core.windows.net/', variables('storageAccountName'))]",
+    "storageAccountBlobUri": "[format('https://{0}.blob.{1}/', variables('storageAccountName'), environment().suffixes.storage)]",
     "serviceBusNamespaceName": "[format('{0}-sb-{1}', parameters('resourceNamePrefix'), parameters('resourceNameSuffix'))]",
     "serviceBusQueues": [
-      {
-        "name": "demo"
-      }
+      "demo"
     ],
     "logicAppFtpDemoName": "[format('{0}-ftp-la-{1}', parameters('resourceNamePrefix'), parameters('resourceNameSuffix'))]",
-    "logicAppFtpDemoDefUri": "[format('{0}{1}/LogicApps/ftp-demo.json', variables('storageAccountUri'), variables('blobContainerDeployment'))]"
+    "logicAppFtpDemoDefUri": "[format('{0}{1}/LogicApps/ftp-demo.json', variables('storageAccountBlobUri'), variables('blobContainerDeployment'))]"
   },
   "resources": [
     {
@@ -95,8 +93,7 @@
       "name": "[variables('storageAccountName')]",
       "location": "[resourceGroup().location]",
       "sku": {
-        "name": "Standard_LRS",
-        "tier": "Standard"
+        "name": "Standard_LRS"
       },
       "kind": "StorageV2",
       "properties": {
@@ -176,7 +173,7 @@
       }
     },
     {
-      "type": "microsoft.insights/diagnosticSettings",
+      "type": "Microsoft.Insights/diagnosticSettings",
       "apiVersion": "2017-05-01-preview",
       "scope": "[format('Microsoft.KeyVault/vaults/{0}', variables('keyVaultName'))]",
       "name": "LogAnalytics",
@@ -242,7 +239,7 @@
       },
       "type": "Microsoft.ServiceBus/namespaces/queues",
       "apiVersion": "2021-01-01-preview",
-      "name": "[format('{0}/{1}', variables('serviceBusNamespaceName'), variables('serviceBusQueues')[copyIndex()].name)]",
+      "name": "[format('{0}/{1}', variables('serviceBusNamespaceName'), variables('serviceBusQueues')[copyIndex()])]",
       "properties": {
         "lockDuration": "PT1M",
         "maxSizeInMegabytes": 1024,
@@ -259,7 +256,7 @@
       ]
     },
     {
-      "type": "microsoft.insights/diagnosticSettings",
+      "type": "Microsoft.Insights/diagnosticSettings",
       "apiVersion": "2017-05-01-preview",
       "scope": "[format('Microsoft.ServiceBus/namespaces/{0}', variables('serviceBusNamespaceName'))]",
       "name": "LogAnalytics",
@@ -302,7 +299,7 @@
       ]
     },
     {
-      "type": "microsoft.insights/diagnosticSettings",
+      "type": "Microsoft.Insights/diagnosticSettings",
       "apiVersion": "2017-05-01-preview",
       "scope": "[format('Microsoft.Resources/deployments/{0}', variables('logicAppFtpDemoName'))]",
       "name": "LogAnalytics",
