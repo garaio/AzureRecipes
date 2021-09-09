@@ -4,22 +4,6 @@ parameters:
   - name: suffix
     type: string
     default: 'd'
-variables:
-  - group: Release
-  - name: deploymentFolderName
-    value: 'Customer.Project.Deployment'
-  - name: frontendFolderName
-    value: 'Customer.Project.Frontend'
-  - name: resourceNameSuffix
-    value: '${{ parameters.suffix }}'
-  - name: resourceGroupName
-    value: '$(resourceNamePrefix)-$(resourceNameSuffix)'
-  - name: prefixUnhyphenated
-    value: '$[replace(variables[''resourceNamePrefix''],''-'','''')]'
-  - name: storageAccountName
-    value: '$(prefixUnhyphenated)sa$(resourceNameSuffix)'
-  - name: currentDate
-    value: '$[format(''{0:yyyy}-{0:MM}-{0:dd}'', pipeline.startTime)]'
 
 resources:
   containers:
@@ -31,6 +15,28 @@ resources:
     trigger: 
       branches:
       - develop
+      - release/*
+
+variables:
+  - group: Release
+  - name: projectNamePrefix
+    value: 'Customer.Project.'
+  - name: deploymentFolderName
+    value: '$(projectNamePrefix)Deployment'
+  - name: frontendFolderName
+    value: '$(projectNamePrefix)Frontend'
+  - name: resourceNameSuffix
+    value: '${{ parameters.suffix }}'
+  - name: resourceGroupName
+    value: '$(resourceNamePrefix)-$(resourceNameSuffix)'
+  - name: prefixUnhyphenated
+    value: '$[replace(variables[''resourceNamePrefix''],''-'','''')]'
+  - name: storageAccountName
+    value: '$(prefixUnhyphenated)sa$(resourceNameSuffix)'
+  - name: blobContainerFrontendDeployment
+    value: '$web'
+  - name: currentDate
+    value: '$[format(''{0:yyyy}-{0:MM}-{0:dd}'', pipeline.startTime)]'
 
 stages:
   - stage: deployDevEnvironment
@@ -42,12 +48,13 @@ stages:
         pool:
           vmImage: 'ubuntu-latest'
         environment: 'DEV'
+        variables:
+          - name: ciArtifactName
+            value: 'backend'
         strategy:
           runOnce:
             deploy:
               steps:
-                - download: CI-Pipeline
-
                 - task: AzureCLI@2
                   displayName: 'Create Resource Group'
                   inputs:
@@ -82,7 +89,7 @@ stages:
                     scriptType: bash
                     scriptLocation: inlineScript
                     inlineScript: |
-                      az storage blob upload-batch -s $(Pipeline.Workspace)/CI-Pipeline/drop -d $(blobContainerDeployment) --account-name $(storageAccountName)
+                      az storage blob upload-batch -s $(Pipeline.Workspace)/CI-Pipeline/$(ciArtifactName) -d $(blobContainerDeployment) --account-name $(storageAccountName)
 
                 - task: AzureResourceManagerTemplateDeployment@3
                   displayName: 'Deploy ARM Template (ResourceGroup)'
@@ -91,20 +98,11 @@ stages:
                     subscriptionId: '$(subscriptionId)'
                     resourceGroupName: '$(resourceGroupName)'
                     location: '$(resourceLocation)'
-                    csmFile: '$(Pipeline.Workspace)/CI-Pipeline/drop/$(deploymentFolderName)/azuredeploy.json'
-                    csmParametersFile: '$(Pipeline.Workspace)/CI-Pipeline/drop/$(deploymentFolderName)/azuredeploy.parameters.json'
+                    csmFile: '$(Pipeline.Workspace)/CI-Pipeline/$(ciArtifactName)/$(deploymentFolderName)/azuredeploy.json'
+                    csmParametersFile: '$(Pipeline.Workspace)/CI-Pipeline/$(ciArtifactName)/$(deploymentFolderName)/azuredeploy.parameters.json'
                     overrideParameters: '-resourceNamePrefix "$(resourceNamePrefix)" -resourceNameSuffix "$(resourceNameSuffix)" -serviceFuncKeySecret "$(serviceFuncKeySecret)"'
                     deploymentMode: 'Incremental'
                     deploymentName: 'Customer-Project-$(Build.BuildId)-$(Environment.Name)'
-
-                - task: AzureCLI@2
-                  displayName: 'Set Function Key'
-                  inputs:
-                    azureSubscription: '$(armServiceConnection)'
-                    scriptType: bash
-                    scriptLocation: inlineScript
-                    inlineScript: |
-                      az functionapp keys set --name $(serviceFuncName) --resource-group $(resourceGroupName) --key-name client --key-type functionKeys --key-value $(serviceFuncKeySecret)
 
       - deployment: deploy_frontend
         dependsOn: deploy_backend
@@ -112,6 +110,9 @@ stages:
         pool:
           vmImage: 'ubuntu-latest'
         environment: 'DEV'
+        variables:
+          - name: ciArtifactName
+            value: 'frontend'
         strategy:
           runOnce:
             deploy:
@@ -123,12 +124,12 @@ stages:
                     scriptType: bash
                     scriptLocation: inlineScript
                     inlineScript: |
-                      az storage container create --name '$web' --account-name $(storageAccountName) --resource-group $(resourceGroupName)
+                      az storage container create --name '$(blobContainerFrontendDeployment)' --account-name $(storageAccountName) --resource-group $(resourceGroupName)
 
                 - task: FileTransform@1
                   displayName: 'Transforming configuration'
                   inputs:
-                    folderPath: '$(Pipeline.Workspace)/CI-Pipeline/drop/$(frontendFolderName)/assets'
+                    folderPath: '$(Pipeline.Workspace)/CI-Pipeline/$(ciArtifactName)/$(frontendFolderName)/assets'
                     fileType: json
                     targetFiles: config.json
 
@@ -139,7 +140,7 @@ stages:
                     scriptType: bash
                     scriptLocation: inlineScript
                     inlineScript: |
-                      az storage blob upload-batch -s $(Pipeline.Workspace)/CI-Pipeline/drop/$(frontendFolderName) -d $(blobContainerFrontendDeployment) --account-name $(storageAccountName)
+                      az storage blob upload-batch -s $(Pipeline.Workspace)/CI-Pipeline/$(ciArtifactName)/$(frontendFolderName) -d '$(blobContainerFrontendDeployment)' --account-name $(storageAccountName)
 
                 - task: AzureCLI@2
                   displayName: 'Set static website'
@@ -158,3 +159,14 @@ stages:
                     scriptLocation: inlineScript
                     inlineScript: |
                       az cdn endpoint purge -g $(resourceGroupName) -n $(cdnEndpointName) --profile-name $(cdnProfileName) --content-paths '/*' --no-wait
+                
+                - task: AzureCLI@2
+                  displayName: 'Set Function Key'
+                  continueOnError: true
+                  inputs:
+                    azureSubscription: '$(armServiceConnection)'
+                    scriptType: bash
+                    scriptLocation: inlineScript
+                    inlineScript: |
+                      az functionapp restart --name $(serviceFuncName) --resource-group $(resourceGroupName)
+                      az functionapp keys set --name $(serviceFuncName) --resource-group $(resourceGroupName) --key-name client --key-type functionKeys --key-value $(adminServiceFuncKeySecret)

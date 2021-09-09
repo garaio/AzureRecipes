@@ -64,11 +64,11 @@ stages:
             deploymentMode: 'Validation'
           continueOnError: true
 
-        - task: PublishBuildArtifacts@1
+        - task: PublishPipelineArtifact@1
           displayName: 'Publish Artifact'
           inputs:
-            PathtoPublish: '$(build.artifactstagingdirectory)'
-          condition: succeededOrFailed()
+            targetPath: '$(Build.ArtifactStagingDirectory)'
+            artifactName: '$(System.StageName)'
 
     - job: push_image
       displayName: 'Build and Push Image'

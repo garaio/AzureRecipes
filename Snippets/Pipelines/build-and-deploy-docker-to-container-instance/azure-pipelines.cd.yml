@@ -19,6 +19,8 @@ resources:
 variables:
   - name: deploymentFolderName
     value: 'Deployment'
+  - name: ciArtifactName
+    value: 'build'
   - name: dockerFilePath
     value: '$(Build.SourcesDirectory)/DockerApp/Dockerfile'
   - name: buildTag
@@ -65,8 +67,6 @@ stages:
           runOnce:
             deploy:
               steps:
-                - download: CI-Pipeline
-
                 - task: AzureCLI@2
                   displayName: 'Create Resource Group'
                   inputs:
@@ -82,8 +82,8 @@ stages:
                     azureResourceManagerConnection: '$(armServiceConnection)'
                     resourceGroupName: '$(resourceGroupName)'
                     location: '$(resourceLocation)'
-                    csmFile: '$(Pipeline.Workspace)/CI-Pipeline/drop/$(deploymentFolderName)/azuredeploy.instance.json'
-                    csmParametersFile: '$(Pipeline.Workspace)/CI-Pipeline/drop/$(deploymentFolderName)/azuredeploy.parameters.json'
+                    csmFile: '$(Pipeline.Workspace)/CI-Pipeline/$(ciArtifactName)/$(deploymentFolderName)/azuredeploy.instance.json'
+                    csmParametersFile: '$(Pipeline.Workspace)/CI-Pipeline/$(ciArtifactName)/$(deploymentFolderName)/azuredeploy.parameters.json'
                     overrideParameters: '-resourceNamePrefix "$(resourceNamePrefix)" -resourceNameSuffix "$(resourceNameSuffix)" -containerRegistryLoginServer "$(containerRegistryLoginServer)" -containerRegistryUsername "$(containerRegistryUsername)" -containerRegistryPassword "$(containerRegistryPassword)" -dockerImageName "$(dockerImageName)" -dockerImageTag "$(buildTag)"'
                     deploymentMode: 'Incremental'
                     deploymentName: 'Customer-Project-$(Build.BuildId)-$(Environment.Name)'

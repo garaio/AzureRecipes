@@ -51,10 +51,11 @@ stages:
               versioningScheme: 'byEnvVar'
               versionEnvVar: nugetVersion
             
-          - task: PublishBuildArtifacts@1
+          - task: PublishPipelineArtifact@1
             displayName: 'Publish Artifact'
             inputs:
-              PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+              targetPath: '$(Build.ArtifactStagingDirectory)'
+              artifactName: '$(System.StageName)'
   
   - stage: publish
     displayName: 'Publish Nuget Packages'
@@ -76,6 +77,6 @@ stages:
           inputs:
             command: push
             nuGetFeedType: internal
-            packagesToPush: '$(Pipeline.Workspace)/drop/*.nupkg'
+            packagesToPush: '$(Pipeline.Workspace)/build/*.nupkg'
             publishVstsFeed: '$(System.TeamProject)/$(feedName)'
             allowPackageConflicts: true

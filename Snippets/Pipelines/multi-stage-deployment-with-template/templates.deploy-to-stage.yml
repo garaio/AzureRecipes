@@ -31,6 +31,8 @@ jobs:
         value: '${{ format(''customerproject{0}{1}'', ''sa'', lower(parameters.resNameEnv)) }}'
       - name: blobContainerDeployment
         value: 'deployment'
+      - name: ciArtifactName
+        value: 'backend'
     strategy:
       runOnce:
         deploy:
@@ -69,7 +71,7 @@ jobs:
                 scriptType: bash
                 scriptLocation: inlineScript
                 inlineScript: |
-                  az storage blob upload-batch -s $(Pipeline.Workspace)/CI-Pipeline/drop -d $(blobContainerDeployment) --account-name $(storageAccountName)
+                  az storage blob upload-batch -s $(Pipeline.Workspace)/CI-Pipeline/$(ciArtifactName) -d $(blobContainerDeployment) --account-name $(storageAccountName)
             
             - task: AzureResourceManagerTemplateDeployment@3
               displayName: 'Deploy ARM Template (ResourceGroup)'
@@ -78,8 +80,8 @@ jobs:
                 subscriptionId: '$(subscriptionId)'
                 resourceGroupName: '$(resourceGroupName)'
                 location: '$(resourceLocation)'
-                csmFile: '$(Pipeline.Workspace)/CI-Pipeline/drop/$(deploymentFolderName)/azuredeploy.json'
-                csmParametersFile: '$(Pipeline.Workspace)/CI-Pipeline/drop/$(deploymentFolderName)/azuredeploy.parameters.json'
+                csmFile: '$(Pipeline.Workspace)/CI-Pipeline/$(ciArtifactName)/$(deploymentFolderName)/azuredeploy.json'
+                csmParametersFile: '$(Pipeline.Workspace)/CI-Pipeline/$(ciArtifactName)/$(deploymentFolderName)/azuredeploy.parameters.json'
                 overrideParameters: '-resourceNameEnv "${{ parameters.resNameEnv }}"'
                 deploymentMode: 'Incremental'
                 deploymentName: 'Customer-Project-$(Build.BuildId)-$(Environment.Name)'
@@ -103,6 +105,8 @@ jobs:
         value: '${{ format(''customerproject{0}{1}'', ''sa'', lower(parameters.resNameEnv)) }}'
       - name: blobContainerFrontendDeployment
         value: '$web'
+      - name: ciArtifactName
+        value: 'frontend'
     strategy:
       runOnce:
         deploy:
@@ -119,7 +123,7 @@ jobs:
             - task: FileTransform@1
               displayName: 'Transforming configuration'
               inputs:
-                folderPath: '$(Pipeline.Workspace)/CI-Pipeline/drop/$(frontendFolderName)'
+                folderPath: '$(Pipeline.Workspace)/CI-Pipeline/$(ciArtifactName)/$(frontendFolderName)'
                 fileType: json
                 targetFiles: config.json
             
@@ -130,7 +134,7 @@ jobs:
                 scriptType: bash
                 scriptLocation: inlineScript
                 inlineScript: |
-                  az storage blob upload-batch -s $(Pipeline.Workspace)/CI-Pipeline/drop/$(frontendFolderName) -d '$(blobContainerFrontendDeployment)' --account-name $(storageAccountName)
+                  az storage blob upload-batch -s $(Pipeline.Workspace)/CI-Pipeline/$(ciArtifactName)/$(frontendFolderName) -d '$(blobContainerFrontendDeployment)' --account-name $(storageAccountName)
             
             - task: AzureCLI@2
               displayName: 'Set static website'

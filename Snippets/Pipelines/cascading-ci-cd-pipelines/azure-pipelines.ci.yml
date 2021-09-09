@@ -4,10 +4,12 @@ trigger:
 
 variables:
   - group: Build
+  - name: projectNamePrefix
+    value: 'Customer.Project.'
   - name: deploymentFolderName
-    value: 'Customer.Project.Deployment'
+    value: '$(projectNamePrefix)Deployment'
   - name: frontendFolderName
-    value: 'Customer.Project.Frontend'
+    value: '$(projectNamePrefix)Frontend'
   - name: resourceGroupName
     value: '$(resourceNamePrefix)-$(resourceNameSuffix)'
   - name: currentDate
@@ -24,12 +26,12 @@ stages:
   dependsOn: []
   jobs:
     - job: build_test
-      displayName: "Build & Test"
+      displayName: 'Build & Test'
       pool:
-        vimImage: "ubuntu-latest"
+        vmImage: 'ubuntu-latest'
       steps:
         - task: DotNetCoreCLI@2
-          displayName: Restore
+          displayName: 'Restore'
           inputs:
             command: restore
             projects: |
@@ -37,7 +39,7 @@ stages:
               **/*.deployproj
 
         - task: DotNetCoreCLI@2
-          displayName: Build
+          displayName: 'Build'
           inputs:
             projects: |
               **/*.csproj
@@ -52,7 +54,7 @@ stages:
             arguments: '--configuration $(buildConfiguration)'
 
         - task: DotNetCoreCLI@2
-          displayName: Publish
+          displayName: 'Publish'
           inputs:
             command: publish
             publishWebProjects: false
@@ -78,25 +80,24 @@ stages:
             location: '$(resourceLocation)'
             csmFile: '$(deploymentFolderName)/azuredeploy.json'
             csmParametersFile: '$(deploymentFolderName)/azuredeploy.parameters.json'
-            overrideParameters: '-resourceNameSuffix "build"'
+            overrideParameters: '-resourceNameSuffix "$(resourceNameSuffix)"'
             deploymentMode: 'Validation'
           continueOnError: true
 
-        - task: PublishBuildArtifacts@1
+        - task: PublishPipelineArtifact@1
           displayName: 'Publish Artifact'
           inputs:
-            PathtoPublish: '$(build.artifactstagingdirectory)'
-          condition: succeededOrFailed()
+            targetPath: '$(Build.ArtifactStagingDirectory)'
+            artifactName: '$(System.StageName)'
 
 - stage: frontend
   displayName: 'Frontend'
   dependsOn: []
   jobs:
     - job: build_test
-      displayName: "Build & Test"
+      displayName: 'Build & Test'
       pool:
-        vimImage: "ubuntu-latest"
-
+        vmImage: 'ubuntu-latest'
       steps:
       - task: Npm@1
         displayName: 'Install Packages'
@@ -119,7 +120,8 @@ stages:
           SourceFolder: '$(frontendFolderName)/dist/$(frontendPackageName)'
           TargetFolder: '$(build.artifactstagingdirectory)/$(frontendFolderName)'
 
-      - task: PublishBuildArtifacts@1
+      - task: PublishPipelineArtifact@1
         displayName: 'Publish Artifact'
         inputs:
-          PathtoPublish: '$(build.artifactStagingDirectory)'
+          targetPath: '$(Build.ArtifactStagingDirectory)'
+          artifactName: '$(System.StageName)'
