@@ -14,11 +14,6 @@ variables:
   modelProjectName: 'Library'
   feedName: ${{ parameters.artifactFeedName }}
 
-resources:
-  containers:
-    - container: linux
-      image: ubuntu-latest
-
 stages:
   - stage: build
     displayName: 'Build'
@@ -27,7 +22,7 @@ stages:
       - job: build_model
         displayName: 'Model Build'
         pool:
-          vimImage: 'ubuntu-latest'
+          vmImage: 'ubuntu-latest'
         steps:
           - task: DotNetCoreCLI@2
             displayName: Restore
@@ -64,7 +59,7 @@ stages:
     - job: publish_model
       displayName: 'Publish'
       pool:
-        vimImage: 'ubuntu-latest'
+        vmImage: 'ubuntu-latest'
       steps:      
         - download: current
           displayName: 'Download Artifact'
