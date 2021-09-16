@@ -6,9 +6,6 @@ parameters:
     default: 'Dev'
 
 resources:
-  containers:
-    - container: linux
-      image: ubuntu-latest
   pipelines:
   - pipeline: CI-Pipeline
     source: CI

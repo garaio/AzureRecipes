@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.4.613.9944",
-      "templateHash": "17672163684789133507"
+      "templateHash": "7776171193036646405"
     }
   },
   "parameters": {
@@ -322,12 +322,9 @@
     },
     {
       "type": "Microsoft.DocumentDB/databaseAccounts",
-      "apiVersion": "2021-03-15",
+      "apiVersion": "2021-06-15",
       "name": "[variables('cosmosDbAccountName')]",
       "location": "[resourceGroup().location]",
-      "tags": {
-        "defaultExperience": "Core (SQL)"
-      },
       "kind": "GlobalDocumentDB",
       "properties": {
         "publicNetworkAccess": "Enabled",
@@ -352,11 +349,7 @@
           }
         ],
         "backupPolicy": {
-          "type": "Periodic",
-          "periodicModeProperties": {
-            "backupIntervalInMinutes": 240,
-            "backupRetentionIntervalInHours": 8
-          }
+          "type": "Continuous"
         }
       }
     },

@@ -4,17 +4,17 @@ variables:
 
 steps:
 - task: PowerShell@2
-  displayName: "Download File"
+  displayName: 'Download File'
   inputs:
-    targetType: "inline"
+    targetType: 'inline'
     script: |
       Invoke-WebRequest -Uri "https://any-host-$(withParameter).net/FileName.zip" -OutFile "$(Pipeline.Workspace)/Pipeline/drop/$(targetFolderName)/assets/FileName.zip"
 
 
 - task: ExtractFiles@1
-  displayName: "Extract ZIP File"
+  displayName: 'Extract ZIP File'
   inputs:
-    archiveFilePatterns: "$(Pipeline.Workspace)/Pipeline/drop/$(targetFolderName)/assets/FileName.zip"
-    destinationFolder: "$(Pipeline.Workspace)/Pipeline/drop/$(targetFolderName)/assets"
+    archiveFilePatterns: '$(Pipeline.Workspace)/Pipeline/drop/$(targetFolderName)/assets/FileName.zip'
+    destinationFolder: '$(Pipeline.Workspace)/Pipeline/drop/$(targetFolderName)/assets'
     cleanDestinationFolder: false
     overwriteExistingFiles: true

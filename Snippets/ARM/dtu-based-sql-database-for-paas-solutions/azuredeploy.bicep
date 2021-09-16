@@ -5,6 +5,13 @@ param resourceNamePrefix string = 'customer-project'
 @description('The suffix will be appended to every parameter that represents a resource name.')
 param resourceNameSuffix string
 
+@allowed([
+  'S0' // 10 DTUs, ~ 20 CHF
+  'S1' // 20 DTUs, ~ 45 CHF
+  'S2' // 50 DTUs, ~ 115 CHF
+  'S3' // 100 DTUs, ~ 225 CHF
+])
+param sqlServerSku string = 'S0'
 param sqlServerAdminUsername string = 'customer-admin'
 @secure()
 param sqlServerAdminPassword string
@@ -67,9 +74,8 @@ resource sqlDatabaseRes 'Microsoft.Sql/servers/databases@2021-02-01-preview' = {
   name: sqlDatabaseName
   location: resourceGroup().location
   sku: {
-    name: 'S0'
+    name: sqlServerSku
     tier: 'Standard'
-    capacity: 10
   }
   properties: {
     collation: 'SQL_Latin1_General_CP1_CI_AS'

@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.4.613.9944",
-      "templateHash": "6692159724697694260"
+      "templateHash": "5664964784083927506"
     }
   },
   "parameters": {
@@ -21,6 +21,16 @@
       "metadata": {
         "description": "The suffix will be appended to every parameter that represents a resource name."
       }
+    },
+    "sqlServerSku": {
+      "type": "string",
+      "defaultValue": "S0",
+      "allowedValues": [
+        "S0",
+        "S1",
+        "S2",
+        "S3"
+      ]
     },
     "sqlServerAdminUsername": {
       "type": "string",
@@ -97,9 +107,8 @@
       "name": "[format('{0}/{1}', variables('sqlServerName'), variables('sqlDatabaseName'))]",
       "location": "[resourceGroup().location]",
       "sku": {
-        "name": "S0",
-        "tier": "Standard",
-        "capacity": 10
+        "name": "[parameters('sqlServerSku')]",
+        "tier": "Standard"
       },
       "properties": {
         "collation": "SQL_Latin1_General_CP1_CI_AS",

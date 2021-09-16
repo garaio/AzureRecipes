@@ -12,7 +12,7 @@ variables:
   nugetVersion: '$(versionMajor).$(versionMinor).$(Build.BuildID)'
   buildConfiguration: 'Release'
   modelProjectName: 'Library'
-  feedName: ${{ parameters.artifactFeedName }}
+  feedName: '${{ parameters.artifactFeedName }}'
 
 stages:
   - stage: build

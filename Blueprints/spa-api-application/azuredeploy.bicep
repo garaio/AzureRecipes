@@ -242,18 +242,15 @@ resource keyVaultAccessPoliciesRes 'Microsoft.KeyVault/vaults/accessPolicies@201
   }
 }
 
-resource cosmosDbAccountRes 'Microsoft.DocumentDB/databaseAccounts@2021-03-15' = {
+resource cosmosDbAccountRes 'Microsoft.DocumentDB/databaseAccounts@2021-06-15' = {
   name: cosmosDbAccountName
   location: resourceGroup().location
-  tags: {
-    defaultExperience: 'Core (SQL)'
-  }
   kind: 'GlobalDocumentDB'
   properties: {
     publicNetworkAccess: 'Enabled'
     enableAutomaticFailover: false
     enableMultipleWriteLocations: false
-    enableFreeTier: false
+    enableFreeTier: false // Not supported with serverless tier
     enableAnalyticalStorage: false
     databaseAccountOfferType: 'Standard'
     consistencyPolicy: {
@@ -272,11 +269,7 @@ resource cosmosDbAccountRes 'Microsoft.DocumentDB/databaseAccounts@2021-03-15' =
       }
     ]
     backupPolicy: {
-      type: 'Periodic'
-      periodicModeProperties: {
-        backupIntervalInMinutes: 240
-        backupRetentionIntervalInHours: 8
-      }
+      type: 'Continuous'
     }
   }
 }

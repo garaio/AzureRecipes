@@ -13,11 +13,6 @@ variables:
   currentDate: $[format('{0:yyyy}-{0:MM}-{0:dd}', pipeline.startTime)]
   releaseName: 'DevOps-Policies-$(Build.BuildId)'
 
-resources:
-  containers:
-  - container: linux
-    image: ubuntu-latest
-
 stages:    
 - stage: deploy
   displayName: 'Deploy'

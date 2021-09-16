@@ -98,7 +98,7 @@ var storageAccountBlobs = [
     publicAccess: 'None'
   }
 ]
-var storageAccountBlobUri = 'https://${storageAccountName}.blob.core.windows.net/'
+var storageAccountBlobUri = 'https://${storageAccountName}.blob.${environment().suffixes.storage}/'
 var storageAccountFunctionSasParams = {
   signedServices: 'b'
   signedResourceTypes: 'o'
@@ -109,10 +109,7 @@ var storageAccountFunctionSasParams = {
 var appServicePlanName = '${resourceNamePrefix}-asp-${resourceNameSuffix}'
 var appServicePlanSku = {
   name: 'B1'
-  tier: 'Basic'
-  size: 'B1'
-  family: 'B'
-  capacity: 1
+  tier: 'Basic' // For information, can be removed
 }
 var indexerFuncName = '${resourceNamePrefix}-indexer-f-${resourceNameSuffix}'
 var indexerFuncPackagePath = '/Customer.Project.IndexerFuncApp.zip'
@@ -150,7 +147,6 @@ resource storageAccountRes 'Microsoft.Storage/storageAccounts@2019-06-01' = {
   location: resourceGroup().location
   sku: {
     name: 'Standard_LRS'
-    tier: 'Standard'
   }
   kind: 'StorageV2'
   properties: {
@@ -244,7 +240,7 @@ resource keyVaultDiagnosticsRes 'Microsoft.Insights/diagnosticSettings@2017-05-0
 
 resource keyVaultSecretStorageAccountConnectionStringRes 'Microsoft.KeyVault/vaults/secrets@2019-09-01' = {
   parent: keyVaultRes
-  name: '${keyVaultSecretStorageAccountConnectionString}'
+  name: keyVaultSecretStorageAccountConnectionString
   properties: {
     value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccountName};AccountKey=${listKeys(storageAccountRes.id, '2019-06-01').keys[0].value}'
   }
@@ -252,7 +248,7 @@ resource keyVaultSecretStorageAccountConnectionStringRes 'Microsoft.KeyVault/vau
 
 resource keyVaultSecretCosmosDbConnectionStringRes 'Microsoft.KeyVault/vaults/secrets@2019-09-01' = {
   parent: keyVaultRes
-  name: '${keyVaultSecretCosmosDbConnectionString}'
+  name: keyVaultSecretCosmosDbConnectionString
   properties: {
     value: listConnectionStrings(cosmosDbAccountRes.id, '2020-04-01').connectionStrings[0].connectionString
   }
@@ -260,7 +256,7 @@ resource keyVaultSecretCosmosDbConnectionStringRes 'Microsoft.KeyVault/vaults/se
 
 resource keyVaultSecretBotAppSecretRes 'Microsoft.KeyVault/vaults/secrets@2019-09-01' = {
   parent: keyVaultRes
-  name: '${keyVaultSecretBotAppSecret}'
+  name: keyVaultSecretBotAppSecret
   properties: {
     value: botAppSecret
   }
@@ -299,18 +295,15 @@ resource keyVaultAccessPoliciesRes 'Microsoft.KeyVault/vaults/accessPolicies@201
   }
 }
 
-resource cosmosDbAccountRes 'Microsoft.DocumentDB/databaseAccounts@2021-03-15' = {
+resource cosmosDbAccountRes 'Microsoft.DocumentDB/databaseAccounts@2021-06-15' = {
   name: cosmosDbAccountName
   location: resourceGroup().location
-  tags: {
-    defaultExperience: 'Core (SQL)'
-  }
   kind: 'GlobalDocumentDB'
   properties: {
     publicNetworkAccess: 'Enabled'
     enableAutomaticFailover: false
     enableMultipleWriteLocations: false
-    enableFreeTier: false
+    enableFreeTier: false // Not supported with serverless tier
     enableAnalyticalStorage: false
     databaseAccountOfferType: 'Standard'
     consistencyPolicy: {
@@ -329,11 +322,7 @@ resource cosmosDbAccountRes 'Microsoft.DocumentDB/databaseAccounts@2021-03-15' =
       }
     ]
     backupPolicy: {
-      type: 'Periodic'
-      periodicModeProperties: {
-        backupIntervalInMinutes: 240
-        backupRetentionIntervalInHours: 8
-      }
+      type: 'Continuous'
     }
   }
 }

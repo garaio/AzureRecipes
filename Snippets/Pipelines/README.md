@@ -8,8 +8,7 @@ General resources:
 
 | Service(s)                      | Architecture                | Problem / Solution                      | Related | Link                            |
 |---------------------------------|-----------------------------|-----------------------------------------|---------|---------------------------------|
-| (any) | - | Deployment pipeline to multiple stages based on particular build pipeline run ahead (i.e. acts as trigger) providing a deployable artifact  | [multi-stage-deployment-with-template](./
-multi-stage-deployment-with-template) | [cascading-ci-cd-pipelines](./cascading-ci-cd-pipelines) |
+| (any) | - | Deployment pipeline to multiple stages based on particular build pipeline run ahead (i.e. acts as trigger) providing a deployable artifact  | [multi-stage-deployment-with-template](./multi-stage-deployment-with-template) | [cascading-ci-cd-pipelines](./cascading-ci-cd-pipelines) |
 | Policies, Blueprints and other Governance resources | - | As a best practice, governance definitions applied to hierarchical Azure structures should be managed within a GIT repository and applied using a controlled deployment process. This snippets show how to achieve this with an Azure DevOps project.  | - | [policies-on-management-groups](./policies-on-management-groups) |
 | Resource Group | - | Create a resource group (e.g. prior to deployment of ARM templates) having tags consisting of calculated values (PowerShell) and pipeline variables | - | [create-resource-group-with-calculated-tags](./create-resource-group-with-calculated-tags) |
 | (any) | - | Download a file from any URL to the working directory of the agent | - | [download-file-from-url](./download-file-from-url) |

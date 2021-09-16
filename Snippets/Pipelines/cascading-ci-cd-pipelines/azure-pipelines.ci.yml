@@ -15,11 +15,6 @@ variables:
   - name: currentDate
     value: '$[format(''{0:yyyy}-{0:MM}-{0:dd}'', pipeline.startTime)]'
 
-resources:
-  containers:
-  - container: linux
-    image: ubuntu-latest
-
 stages:
 - stage: backend
   displayName: 'Backend'
@@ -59,7 +54,7 @@ stages:
             command: publish
             publishWebProjects: false
             projects: '**/*.csproj'
-            arguments: '--configuration $(buildConfiguration) --output $(build.artifactstagingdirectory)'
+            arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)'
             zipAfterPublish: True
 
         - task: AzureCLI@2
@@ -118,7 +113,7 @@ stages:
         displayName: 'Copy Dist'
         inputs:
           SourceFolder: '$(frontendFolderName)/dist/$(frontendPackageName)'
-          TargetFolder: '$(build.artifactstagingdirectory)/$(frontendFolderName)'
+          TargetFolder: '$(Build.ArtifactStagingDirectory)/$(frontendFolderName)'
 
       - task: PublishPipelineArtifact@1
         displayName: 'Publish Artifact'

@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.4.613.9944",
-      "templateHash": "2322317819917232856"
+      "templateHash": "15716777807658044189"
     }
   },
   "parameters": {
@@ -149,7 +149,7 @@
         "publicAccess": "None"
       }
     ],
-    "storageAccountBlobUri": "[format('https://{0}.blob.core.windows.net/', variables('storageAccountName'))]",
+    "storageAccountBlobUri": "[format('https://{0}.blob.{1}/', variables('storageAccountName'), environment().suffixes.storage)]",
     "storageAccountFunctionSasParams": {
       "signedServices": "b",
       "signedResourceTypes": "o",
@@ -159,10 +159,7 @@
     "appServicePlanName": "[format('{0}-asp-{1}', parameters('resourceNamePrefix'), parameters('resourceNameSuffix'))]",
     "appServicePlanSku": {
       "name": "B1",
-      "tier": "Basic",
-      "size": "B1",
-      "family": "B",
-      "capacity": 1
+      "tier": "Basic"
     },
     "indexerFuncName": "[format('{0}-indexer-f-{1}', parameters('resourceNamePrefix'), parameters('resourceNameSuffix'))]",
     "indexerFuncPackagePath": "/Customer.Project.IndexerFuncApp.zip",
@@ -200,8 +197,7 @@
       "name": "[variables('storageAccountName')]",
       "location": "[resourceGroup().location]",
       "sku": {
-        "name": "Standard_LRS",
-        "tier": "Standard"
+        "name": "Standard_LRS"
       },
       "kind": "StorageV2",
       "properties": {
@@ -380,12 +376,9 @@
     },
     {
       "type": "Microsoft.DocumentDB/databaseAccounts",
-      "apiVersion": "2021-03-15",
+      "apiVersion": "2021-06-15",
       "name": "[variables('cosmosDbAccountName')]",
       "location": "[resourceGroup().location]",
-      "tags": {
-        "defaultExperience": "Core (SQL)"
-      },
       "kind": "GlobalDocumentDB",
       "properties": {
         "publicNetworkAccess": "Enabled",
@@ -410,11 +403,7 @@
           }
         ],
         "backupPolicy": {
-          "type": "Periodic",
-          "periodicModeProperties": {
-            "backupIntervalInMinutes": 240,
-            "backupRetentionIntervalInHours": 8
-          }
+          "type": "Continuous"
         }
       }
     },
