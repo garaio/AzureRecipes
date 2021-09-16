@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.4.613.9944",
-      "templateHash": "12152939765756810676"
+      "templateHash": "14551500548709974248"
     }
   },
   "parameters": {
@@ -65,7 +65,8 @@
     "cosmosDbSettingFreeTier": "[and(not(parameters('cosmosDbEnableSynapseLink')), parameters('cosmosDbEnableFreeTier'))]",
     "cosmosDbSettingCapabilities": "[if(not(parameters('cosmosDbEnableSynapseLink')), createArray(createObject('name', 'EnableServerless')), createArray())]",
     "cosmosDbScaleOptions": "[if(and(not(variables('cosmosDbSettingFreeTier')), parameters('cosmosDbEnableAutoscale')), createObject('autoscaleSettings', createObject('maxThroughput', 4000)), createObject('throughput', parameters('cosmosDbProvisionedThroughput')))]",
-    "cosmosDbSettingOptions": "[if(parameters('cosmosDbEnableSynapseLink'), variables('cosmosDbScaleOptions'), createObject())]"
+    "cosmosDbSettingOptions": "[if(parameters('cosmosDbEnableSynapseLink'), variables('cosmosDbScaleOptions'), createObject())]",
+    "cosmosDbSettingBackupPolicy": "[if(parameters('cosmosDbEnableSynapseLink'), createObject('type', 'Periodic', 'periodicModeProperties', createObject('backupIntervalInMinutes', 240, 'backupRetentionIntervalInHours', 8)), createObject('type', 'Continuous'))]"
   },
   "resources": [
     {
@@ -118,9 +119,7 @@
           }
         ],
         "capabilities": "[variables('cosmosDbSettingCapabilities')]",
-        "backupPolicy": {
-          "type": "Continuous"
-        }
+        "backupPolicy": "[variables('cosmosDbSettingBackupPolicy')]"
       }
     },
     {

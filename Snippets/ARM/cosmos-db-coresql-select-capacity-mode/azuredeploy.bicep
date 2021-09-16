@@ -40,6 +40,15 @@ var cosmosDbScaleOptions = !cosmosDbSettingFreeTier && cosmosDbEnableAutoscale ?
   throughput: cosmosDbProvisionedThroughput
 }
 var cosmosDbSettingOptions = cosmosDbEnableSynapseLink ? cosmosDbScaleOptions : {}
+var cosmosDbSettingBackupPolicy = cosmosDbEnableSynapseLink ? {
+  type: 'Periodic'
+  periodicModeProperties: {
+    backupIntervalInMinutes: 240
+    backupRetentionIntervalInHours: 8
+  }
+} : {
+  type: 'Continuous'
+}
 
 resource partnerIdRes 'Microsoft.Resources/deployments@2020-06-01' = {
   name: 'pid-d16e7b59-716a-407d-96db-18d1cac40407'
@@ -87,9 +96,7 @@ resource cosmosDbAccountRes 'Microsoft.DocumentDB/databaseAccounts@2021-06-15' =
       }
     ]    
     capabilities: cosmosDbSettingCapabilities
-    backupPolicy: {
-      type: 'Continuous'
-    }
+    backupPolicy: cosmosDbSettingBackupPolicy
   }
 }
 
