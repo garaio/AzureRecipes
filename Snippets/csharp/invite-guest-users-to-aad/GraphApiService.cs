@@ -89,7 +89,7 @@ namespace Garaio.AzureRecipes
             // One typical case for this exception is, when you try to invite users with an email that belongs to the AAD's domain (i.e. existing non-guest AAD users)
             catch (ServiceException e)
             {
-                var exMsg = $"Failed to invite user '{model.Email}' to Active Directory: {e.Message}";
+                var exMsg = $"Failed to invite user '{userId}' to Active Directory: {e.Message}";
                 
                 _logger.LogWarning(e, exMsg);
 
