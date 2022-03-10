@@ -71,7 +71,7 @@ jobs:
                 scriptType: bash
                 scriptLocation: inlineScript
                 inlineScript: |
-                  az storage blob upload-batch -s $(Pipeline.Workspace)/CI-Pipeline/$(ciArtifactName) -d $(blobContainerDeployment) --account-name $(storageAccountName)
+                  az storage blob upload-batch -s $(Pipeline.Workspace)/CI-Pipeline/$(ciArtifactName) -d $(blobContainerDeployment) --account-name $(storageAccountName) --overwrite=true
             
             - task: AzureResourceManagerTemplateDeployment@3
               displayName: 'Deploy ARM Template (ResourceGroup)'
@@ -134,7 +134,7 @@ jobs:
                 scriptType: bash
                 scriptLocation: inlineScript
                 inlineScript: |
-                  az storage blob upload-batch -s $(Pipeline.Workspace)/CI-Pipeline/$(ciArtifactName)/$(frontendFolderName) -d '$(blobContainerFrontendDeployment)' --account-name $(storageAccountName)
+                  az storage blob upload-batch -s $(Pipeline.Workspace)/CI-Pipeline/$(ciArtifactName)/$(frontendFolderName) -d '$(blobContainerFrontendDeployment)' --account-name $(storageAccountName) --overwrite=true
             
             - task: AzureCLI@2
               displayName: 'Set static website'
