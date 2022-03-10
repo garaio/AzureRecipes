@@ -4,6 +4,8 @@ param resourceNamePrefix string = 'customer-project'
 @description('The suffix will be appended to every parameter that represents a resource name. See the description of the parameter.')
 param resourceNameSuffix string
 
+param resourceLocation string = resourceGroup().location
+
 var logAnalyticsWsName = '${resourceNamePrefix}-law-${resourceNameSuffix}'
 var appInsightsName = '${resourceNamePrefix}-ai-${resourceNameSuffix}'
 var keyVaultName = '${resourceNamePrefix}-kv-${resourceNameSuffix}'
@@ -37,10 +39,9 @@ resource partnerIdRes 'Microsoft.Resources/deployments@2020-06-01' = {
 
 resource storageAccountRes 'Microsoft.Storage/storageAccounts@2019-06-01' = {
   name: storageAccountName
-  location: resourceGroup().location
+  location: resourceLocation
   sku: {
     name: 'Standard_LRS'
-    tier: 'Standard'
   }
   kind: 'StorageV2'
   properties: {
@@ -76,7 +77,7 @@ resource storageAccountBlobContainerRes 'Microsoft.Storage/storageAccounts/blobS
 
 resource logAnalyticsWsRes 'Microsoft.OperationalInsights/workspaces@2020-08-01' = {
   name: logAnalyticsWsName
-  location: resourceGroup().location
+  location: resourceLocation
   properties: {
     sku: {
       name: 'PerGB2018'
@@ -87,7 +88,7 @@ resource logAnalyticsWsRes 'Microsoft.OperationalInsights/workspaces@2020-08-01'
 
 resource appInsightsRes 'Microsoft.Insights/components@2020-02-02-preview' = {
   name: appInsightsName
-  location: resourceGroup().location
+  location: resourceLocation
   kind: 'web'
   properties: {
     Application_Type: 'web'
@@ -97,7 +98,7 @@ resource appInsightsRes 'Microsoft.Insights/components@2020-02-02-preview' = {
 
 resource keyVaultRes 'Microsoft.KeyVault/vaults@2019-09-01' = {
   name: keyVaultName
-  location: resourceGroup().location
+  location: resourceLocation
   properties: {
     sku: {
       family: 'A'
@@ -127,14 +128,11 @@ resource keyVaultDiagnosticsRes 'Microsoft.Insights/diagnosticSettings@2017-05-0
       }
     ]
   }
-  dependsOn: [
-    keyVaultRes
-  ]
 }
 
 resource keyVaultSecretStorageAccountConnectionStringRes 'Microsoft.KeyVault/vaults/secrets@2019-09-01' = {
   parent: keyVaultRes
-  name: '${keyVaultSecretStorageAccountConnectionString}'
+  name: keyVaultSecretStorageAccountConnectionString
   properties: {
     value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccountName};AccountKey=${listKeys(storageAccountRes.id, '2019-06-01').keys[0].value}'
   }

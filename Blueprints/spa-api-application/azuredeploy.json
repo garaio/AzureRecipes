@@ -4,8 +4,8 @@
   "metadata": {
     "_generator": {
       "name": "bicep",
-      "version": "0.4.613.9944",
-      "templateHash": "7776171193036646405"
+      "version": "0.4.1272.37030",
+      "templateHash": "9730111920135023225"
     }
   },
   "parameters": {
@@ -21,6 +21,10 @@
       "metadata": {
         "description": "The suffix will be appended to every parameter that represents a resource name. See the description of the parameter."
       }
+    },
+    "resourceLocation": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]"
     },
     "deployUserAuth": {
       "type": "bool",
@@ -75,7 +79,6 @@
       "defaultValue": false
     }
   },
-  "functions": [],
   "variables": {
     "logAnalyticsWsName": "[format('{0}-law-{1}', parameters('resourceNamePrefix'), parameters('resourceNameSuffix'))]",
     "appInsightsName": "[format('{0}-ai-{1}', parameters('resourceNamePrefix'), parameters('resourceNameSuffix'))]",
@@ -119,7 +122,7 @@
     },
     "cdnProfileName": "[format('{0}-cdn-{1}', parameters('resourceNamePrefix'), parameters('resourceNameSuffix'))]",
     "cdnEndpointName": "[format('{0}-cdn-ep-{1}', parameters('resourceNamePrefix'), parameters('resourceNameSuffix'))]",
-    "cdnEndpointOriginHost": "[format('{0}.{1}.web.{2}', variables('storageAccountName'), variables('storageAccountRegionalCodes')[resourceGroup().location], environment().suffixes.storage)]",
+    "cdnEndpointOriginHost": "[format('{0}.{1}.web.{2}', variables('storageAccountName'), variables('storageAccountRegionalCodes')[parameters('resourceLocation')], environment().suffixes.storage)]",
     "cdnEndpointOriginName": "[format('{0}-static-website', variables('storageAccountName'))]",
     "appServicePlanName": "[format('{0}-asp-{1}', parameters('resourceNamePrefix'), parameters('resourceNameSuffix'))]",
     "serviceFuncName": "[format('{0}-service-f-{1}', parameters('resourceNamePrefix'), parameters('resourceNameSuffix'))]",
@@ -146,7 +149,7 @@
       "type": "Microsoft.Storage/storageAccounts",
       "apiVersion": "2019-06-01",
       "name": "[variables('storageAccountName')]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('resourceLocation')]",
       "sku": {
         "name": "Standard_LRS"
       },
@@ -190,7 +193,7 @@
       "type": "Microsoft.OperationalInsights/workspaces",
       "apiVersion": "2020-08-01",
       "name": "[variables('logAnalyticsWsName')]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('resourceLocation')]",
       "properties": {
         "sku": {
           "name": "PerGB2018"
@@ -202,7 +205,7 @@
       "type": "Microsoft.Insights/components",
       "apiVersion": "2020-02-02-preview",
       "name": "[variables('appInsightsName')]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('resourceLocation')]",
       "kind": "web",
       "properties": {
         "Application_Type": "web",
@@ -216,7 +219,7 @@
       "type": "Microsoft.KeyVault/vaults",
       "apiVersion": "2019-09-01",
       "name": "[variables('keyVaultName')]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('resourceLocation')]",
       "properties": {
         "sku": {
           "family": "A",
@@ -324,7 +327,7 @@
       "type": "Microsoft.DocumentDB/databaseAccounts",
       "apiVersion": "2021-06-15",
       "name": "[variables('cosmosDbAccountName')]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('resourceLocation')]",
       "kind": "GlobalDocumentDB",
       "properties": {
         "publicNetworkAccess": "Enabled",
@@ -338,7 +341,7 @@
         },
         "locations": [
           {
-            "locationName": "[resourceGroup().location]",
+            "locationName": "[parameters('resourceLocation')]",
             "failoverPriority": 0,
             "isZoneRedundant": false
           }
@@ -393,9 +396,9 @@
     {
       "condition": "[not(parameters('usePremiumFunctionPlan'))]",
       "type": "Microsoft.Web/serverfarms",
-      "apiVersion": "2020-09-01",
+      "apiVersion": "2021-03-01",
       "name": "[if(parameters('usePremiumFunctionPlan'), uniqueString(resourceGroup().id), variables('appServicePlanName'))]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('resourceLocation')]",
       "sku": {
         "name": "Y1",
         "tier": "Dynamic"
@@ -405,9 +408,9 @@
     {
       "condition": "[parameters('usePremiumFunctionPlan')]",
       "type": "Microsoft.Web/serverfarms",
-      "apiVersion": "2020-09-01",
+      "apiVersion": "2021-03-01",
       "name": "[if(parameters('usePremiumFunctionPlan'), variables('appServicePlanName'), uniqueString(resourceGroup().id))]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('resourceLocation')]",
       "sku": {
         "name": "EP1",
         "tier": "ElasticPremium"
@@ -419,9 +422,9 @@
     },
     {
       "type": "Microsoft.Web/sites",
-      "apiVersion": "2020-09-01",
+      "apiVersion": "2021-03-01",
       "name": "[variables('serviceFuncName')]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('resourceLocation')]",
       "kind": "functionapp",
       "properties": {
         "enabled": true,
@@ -462,7 +465,7 @@
     },
     {
       "type": "Microsoft.Web/sites/config",
-      "apiVersion": "2020-09-01",
+      "apiVersion": "2021-03-01",
       "name": "[format('{0}/{1}', variables('serviceFuncName'), 'appsettings')]",
       "properties": {
         "AzureWebJobsStorage": "[format('@Microsoft.KeyVault(VaultName={0};SecretName={1})', variables('keyVaultName'), variables('keyVaultSecretStorageAccountConnectionString'))]",
@@ -493,7 +496,7 @@
     {
       "condition": "[parameters('deployUserAuth')]",
       "type": "Microsoft.Web/sites/config",
-      "apiVersion": "2020-09-01",
+      "apiVersion": "2021-03-01",
       "name": "[format('{0}/{1}', variables('serviceFuncName'), 'authsettingsV2')]",
       "properties": {
         "platform": {
@@ -508,7 +511,7 @@
           "azureActiveDirectory": {
             "enabled": true,
             "registration": {
-              "openIdIssuer": "[if(empty(parameters('aadB2cName')), format('https://login.microsoftonline.com/{0}', subscription().tenantId), format('https://{0}.b2clogin.com/{1}.onmicrosoft.com/v2.0/.well-known/openid-configuration?p=B2C_1_signupsignin', parameters('aadB2cName'), parameters('aadB2cName')))]",
+              "openIdIssuer": "[if(empty(parameters('aadB2cName')), format('{0}{1}', environment().authentication.loginEndpoint, subscription().tenantId), format('https://{0}.b2clogin.com/{1}.onmicrosoft.com/v2.0/.well-known/openid-configuration?p=B2C_1_signupsignin', parameters('aadB2cName'), parameters('aadB2cName')))]",
               "clientId": "[parameters('serviceAppId')]"
             },
             "isAutoProvisioned": true
@@ -528,7 +531,7 @@
       "type": "Microsoft.Cdn/profiles",
       "apiVersion": "2020-04-15",
       "name": "[variables('cdnProfileName')]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('resourceLocation')]",
       "sku": {
         "name": "Standard_Microsoft"
       },
@@ -557,7 +560,7 @@
       "type": "Microsoft.Cdn/profiles/endpoints",
       "apiVersion": "2020-04-15",
       "name": "[format('{0}/{1}', variables('cdnProfileName'), variables('cdnEndpointName'))]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('resourceLocation')]",
       "properties": {
         "originHostHeader": "[variables('cdnEndpointOriginHost')]",
         "isHttpAllowed": true,
@@ -683,7 +686,7 @@
       "type": "Microsoft.SignalRService/signalR",
       "apiVersion": "2021-06-01-preview",
       "name": "[variables('signalRServiceName')]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('resourceLocation')]",
       "sku": {
         "name": "[parameters('signalRServiceSku')]",
         "capacity": 1
@@ -748,7 +751,7 @@
       "type": "Microsoft.AppConfiguration/configurationStores",
       "apiVersion": "2021-03-01-preview",
       "name": "[variables('appConfigStoreName')]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('resourceLocation')]",
       "identity": {
         "type": "SystemAssigned"
       },

@@ -5,6 +5,8 @@ param resourceNamePrefix string = 'customer-project'
 @description('The suffix will be appended to every parameter that represents a resource name.')
 param resourceNameSuffix string
 
+param resourceLocation string = resourceGroup().location
+
 param deployDemoFunction bool = true
 
 var logAnalyticsWsName = '${resourceNamePrefix}-law-${resourceNameSuffix}'
@@ -30,7 +32,7 @@ var demoFuncName = '${resourceNamePrefix}-demo-f-${resourceNameSuffix}'
 
 resource logAnalyticsWsRes 'Microsoft.OperationalInsights/workspaces@2020-08-01' = {
   name: logAnalyticsWsName
-  location: resourceGroup().location
+  location: resourceLocation
   properties: {
     sku: {
       name: 'PerGB2018'
@@ -41,7 +43,7 @@ resource logAnalyticsWsRes 'Microsoft.OperationalInsights/workspaces@2020-08-01'
 
 resource appInsightsRes 'Microsoft.Insights/components@2020-02-02-preview' = {
   name: appInsightsName
-  location: resourceGroup().location
+  location: resourceLocation
   kind: 'web'
   properties: {
     Application_Type: 'web'
@@ -51,7 +53,7 @@ resource appInsightsRes 'Microsoft.Insights/components@2020-02-02-preview' = {
 
 resource keyVaultRes 'Microsoft.KeyVault/vaults@2019-09-01' = {
   name: keyVaultName
-  location: resourceGroup().location
+  location: resourceLocation
   properties: {
     sku: {
       family: 'A'
@@ -81,9 +83,6 @@ resource keyVaultDiagnosticsRes 'Microsoft.Insights/diagnosticSettings@2017-05-0
       }
     ]
   }
-  dependsOn: [
-    keyVaultRes
-  ]
 }
 
 resource keyVaultAccessPoliciesRes  'Microsoft.KeyVault/vaults/accessPolicies@2019-09-01' = {
@@ -101,7 +100,7 @@ resource keyVaultAccessPoliciesRes  'Microsoft.KeyVault/vaults/accessPolicies@20
 
 resource appServicePlanRes 'Microsoft.Web/serverfarms@2020-09-01' = {
   name: appServicePlanName
-  location: resourceGroup().location
+  location: resourceLocation
   sku: appServicePlanSku
   properties: {}
 }
@@ -109,7 +108,7 @@ resource appServicePlanRes 'Microsoft.Web/serverfarms@2020-09-01' = {
 resource demoFuncRes 'Microsoft.Web/sites@2020-09-01' = {
   name: demoFuncName
   kind: 'functionapp'
-  location: resourceGroup().location
+  location: resourceLocation
   properties: {
     enabled: true
     hostNameSslStates: [

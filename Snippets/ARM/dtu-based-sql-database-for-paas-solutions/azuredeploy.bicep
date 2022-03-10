@@ -5,11 +5,14 @@ param resourceNamePrefix string = 'customer-project'
 @description('The suffix will be appended to every parameter that represents a resource name.')
 param resourceNameSuffix string
 
+param resourceLocation string = resourceGroup().location
+
 @allowed([
-  'S0' // 10 DTUs, ~ 20 CHF
-  'S1' // 20 DTUs, ~ 45 CHF
-  'S2' // 50 DTUs, ~ 115 CHF
-  'S3' // 100 DTUs, ~ 225 CHF
+  'Basic' // 5 DTUs, ~ 5 CHF
+  'S0'    // 10 DTUs, ~ 20 CHF
+  'S1'    // 20 DTUs, ~ 45 CHF
+  'S2'    // 50 DTUs, ~ 115 CHF
+  'S3'    // 100 DTUs, ~ 225 CHF
 ])
 param sqlServerSku string = 'S0'
 param sqlServerAdminUsername string = 'customer-admin'
@@ -35,7 +38,7 @@ resource partnerIdRes 'Microsoft.Resources/deployments@2020-06-01' = {
 
 resource logAnalyticsWsRes 'Microsoft.OperationalInsights/workspaces@2020-08-01' = {
   name: logAnalyticsWsName
-  location: resourceGroup().location
+  location: resourceLocation
   properties: {
     sku: {
       name: 'PerGB2018'
@@ -46,7 +49,7 @@ resource logAnalyticsWsRes 'Microsoft.OperationalInsights/workspaces@2020-08-01'
 
 resource sqlServerRes 'Microsoft.Sql/servers@2021-02-01-preview' = {
   name: sqlServerName
-  location: resourceGroup().location
+  location: resourceLocation
   identity: {
     type: 'SystemAssigned'
   }
@@ -72,10 +75,9 @@ resource sqlServerFirewallRuleRes 'Microsoft.Sql/servers/firewallRules@2021-02-0
 resource sqlDatabaseRes 'Microsoft.Sql/servers/databases@2021-02-01-preview' = {
   parent: sqlServerRes
   name: sqlDatabaseName
-  location: resourceGroup().location
+  location: resourceLocation
   sku: {
     name: sqlServerSku
-    tier: 'Standard'
   }
   properties: {
     collation: 'SQL_Latin1_General_CP1_CI_AS'
@@ -118,9 +120,7 @@ resource sqlDatabaseDiagnosticsRes 'Microsoft.Insights/diagnosticSettings@2017-0
       }
     ]
   }
-  dependsOn: [
-    sqlDatabaseRes
-  ]
 }
 
+#disable-next-line outputs-should-not-contain-secrets
 output sqlDatabaseConnectionString string = 'Server=tcp:${reference(sqlServerName).fullyQualifiedDomainName},1433;Initial Catalog=${sqlDatabaseName};Persist Security Info=False;User ID=${sqlServerAdminUsername};Password=${sqlServerAdminPassword};Connection Timeout=30;'

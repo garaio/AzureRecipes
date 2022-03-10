@@ -4,8 +4,8 @@
   "metadata": {
     "_generator": {
       "name": "bicep",
-      "version": "0.4.613.9944",
-      "templateHash": "5664964784083927506"
+      "version": "0.4.1272.37030",
+      "templateHash": "2407873360031646314"
     }
   },
   "parameters": {
@@ -22,10 +22,15 @@
         "description": "The suffix will be appended to every parameter that represents a resource name."
       }
     },
+    "resourceLocation": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]"
+    },
     "sqlServerSku": {
       "type": "string",
       "defaultValue": "S0",
       "allowedValues": [
+        "Basic",
         "S0",
         "S1",
         "S2",
@@ -40,7 +45,6 @@
       "type": "secureString"
     }
   },
-  "functions": [],
   "variables": {
     "logAnalyticsWsName": "[format('{0}-law-{1}', parameters('resourceNamePrefix'), parameters('resourceNameSuffix'))]",
     "sqlServerName": "[format('{0}-sql-{1}', parameters('resourceNamePrefix'), parameters('resourceNameSuffix'))]",
@@ -64,7 +68,7 @@
       "type": "Microsoft.OperationalInsights/workspaces",
       "apiVersion": "2020-08-01",
       "name": "[variables('logAnalyticsWsName')]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('resourceLocation')]",
       "properties": {
         "sku": {
           "name": "PerGB2018"
@@ -76,7 +80,7 @@
       "type": "Microsoft.Sql/servers",
       "apiVersion": "2021-02-01-preview",
       "name": "[variables('sqlServerName')]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('resourceLocation')]",
       "identity": {
         "type": "SystemAssigned"
       },
@@ -105,10 +109,9 @@
       "type": "Microsoft.Sql/servers/databases",
       "apiVersion": "2021-02-01-preview",
       "name": "[format('{0}/{1}', variables('sqlServerName'), variables('sqlDatabaseName'))]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('resourceLocation')]",
       "sku": {
-        "name": "[parameters('sqlServerSku')]",
-        "tier": "Standard"
+        "name": "[parameters('sqlServerSku')]"
       },
       "properties": {
         "collation": "SQL_Latin1_General_CP1_CI_AS",

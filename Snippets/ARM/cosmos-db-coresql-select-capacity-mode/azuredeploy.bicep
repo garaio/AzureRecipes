@@ -4,6 +4,8 @@ param resourceNamePrefix string = 'customer-project'
 @description('The suffix will be appended to every resource name. You have to specify a unique, not yet used, value.')
 param resourceNameSuffix string
 
+param resourceLocation string = resourceGroup().location
+
 @description('Can only be activated once per subscription. Ignored when Synapse Workspace is not deployed (then serverless tier is choosen).')
 param cosmosDbEnableFreeTier bool = false
 
@@ -64,7 +66,7 @@ resource partnerIdRes 'Microsoft.Resources/deployments@2020-06-01' = {
 
 resource logAnalyticsWsRes 'Microsoft.OperationalInsights/workspaces@2020-08-01' = {
   name: logAnalyticsWsName
-  location: resourceGroup().location
+  location: resourceLocation
   properties: {
     sku: {
       name: 'PerGB2018'
@@ -75,7 +77,7 @@ resource logAnalyticsWsRes 'Microsoft.OperationalInsights/workspaces@2020-08-01'
 
 resource cosmosDbAccountRes 'Microsoft.DocumentDB/databaseAccounts@2021-06-15' = {
   name: cosmosDbAccountName
-  location: resourceGroup().location
+  location: resourceLocation
   kind: 'GlobalDocumentDB'
   properties: {
     publicNetworkAccess: 'Enabled'
@@ -90,7 +92,7 @@ resource cosmosDbAccountRes 'Microsoft.DocumentDB/databaseAccounts@2021-06-15' =
     }
     locations: [
       {
-        locationName: resourceGroup().location
+        locationName: resourceLocation
         failoverPriority: 0
         isZoneRedundant: false
       }
@@ -130,9 +132,6 @@ resource cosmosDbAccountDiagnosticsRes 'Microsoft.Insights/diagnosticSettings@20
       }
     ]
   }
-  dependsOn: [
-    cosmosDbAccountRes
-  ]
 }
 
 resource cosmosDbDatabaseRes 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2021-06-15' = {
@@ -143,9 +142,6 @@ resource cosmosDbDatabaseRes 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases
     }
     options: cosmosDbSettingOptions
   }
-  dependsOn: [
-    cosmosDbAccountRes
-  ]
 }
 
 resource cosmosDbContainersRes 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2021-06-15' = [for item in cosmosDbContainers: {
@@ -185,4 +181,5 @@ resource cosmosDbContainersRes 'Microsoft.DocumentDB/databaseAccounts/sqlDatabas
   ]
 }]
 
+#disable-next-line outputs-should-not-contain-secrets
 output cosmosAccountConnectionString string = listConnectionStrings(cosmosDbAccountRes.id, '2021-06-15').connectionStrings[0].connectionString

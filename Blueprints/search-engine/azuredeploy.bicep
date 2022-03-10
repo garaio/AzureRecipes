@@ -4,6 +4,8 @@ param resourceNamePrefix string = 'customer-project'
 @description('The suffix will be appended to every parameter that represents a resource name. See the description of the parameter.')
 param resourceNameSuffix string
 
+param resourceLocation string = resourceGroup().location
+
 @allowed([
   'free'
   'basic'
@@ -35,7 +37,7 @@ var storageAccountBlobs = [
     publicAccess: 'None'
   }
 ]
-var storageAccountBlobUri = 'https://${storageAccountName}.blob.core.windows.net/'
+var storageAccountBlobUri = 'https://${storageAccountName}.blob.${environment().suffixes.storage}/'
 var storageAccountFunctionSasParams = {
   signedServices: 'b'
   signedResourceTypes: 'o'
@@ -69,10 +71,9 @@ resource partnerIdRes 'Microsoft.Resources/deployments@2020-06-01' = {
 
 resource storageAccountRes 'Microsoft.Storage/storageAccounts@2019-06-01' = {
   name: storageAccountName
-  location: resourceGroup().location
+  location: resourceLocation
   sku: {
     name: 'Standard_LRS'
-    tier: 'Standard'
   }
   kind: 'StorageV2'
   properties: {
@@ -108,7 +109,7 @@ resource storageAccountBlobContainerRes 'Microsoft.Storage/storageAccounts/blobS
 
 resource logAnalyticsWsRes 'Microsoft.OperationalInsights/workspaces@2020-08-01' = {
   name: logAnalyticsWsName
-  location: resourceGroup().location
+  location: resourceLocation
   properties: {
     sku: {
       name: 'PerGB2018'
@@ -119,7 +120,7 @@ resource logAnalyticsWsRes 'Microsoft.OperationalInsights/workspaces@2020-08-01'
 
 resource appInsightsRes 'Microsoft.Insights/components@2020-02-02-preview' = {
   name: appInsightsName
-  location: resourceGroup().location
+  location: resourceLocation
   kind: 'web'
   properties: {
     Application_Type: 'web'
@@ -129,7 +130,7 @@ resource appInsightsRes 'Microsoft.Insights/components@2020-02-02-preview' = {
 
 resource keyVaultRes 'Microsoft.KeyVault/vaults@2019-09-01' = {
   name: keyVaultName
-  location: resourceGroup().location
+  location: resourceLocation
   properties: {
     sku: {
       family: 'A'
@@ -159,14 +160,11 @@ resource keyVaultDiagnosticsRes 'Microsoft.Insights/diagnosticSettings@2017-05-0
       }
     ]
   }
-  dependsOn: [
-    keyVaultRes
-  ]
 }
 
 resource keyVaultSecretStorageAccountConnectionStringRes 'Microsoft.KeyVault/vaults/secrets@2019-09-01' = {
   parent: keyVaultRes
-  name: '${keyVaultSecretStorageAccountConnectionString}'
+  name: keyVaultSecretStorageAccountConnectionString
   properties: {
     value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccountName};AccountKey=${listKeys(storageAccountRes.id, '2019-06-01').keys[0].value}'
   }
@@ -174,7 +172,7 @@ resource keyVaultSecretStorageAccountConnectionStringRes 'Microsoft.KeyVault/vau
 
 resource keyVaultSecretSearchServiceApiKeyRes 'Microsoft.KeyVault/vaults/secrets@2019-09-01' = {
   parent: keyVaultRes
-  name: '${keyVaultSecretSearchServiceApiKey}'
+  name: keyVaultSecretSearchServiceApiKey
   properties: {
     value: listAdminKeys(cognitiveSearchRes.id, '2020-03-13').primaryKey
   }
@@ -215,7 +213,7 @@ resource keyVaultAccessPoliciesRes 'Microsoft.KeyVault/vaults/accessPolicies@201
 
 resource cognitiveSearchRes 'Microsoft.Search/searchServices@2020-08-01' = {
   name: cognitiveSearchName
-  location: resourceGroup().location
+  location: resourceLocation
   sku: {
     name: cognitiveSearchSku
   }
@@ -243,21 +241,18 @@ resource cognitiveSearchDiagnosticsRes 'Microsoft.Insights/diagnosticSettings@20
       }
     ]
   }
-  dependsOn: [
-    cognitiveSearchRes
-  ]
 }
 
 resource appServicePlanRes 'Microsoft.Web/serverfarms@2020-09-01' = {
   name: appServicePlanName
-  location: resourceGroup().location
+  location: resourceLocation
   sku: appServicePlanSku
   properties: {}
 }
 
 resource searchFuncRes 'Microsoft.Web/sites@2020-09-01' = {
   name: searchFuncName
-  location: resourceGroup().location
+  location: resourceLocation
   kind: 'functionapp'
   properties: {
     enabled: true
@@ -310,7 +305,7 @@ resource searchFuncAppSettingsRes 'Microsoft.Web/sites/config@2020-09-01' = {
 
 resource indexerFuncRes 'Microsoft.Web/sites@2020-09-01' = {
   name: indexerFuncName
-  location: resourceGroup().location
+  location: resourceLocation
   kind: 'functionapp'
   properties: {
     enabled: true

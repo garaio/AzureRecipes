@@ -5,6 +5,8 @@ param resourceNamePrefix string = 'customer-project'
 @description('The suffix will be appended to every resource name. You have to specify a unique, not yet used, value.')
 param resourceNameSuffix string
 
+param resourceLocation string = resourceGroup().location
+
 var logAnalyticsWsName = '${resourceNamePrefix}-law-${resourceNameSuffix}'
 var appInsightsName = '${resourceNamePrefix}-ai-${resourceNameSuffix}'
 
@@ -34,7 +36,7 @@ var storageAccountFunctionSasParams = {
   signedPermission: 'r'
   signedExpiry: '2050-01-01T00:00:00Z'
 }
-var storageAccountBlobUri = 'https://${storageAccountName}.blob.core.windows.net/'
+var storageAccountBlobUri = 'https://${storageAccountName}.blob.${environment().suffixes.storage}/'
 
 var appServicePlanName = '${resourceNamePrefix}-asp-${resourceNameSuffix}'
 var appServicePlanSku = {
@@ -62,10 +64,9 @@ resource partnerIdRes 'Microsoft.Resources/deployments@2020-06-01' = {
 
 resource storageAccountRes 'Microsoft.Storage/storageAccounts@2019-06-01' = {
   name: storageAccountName
-  location: resourceGroup().location
+  location: resourceLocation
   sku: {
     name: 'Standard_LRS'
-    tier: 'Standard'
   }
   kind: 'StorageV2'
   properties: {
@@ -102,7 +103,7 @@ resource storageAccountBlobContainerRes 'Microsoft.Storage/storageAccounts/blobS
 
 resource logAnalyticsWsRes 'Microsoft.OperationalInsights/workspaces@2020-08-01' = {
   name: logAnalyticsWsName
-  location: resourceGroup().location
+  location: resourceLocation
   properties: {
     sku: {
       name: 'PerGB2018'
@@ -113,7 +114,7 @@ resource logAnalyticsWsRes 'Microsoft.OperationalInsights/workspaces@2020-08-01'
 
 resource appInsightsRes 'Microsoft.Insights/components@2020-02-02-preview' = {
   name: appInsightsName
-  location: resourceGroup().location
+  location: resourceLocation
   kind: 'web'
   properties: {
     Application_Type: 'web'
@@ -123,7 +124,7 @@ resource appInsightsRes 'Microsoft.Insights/components@2020-02-02-preview' = {
 
 resource keyVaultRes 'Microsoft.KeyVault/vaults@2019-09-01' = {
   name: keyVaultName
-  location: resourceGroup().location
+  location: resourceLocation
   properties: {
     sku: {
       family: 'A'
@@ -153,9 +154,6 @@ resource keyVaultDiagnosticsRes 'Microsoft.Insights/diagnosticSettings@2017-05-0
       }
     ]
   }
-  dependsOn: [
-    keyVaultRes
-  ]
 }
 
 resource keyVaultAccessSchedulerFuncRes 'Microsoft.KeyVault/vaults/accessPolicies@2019-09-01' = {
@@ -197,7 +195,7 @@ resource keyVaultSecretServiceBusConnectionStringRes 'Microsoft.KeyVault/vaults/
 
 resource serviceBusNamespaceRes 'Microsoft.ServiceBus/namespaces@2018-01-01-preview' = {
   name: serviceBusNamespaceName
-  location: resourceGroup().location
+  location: resourceLocation
   sku: {
     name: 'Basic'
     tier: 'Basic'
@@ -219,9 +217,6 @@ resource serviceBusQueuesRes 'Microsoft.ServiceBus/namespaces/queues@2017-04-01'
     enablePartitioning: false
     enableExpress: false
   }
-  dependsOn: [
-    serviceBusNamespaceRes
-  ]
 }]
 
 resource serviceBusNamespaceDiagnosticsRes 'Microsoft.Insights/diagnosticSettings@2017-05-01-preview' = {
@@ -242,14 +237,11 @@ resource serviceBusNamespaceDiagnosticsRes 'Microsoft.Insights/diagnosticSetting
       }
     ]
   }
-  dependsOn: [
-    serviceBusNamespaceRes
-  ]
 }
 
 resource appServicePlanRes 'Microsoft.Web/serverfarms@2020-09-01' = {
   name: appServicePlanName
-  location: resourceGroup().location
+  location: resourceLocation
   sku: appServicePlanSku
   properties: {
   }
@@ -258,7 +250,7 @@ resource appServicePlanRes 'Microsoft.Web/serverfarms@2020-09-01' = {
 resource schedulerFuncRes 'Microsoft.Web/sites@2020-09-01' = {
   name: schedulerFuncName
   kind: 'functionapp'
-  location: resourceGroup().location
+  location: resourceLocation
   properties: {
     enabled: true
     hostNameSslStates: [
@@ -298,7 +290,7 @@ resource schedulerFuncRes 'Microsoft.Web/sites@2020-09-01' = {
 resource processFuncAppSettingsRes 'Microsoft.Web/sites/config@2020-09-01' = {
   name: '${schedulerFuncRes.name}/appsettings'
   properties: {
-    AzureWebJobsStorage: '@Microsoft.KeyVault(SecretUri=${keyVaultSecretStorageAccountConnectionStringRes.properties.secretUriWithVersion})'
+    AzureWebJobsStorage: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${keyVaultSecretStorageAccountConnectionString})'
     AzureWebJobsDisableHomepage: true
     WEBSITE_CONTENTAZUREFILECONNECTIONSTRING: 'DefaultEndpointsProtocol=https;AccountName=${storageAccountName};AccountKey=${listKeys(storageAccountRes.id, '2019-06-01').keys[0].value}'
     APPINSIGHTS_INSTRUMENTATIONKEY: reference('Microsoft.Insights/components/${appInsightsName}').InstrumentationKey
@@ -321,4 +313,5 @@ resource processFuncAppSettingsRes 'Microsoft.Web/sites/config@2020-09-01' = {
   ]
 }
 
+#disable-next-line outputs-should-not-contain-secrets
 output serviceBusConnectionString string = listkeys(resourceId('Microsoft.ServiceBus/namespaces/authorizationRules', serviceBusNamespaceName, 'RootManageSharedAccessKey'), '2017-04-01').primaryConnectionString

@@ -4,6 +4,8 @@ param resourceNamePrefix string = 'customer-project'
 @description('The suffix will be appended to every parameter that represents a resource name. See the description of the parameter.')
 param resourceNameSuffix string
 
+param resourceLocation string = resourceGroup().location
+
 @allowed([
   'F0'
   'S1'
@@ -122,7 +124,7 @@ var botEndpoint = 'https://${botSiteName}.azurewebsites.net/api/messages'
 var cosmosDbAccountName = '${resourceNamePrefix}-cdb-${resourceNameSuffix}'
 
 var textAnalyticsName = '${resourceNamePrefix}-ta-${resourceNameSuffix}'
-var textAnalyticsEndpointHostName = 'https://${resourceGroup().location}.api.cognitive.microsoft.com'
+var textAnalyticsEndpointHostName = 'https://${resourceLocation}.api.cognitive.microsoft.com'
 var luisPredictionName = '${resourceNamePrefix}-luis-${resourceNameSuffix}'
 var luisAuthoringName = '${resourceNamePrefix}-luis-auth-${resourceNameSuffix}'
 var luisEndpointHostName = 'https://${luisLocation}.api.cognitive.microsoft.com'
@@ -144,7 +146,7 @@ resource partnerIdRes 'Microsoft.Resources/deployments@2020-06-01' = {
 
 resource storageAccountRes 'Microsoft.Storage/storageAccounts@2019-06-01' = {
   name: storageAccountName
-  location: resourceGroup().location
+  location: resourceLocation
   sku: {
     name: 'Standard_LRS'
   }
@@ -182,7 +184,7 @@ resource storageAccountBlobContainerRes 'Microsoft.Storage/storageAccounts/blobS
 
 resource logAnalyticsWsRes 'Microsoft.OperationalInsights/workspaces@2020-08-01' = {
   name: logAnalyticsWsName
-  location: resourceGroup().location
+  location: resourceLocation
   properties: {
     sku: {
       name: 'PerGB2018'
@@ -193,7 +195,7 @@ resource logAnalyticsWsRes 'Microsoft.OperationalInsights/workspaces@2020-08-01'
 
 resource appInsightsRes 'Microsoft.Insights/components@2020-02-02-preview' = {
   name: appInsightsName
-  location: resourceGroup().location
+  location: resourceLocation
   kind: 'web'
   properties: {
     Application_Type: 'web'
@@ -203,7 +205,7 @@ resource appInsightsRes 'Microsoft.Insights/components@2020-02-02-preview' = {
 
 resource keyVaultRes 'Microsoft.KeyVault/vaults@2019-09-01' = {
   name: keyVaultName
-  location: resourceGroup().location
+  location: resourceLocation
   properties: {
     sku: {
       family: 'A'
@@ -233,9 +235,6 @@ resource keyVaultDiagnosticsRes 'Microsoft.Insights/diagnosticSettings@2017-05-0
       }
     ]
   }
-  dependsOn: [
-    keyVaultRes
-  ]
 }
 
 resource keyVaultSecretStorageAccountConnectionStringRes 'Microsoft.KeyVault/vaults/secrets@2019-09-01' = {
@@ -269,7 +268,7 @@ resource keyVaultAccessPoliciesRes 'Microsoft.KeyVault/vaults/accessPolicies@201
     accessPolicies: [
       {
         tenantId: subscription().tenantId
-        objectId: reference(botSiteRes.id, '2020-09-01', 'Full').identity.principalId
+        objectId: reference(botSiteRes.id, '2021-03-01', 'Full').identity.principalId
         permissions: {
           keys: [
             'get'
@@ -281,7 +280,7 @@ resource keyVaultAccessPoliciesRes 'Microsoft.KeyVault/vaults/accessPolicies@201
       }
       {
         tenantId: subscription().tenantId
-        objectId: reference(indexerFuncRes.id, '2020-09-01', 'Full').identity.principalId
+        objectId: reference(indexerFuncRes.id, '2021-03-01', 'Full').identity.principalId
         permissions: {
           keys: [
             'get'
@@ -297,7 +296,7 @@ resource keyVaultAccessPoliciesRes 'Microsoft.KeyVault/vaults/accessPolicies@201
 
 resource cosmosDbAccountRes 'Microsoft.DocumentDB/databaseAccounts@2021-06-15' = {
   name: cosmosDbAccountName
-  location: resourceGroup().location
+  location: resourceLocation
   kind: 'GlobalDocumentDB'
   properties: {
     publicNetworkAccess: 'Enabled'
@@ -311,7 +310,7 @@ resource cosmosDbAccountRes 'Microsoft.DocumentDB/databaseAccounts@2021-06-15' =
     }
     locations: [
       {
-        locationName: resourceGroup().location
+        locationName: resourceLocation
         failoverPriority: 0
         isZoneRedundant: false
       }
@@ -357,14 +356,11 @@ resource cosmosDbAccountDiagnosticsRes 'Microsoft.Insights/diagnosticSettings@20
       }
     ]
   }
-  dependsOn: [
-    cosmosDbAccountRes
-  ]
 }
 
 resource botNameRes 'Microsoft.BotService/botServices@2021-03-01' = {
   name: botName
-  location: resourceGroup().location
+  location: resourceLocation
   sku: {
     name: botSku
   }
@@ -381,16 +377,16 @@ resource botNameRes 'Microsoft.BotService/botServices@2021-03-01' = {
   ]
 }
 
-resource appServicePlanRes 'Microsoft.Web/serverfarms@2020-09-01' = {
+resource appServicePlanRes 'Microsoft.Web/serverfarms@2021-03-01' = {
   name: appServicePlanName
-  location: resourceGroup().location
+  location: resourceLocation
   sku: appServicePlanSku
   properties: {}
 }
 
-resource botSiteRes 'Microsoft.Web/sites@2020-09-01' = {
+resource botSiteRes 'Microsoft.Web/sites@2021-03-01' = {
   name: botSiteName
-  location: resourceGroup().location
+  location: resourceLocation
   kind: 'app'
   properties: {
     serverFarmId: appServicePlanRes.id
@@ -410,7 +406,7 @@ resource botSiteRes 'Microsoft.Web/sites@2020-09-01' = {
   }
 }
 
-resource botSiteAppSettingsRes 'Microsoft.Web/sites/config@2020-09-01' = {
+resource botSiteAppSettingsRes 'Microsoft.Web/sites/config@2021-03-01' = {
   parent: botSiteRes
   name: 'appsettings'
   properties: {
@@ -438,9 +434,9 @@ resource botSiteAppSettingsRes 'Microsoft.Web/sites/config@2020-09-01' = {
   ]
 }
 
-resource indexerFuncRes 'Microsoft.Web/sites@2020-09-01' = {
+resource indexerFuncRes 'Microsoft.Web/sites@2021-03-01' = {
   name: indexerFuncName
-  location: resourceGroup().location
+  location: resourceLocation
   kind: 'functionapp'
   properties: {
     enabled: true
@@ -467,7 +463,7 @@ resource indexerFuncRes 'Microsoft.Web/sites@2020-09-01' = {
   }
 }
 
-resource indexerFuncAppSettingsRes 'Microsoft.Web/sites/config@2020-09-01' = {
+resource indexerFuncAppSettingsRes 'Microsoft.Web/sites/config@2021-03-01' = {
   parent: indexerFuncRes
   name: 'appsettings'
   properties: {
@@ -546,7 +542,7 @@ resource luisAuthoringRes 'Microsoft.CognitiveServices/accounts@2017-04-18' = {
 
 resource textAnalyticsRes 'Microsoft.CognitiveServices/accounts@2017-04-18' = {
   name: textAnalyticsName
-  location: resourceGroup().location
+  location: resourceLocation
   sku: {
     name: textAnalyticsSku
   }

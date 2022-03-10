@@ -4,8 +4,8 @@
   "metadata": {
     "_generator": {
       "name": "bicep",
-      "version": "0.4.613.9944",
-      "templateHash": "9601720882676038949"
+      "version": "0.4.1272.37030",
+      "templateHash": "16501155517842111084"
     }
   },
   "parameters": {
@@ -21,9 +21,12 @@
       "metadata": {
         "description": "The suffix will be appended to every resource name. You have to specify a unique, not yet used, value."
       }
+    },
+    "resourceLocation": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]"
     }
   },
-  "functions": [],
   "variables": {
     "logAnalyticsWsName": "[format('{0}-law-{1}', parameters('resourceNamePrefix'), parameters('resourceNameSuffix'))]",
     "appInsightsName": "[format('{0}-ai-{1}', parameters('resourceNamePrefix'), parameters('resourceNameSuffix'))]",
@@ -51,7 +54,7 @@
       "signedPermission": "r",
       "signedExpiry": "2050-01-01T00:00:00Z"
     },
-    "storageAccountBlobUri": "[format('https://{0}.blob.core.windows.net/', variables('storageAccountName'))]",
+    "storageAccountBlobUri": "[format('https://{0}.blob.{1}/', variables('storageAccountName'), environment().suffixes.storage)]",
     "appServicePlanName": "[format('{0}-asp-{1}', parameters('resourceNamePrefix'), parameters('resourceNameSuffix'))]",
     "appServicePlanSku": {
       "name": "Y1",
@@ -81,10 +84,9 @@
       "type": "Microsoft.Storage/storageAccounts",
       "apiVersion": "2019-06-01",
       "name": "[variables('storageAccountName')]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('resourceLocation')]",
       "sku": {
-        "name": "Standard_LRS",
-        "tier": "Standard"
+        "name": "Standard_LRS"
       },
       "kind": "StorageV2",
       "properties": {
@@ -127,7 +129,7 @@
       "type": "Microsoft.OperationalInsights/workspaces",
       "apiVersion": "2020-08-01",
       "name": "[variables('logAnalyticsWsName')]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('resourceLocation')]",
       "properties": {
         "sku": {
           "name": "PerGB2018"
@@ -139,7 +141,7 @@
       "type": "Microsoft.Insights/components",
       "apiVersion": "2020-02-02-preview",
       "name": "[variables('appInsightsName')]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('resourceLocation')]",
       "kind": "web",
       "properties": {
         "Application_Type": "web",
@@ -153,7 +155,7 @@
       "type": "Microsoft.KeyVault/vaults",
       "apiVersion": "2019-09-01",
       "name": "[variables('keyVaultName')]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('resourceLocation')]",
       "properties": {
         "sku": {
           "family": "A",
@@ -242,7 +244,7 @@
       "type": "Microsoft.ServiceBus/namespaces",
       "apiVersion": "2018-01-01-preview",
       "name": "[variables('serviceBusNamespaceName')]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('resourceLocation')]",
       "sku": {
         "name": "Basic",
         "tier": "Basic"
@@ -301,7 +303,7 @@
       "type": "Microsoft.Web/serverfarms",
       "apiVersion": "2020-09-01",
       "name": "[variables('appServicePlanName')]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('resourceLocation')]",
       "sku": "[variables('appServicePlanSku')]",
       "properties": {}
     },
@@ -310,7 +312,7 @@
       "apiVersion": "2020-09-01",
       "name": "[variables('schedulerFuncName')]",
       "kind": "functionapp",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('resourceLocation')]",
       "properties": {
         "enabled": true,
         "hostNameSslStates": [
@@ -352,7 +354,7 @@
       "apiVersion": "2020-09-01",
       "name": "[format('{0}/appsettings', variables('schedulerFuncName'))]",
       "properties": {
-        "AzureWebJobsStorage": "[format('@Microsoft.KeyVault(SecretUri={0})', reference(resourceId('Microsoft.KeyVault/vaults/secrets', split(format('{0}/{1}', variables('keyVaultName'), variables('keyVaultSecretStorageAccountConnectionString')), '/')[0], split(format('{0}/{1}', variables('keyVaultName'), variables('keyVaultSecretStorageAccountConnectionString')), '/')[1])).secretUriWithVersion)]",
+        "AzureWebJobsStorage": "[format('@Microsoft.KeyVault(VaultName={0};SecretName={1})', variables('keyVaultName'), variables('keyVaultSecretStorageAccountConnectionString'))]",
         "AzureWebJobsDisableHomepage": true,
         "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING": "[format('DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1}', variables('storageAccountName'), listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2019-06-01').keys[0].value)]",
         "APPINSIGHTS_INSTRUMENTATIONKEY": "[reference(format('Microsoft.Insights/components/{0}', variables('appInsightsName'))).InstrumentationKey]",

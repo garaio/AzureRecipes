@@ -4,6 +4,8 @@ param resourceNamePrefix string = 'customer-project'
 @description('The suffix will be appended to every parameter that represents a resource name. See the description of the parameter.')
 param resourceNameSuffix string
 
+param resourceLocation string = resourceGroup().location
+
 @description('Register API with Azure Active Directory (B2C or regular) to enforce user authentication.')
 param deployUserAuth bool = false
 
@@ -75,7 +77,7 @@ var storageAccountRegionalCodes = {
 
 var cdnProfileName = '${resourceNamePrefix}-cdn-${resourceNameSuffix}'
 var cdnEndpointName = '${resourceNamePrefix}-cdn-ep-${resourceNameSuffix}'
-var cdnEndpointOriginHost = '${storageAccountName}.${storageAccountRegionalCodes[resourceGroup().location]}.web.${environment().suffixes.storage}'
+var cdnEndpointOriginHost = '${storageAccountName}.${storageAccountRegionalCodes[resourceLocation]}.web.${environment().suffixes.storage}'
 var cdnEndpointOriginName = '${storageAccountName}-static-website'
 
 var appServicePlanName = '${resourceNamePrefix}-asp-${resourceNameSuffix}'
@@ -102,7 +104,7 @@ resource partnerIdRes 'Microsoft.Resources/deployments@2020-06-01' = {
 
 resource storageAccountRes 'Microsoft.Storage/storageAccounts@2019-06-01' = {
   name: storageAccountName
-  location: resourceGroup().location
+  location: resourceLocation
   sku: {
     name: 'Standard_LRS'
   }
@@ -140,7 +142,7 @@ resource storageAccountBlobContainerRes 'Microsoft.Storage/storageAccounts/blobS
 
 resource logAnalyticsWsRes 'Microsoft.OperationalInsights/workspaces@2020-08-01' = {
   name: logAnalyticsWsName
-  location: resourceGroup().location
+  location: resourceLocation
   properties: {
     sku: {
       name: 'PerGB2018'
@@ -151,7 +153,7 @@ resource logAnalyticsWsRes 'Microsoft.OperationalInsights/workspaces@2020-08-01'
 
 resource appInsightsRes 'Microsoft.Insights/components@2020-02-02-preview' = {
   name: appInsightsName
-  location: resourceGroup().location
+  location: resourceLocation
   kind: 'web'
   properties: {
     Application_Type: 'web'
@@ -161,7 +163,7 @@ resource appInsightsRes 'Microsoft.Insights/components@2020-02-02-preview' = {
 
 resource keyVaultRes 'Microsoft.KeyVault/vaults@2019-09-01' = {
   name: keyVaultName
-  location: resourceGroup().location
+  location: resourceLocation
   properties: {
     sku: {
       family: 'A'
@@ -191,9 +193,6 @@ resource keyVaultDiagnosticsRes 'Microsoft.Insights/diagnosticSettings@2017-05-0
       }
     ]
   }
-  dependsOn: [
-    keyVaultRes
-  ]
 }
 
 resource keyVaultSecretStorageAccountConnectionStringRes 'Microsoft.KeyVault/vaults/secrets@2019-09-01' = {
@@ -244,7 +243,7 @@ resource keyVaultAccessPoliciesRes 'Microsoft.KeyVault/vaults/accessPolicies@201
 
 resource cosmosDbAccountRes 'Microsoft.DocumentDB/databaseAccounts@2021-06-15' = {
   name: cosmosDbAccountName
-  location: resourceGroup().location
+  location: resourceLocation
   kind: 'GlobalDocumentDB'
   properties: {
     publicNetworkAccess: 'Enabled'
@@ -258,7 +257,7 @@ resource cosmosDbAccountRes 'Microsoft.DocumentDB/databaseAccounts@2021-06-15' =
     }
     locations: [
       {
-        locationName: resourceGroup().location
+        locationName: resourceLocation
         failoverPriority: 0
         isZoneRedundant: false
       }
@@ -304,14 +303,11 @@ resource cosmosDbAccountDiagnosticsRes 'Microsoft.Insights/diagnosticSettings@20
       }
     ]
   }
-  dependsOn: [
-    cosmosDbAccountRes
-  ]
 }
 
-resource appServicePlanConsumptionRes 'Microsoft.Web/serverfarms@2020-09-01' = if (!usePremiumFunctionPlan) {
+resource appServicePlanConsumptionRes 'Microsoft.Web/serverfarms@2021-03-01' = if (!usePremiumFunctionPlan) {
   name: (usePremiumFunctionPlan ? uniqueString(resourceGroup().id) : appServicePlanName)
-  location: resourceGroup().location
+  location: resourceLocation
   sku: {
     name: 'Y1'
     tier: 'Dynamic'
@@ -319,9 +315,9 @@ resource appServicePlanConsumptionRes 'Microsoft.Web/serverfarms@2020-09-01' = i
   properties: {}
 }
 
-resource appServicePlanPremiumRes 'Microsoft.Web/serverfarms@2020-09-01' = if (usePremiumFunctionPlan) {
+resource appServicePlanPremiumRes 'Microsoft.Web/serverfarms@2021-03-01' = if (usePremiumFunctionPlan) {
   name: (usePremiumFunctionPlan ? appServicePlanName : uniqueString(resourceGroup().id))
-  location: resourceGroup().location
+  location: resourceLocation
   sku: {
     name: 'EP1'
     tier: 'ElasticPremium'
@@ -332,9 +328,9 @@ resource appServicePlanPremiumRes 'Microsoft.Web/serverfarms@2020-09-01' = if (u
   }
 }
 
-resource serviceFuncRes 'Microsoft.Web/sites@2020-09-01' = {
+resource serviceFuncRes 'Microsoft.Web/sites@2021-03-01' = {
   name: serviceFuncName
-  location: resourceGroup().location
+  location: resourceLocation
   kind: 'functionapp'
   properties: {
     enabled: true
@@ -362,7 +358,7 @@ resource serviceFuncRes 'Microsoft.Web/sites@2020-09-01' = {
         ]
       }
       preWarmedInstanceCount: 1
-      minimumElasticInstanceCount: usePremiumFunctionPlan ? 1 : 0 // Required for benefit of Premium App Service Plan (schema is not up to date)
+      minimumElasticInstanceCount: usePremiumFunctionPlan ? 1 : 0
     }
   }
   identity: {
@@ -374,7 +370,7 @@ resource serviceFuncRes 'Microsoft.Web/sites@2020-09-01' = {
   ]
 }
 
-resource serviceFuncAppSettingsRes 'Microsoft.Web/sites/config@2020-09-01' = {
+resource serviceFuncAppSettingsRes 'Microsoft.Web/sites/config@2021-03-01' = {
   parent: serviceFuncRes
   name: 'appsettings'
   properties: {
@@ -401,8 +397,7 @@ resource serviceFuncAppSettingsRes 'Microsoft.Web/sites/config@2020-09-01' = {
   ]
 }
 
-// Note: Ignore the validation errors, the schema is not up to date
-resource serviceFuncAuthSettingsRes 'Microsoft.Web/sites/config@2020-09-01' = if (deployUserAuth) {
+resource serviceFuncAuthSettingsRes 'Microsoft.Web/sites/config@2021-03-01' = if (deployUserAuth) {
   parent: serviceFuncRes
   name: 'authsettingsV2'
   properties: {
@@ -418,7 +413,7 @@ resource serviceFuncAuthSettingsRes 'Microsoft.Web/sites/config@2020-09-01' = if
       azureActiveDirectory: {
         enabled: true
         registration: {
-          openIdIssuer: (empty(aadB2cName) ? 'https://login.microsoftonline.com/${subscription().tenantId}' : 'https://${aadB2cName}.b2clogin.com/${aadB2cName}.onmicrosoft.com/v2.0/.well-known/openid-configuration?p=B2C_1_signupsignin')
+          openIdIssuer: (empty(aadB2cName) ? '${environment().authentication.loginEndpoint}${subscription().tenantId}' : 'https://${aadB2cName}.b2clogin.com/${aadB2cName}.onmicrosoft.com/v2.0/.well-known/openid-configuration?p=B2C_1_signupsignin')
           clientId: serviceAppId
         }
         isAutoProvisioned: true
@@ -434,7 +429,7 @@ resource serviceFuncAuthSettingsRes 'Microsoft.Web/sites/config@2020-09-01' = if
 
 resource cdnProfileRes 'Microsoft.Cdn/profiles@2020-04-15' = {
   name: cdnProfileName
-  location: resourceGroup().location
+  location: resourceLocation
   sku: {
     name: 'Standard_Microsoft'
   }
@@ -453,15 +448,12 @@ resource cdnProfileDiagnosticsRes 'Microsoft.Insights/diagnosticSettings@2017-05
       }
     ]
   }
-  dependsOn: [
-    cdnProfileRes
-  ]
 }
 
 resource cdnEndpointRes 'Microsoft.Cdn/profiles/endpoints@2020-04-15' = {
   parent: cdnProfileRes
   name: cdnEndpointName
-  location: resourceGroup().location
+  location: resourceLocation
   properties: {
     originHostHeader: cdnEndpointOriginHost
     isHttpAllowed: true
@@ -571,14 +563,11 @@ resource cdnEndpointDiagnosticsRes 'Microsoft.Insights/diagnosticSettings@2017-0
       }
     ]
   }
-  dependsOn: [
-    cdnEndpointRes
-  ]
 }
 
 resource signalRServiceRes 'Microsoft.SignalRService/signalR@2021-06-01-preview' = if(deploySignalRService) {
   name: signalRServiceName
-  location: resourceGroup().location
+  location: resourceLocation
   sku: {
     name: signalRServiceSku
     capacity: 1
@@ -631,14 +620,11 @@ resource signalRServiceDiagnosticsRes 'Microsoft.Insights/diagnosticSettings@201
       }
     ]
   }
-  dependsOn: [
-    signalRServiceRes
-  ]
 }
 
 resource appConfigStoreRes 'Microsoft.AppConfiguration/configurationStores@2021-03-01-preview' = if(deployAppConfigStore) {
   name: appConfigStoreName
-  location: resourceGroup().location
+  location: resourceLocation
   identity: {
     type: 'SystemAssigned'
   }
@@ -672,9 +658,6 @@ resource appConfigStoreDiagnosticsRes 'Microsoft.Insights/diagnosticSettings@201
       }
     ]
   }
-  dependsOn: [
-    appConfigStoreRes
-  ]
 }
 
 output storageAccountWebEndpoint string = reference(storageAccountRes.id, '2019-06-01', 'Full').properties.primaryEndpoints.web
