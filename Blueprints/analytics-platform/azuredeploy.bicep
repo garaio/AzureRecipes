@@ -4,6 +4,8 @@ param resourceNamePrefix string = 'customer-project'
 @description('The suffix will be appended to every parameter that represents a resource name. See the description of the parameter.')
 param resourceNameSuffix string
 
+param resourceLocation string = resourceGroup().location
+
 @allowed([
   'User'
   'Group'
@@ -59,7 +61,7 @@ resource partnerIdRes 'Microsoft.Resources/deployments@2020-06-01' = {
 
 resource storageAccountRes 'Microsoft.Storage/storageAccounts@2019-06-01' = {
   name: storageAccountName
-  location: resourceGroup().location
+  location: resourceLocation
   sku: {
     name: 'Standard_LRS'
   }
@@ -97,7 +99,7 @@ resource storageAccountBlobContainerRes 'Microsoft.Storage/storageAccounts/blobS
 
 resource logAnalyticsWsRes 'Microsoft.OperationalInsights/workspaces@2020-08-01' = {
   name: logAnalyticsWsName
-  location: resourceGroup().location
+  location: resourceLocation
   properties: {
     sku: {
       name: 'PerGB2018'
@@ -108,7 +110,7 @@ resource logAnalyticsWsRes 'Microsoft.OperationalInsights/workspaces@2020-08-01'
 
 resource keyVaultRes 'Microsoft.KeyVault/vaults@2019-09-01' = {
   name: keyVaultName
-  location: resourceGroup().location
+  location: resourceLocation
   properties: {
     sku: {
       family: 'A'
@@ -138,14 +140,11 @@ resource keyVaultDiagnosticsRes 'Microsoft.Insights/diagnosticSettings@2017-05-0
       }
     ]
   }
-  dependsOn: [
-    keyVaultRes
-  ]
 }
 
 resource dataLakeStorageRes 'Microsoft.Storage/storageAccounts@2019-06-01' = {
   name: dataLakeStorageName
-  location: resourceGroup().location
+  location: resourceLocation
   tags: {
     Type: 'Synapse Data Lake Storage'
   }
@@ -204,9 +203,6 @@ resource dataLakeStorageRoleAssignmentServiceRes 'Microsoft.Authorization/roleAs
     principalId: reference(synapseWorkspaceRes.id, '2021-03-01', 'Full').identity.principalId
     principalType: 'ServicePrincipal'
   }
-  dependsOn: [
-    dataLakeStorageRes
-  ]
 }
 
 resource dataLakeStorageRoleAssignmentUserRes 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = if (!empty(synapseIdentityId)) {
@@ -217,14 +213,11 @@ resource dataLakeStorageRoleAssignmentUserRes 'Microsoft.Authorization/roleAssig
     principalId: synapseIdentityId
     principalType: synapseIdentityType
   }
-  dependsOn: [
-    dataLakeStorageRes
-  ]
 }
 
 resource synapseWorkspaceRes 'Microsoft.Synapse/workspaces@2021-03-01' = {
   name: synapseWorkspaceName
-  location: resourceGroup().location
+  location: resourceLocation
   identity: {
     type: 'SystemAssigned'
   }
@@ -290,9 +283,6 @@ resource synapseWorkspaceDiagnosticsRes 'Microsoft.Insights/diagnosticSettings@2
       }
     ]
   }
-  dependsOn: [
-    synapseWorkspaceRes
-  ]
 }
 
 resource logicAppFileIntegrationRes 'Microsoft.Resources/deployments@2021-01-01' = if (deployLogicApps) {
@@ -303,12 +293,11 @@ resource logicAppFileIntegrationRes 'Microsoft.Resources/deployments@2021-01-01'
       uri: '${logicAppFileIntegrationDefUri}?${listAccountSas(storageAccountRes.id, '2019-06-01', storageAccountFunctionSasParams).accountSasToken}'
     }
     parameters: {
-      LogicAppName: logicAppFileIntegrationName
+      LogicAppName:  { 
+        value: logicAppFileIntegrationName
+      }
     }
   }
-  dependsOn: [
-    storageAccountRes
-  ]
 }
 
 resource logicAppFileIntegrationDiagnosticsRes 'Microsoft.Insights/diagnosticSettings@2017-05-01-preview' = {
@@ -329,7 +318,4 @@ resource logicAppFileIntegrationDiagnosticsRes 'Microsoft.Insights/diagnosticSet
       }
     ]
   }
-  dependsOn: [
-    logicAppFileIntegrationRes
-  ]
 }

@@ -4,8 +4,8 @@
   "metadata": {
     "_generator": {
       "name": "bicep",
-      "version": "0.4.613.9944",
-      "templateHash": "8021177325002322731"
+      "version": "0.4.1272.37030",
+      "templateHash": "16426209696706450998"
     }
   },
   "parameters": {
@@ -21,6 +21,10 @@
       "metadata": {
         "description": "The suffix will be appended to every parameter that represents a resource name. See the description of the parameter."
       }
+    },
+    "resourceLocation": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]"
     },
     "serviceBusSku": {
       "type": "string",
@@ -39,7 +43,6 @@
       }
     }
   },
-  "functions": [],
   "variables": {
     "logAnalyticsWsName": "[format('{0}-law-{1}', parameters('resourceNamePrefix'), parameters('resourceNameSuffix'))]",
     "appInsightsName": "[format('{0}-ai-{1}', parameters('resourceNamePrefix'), parameters('resourceNameSuffix'))]",
@@ -91,7 +94,7 @@
       "type": "Microsoft.Storage/storageAccounts",
       "apiVersion": "2019-06-01",
       "name": "[variables('storageAccountName')]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('resourceLocation')]",
       "sku": {
         "name": "Standard_LRS"
       },
@@ -135,7 +138,7 @@
       "type": "Microsoft.OperationalInsights/workspaces",
       "apiVersion": "2020-08-01",
       "name": "[variables('logAnalyticsWsName')]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('resourceLocation')]",
       "properties": {
         "sku": {
           "name": "PerGB2018"
@@ -147,7 +150,7 @@
       "type": "Microsoft.Insights/components",
       "apiVersion": "2020-02-02-preview",
       "name": "[variables('appInsightsName')]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('resourceLocation')]",
       "kind": "web",
       "properties": {
         "Application_Type": "web",
@@ -161,7 +164,7 @@
       "type": "Microsoft.KeyVault/vaults",
       "apiVersion": "2019-09-01",
       "name": "[variables('keyVaultName')]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('resourceLocation')]",
       "properties": {
         "sku": {
           "family": "A",
@@ -225,7 +228,7 @@
       "type": "Microsoft.ServiceBus/namespaces",
       "apiVersion": "2021-01-01-preview",
       "name": "[variables('serviceBusNamespaceName')]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('resourceLocation')]",
       "sku": {
         "name": "[parameters('serviceBusSku')]",
         "tier": "[parameters('serviceBusSku')]"
@@ -291,7 +294,9 @@
           "uri": "[format('{0}?{1}', variables('logicAppFtpDemoDefUri'), listAccountSas(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2019-06-01', variables('storageAccountFunctionSasParams')).accountSasToken)]"
         },
         "parameters": {
-          "LogicAppName": "[variables('logicAppFtpDemoName')]"
+          "LogicAppName": {
+            "value": "[variables('logicAppFtpDemoName')]"
+          }
         }
       },
       "dependsOn": [

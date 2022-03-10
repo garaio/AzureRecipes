@@ -4,6 +4,8 @@ param resourceNamePrefix string = 'customer-project'
 @description('The suffix will be appended to every parameter that represents a resource name. See the description of the parameter.')
 param resourceNameSuffix string
 
+param resourceLocation string = resourceGroup().location
+
 @allowed([
   'Basic'
   'Standard'
@@ -63,7 +65,7 @@ resource partnerIdRes 'Microsoft.Resources/deployments@2020-06-01' = {
 
 resource storageAccountRes 'Microsoft.Storage/storageAccounts@2019-06-01' = {
   name: storageAccountName
-  location: resourceGroup().location
+  location: resourceLocation
   sku: {
     name: 'Standard_LRS'
   }
@@ -101,7 +103,7 @@ resource storageAccountBlobContainerRes 'Microsoft.Storage/storageAccounts/blobS
 
 resource logAnalyticsWsRes 'Microsoft.OperationalInsights/workspaces@2020-08-01' = {
   name: logAnalyticsWsName
-  location: resourceGroup().location
+  location: resourceLocation
   properties: {
     sku: {
       name: 'PerGB2018'
@@ -112,7 +114,7 @@ resource logAnalyticsWsRes 'Microsoft.OperationalInsights/workspaces@2020-08-01'
 
 resource appInsightsRes 'Microsoft.Insights/components@2020-02-02-preview' = {
   name: appInsightsName
-  location: resourceGroup().location
+  location: resourceLocation
   kind: 'web'
   properties: {
     Application_Type: 'web'
@@ -122,7 +124,7 @@ resource appInsightsRes 'Microsoft.Insights/components@2020-02-02-preview' = {
 
 resource keyVaultRes 'Microsoft.KeyVault/vaults@2019-09-01' = {
   name: keyVaultName
-  location: resourceGroup().location
+  location: resourceLocation
   properties: {
     sku: {
       family: 'A'
@@ -152,9 +154,6 @@ resource keyVaultDiagnosticsRes 'Microsoft.Insights/diagnosticSettings@2017-05-0
       }
     ]
   }
-  dependsOn: [
-    keyVaultRes
-  ]
 }
 
 resource keyVaultSecretStorageAccountConnectionStringRes 'Microsoft.KeyVault/vaults/secrets@2019-09-01' = {
@@ -178,7 +177,7 @@ resource keyVaultSecretServiceBusConnectionStringRes 'Microsoft.KeyVault/vaults/
 
 resource serviceBusNamespaceRes 'Microsoft.ServiceBus/namespaces@2021-01-01-preview' = {
   name: serviceBusNamespaceName
-  location: resourceGroup().location
+  location: resourceLocation
   sku: {
     name: serviceBusSku
     tier: serviceBusSku
@@ -200,9 +199,6 @@ resource serviceBusQueuesRes 'Microsoft.ServiceBus/namespaces/queues@2021-01-01-
     enablePartitioning: false
     enableExpress: false
   }
-  dependsOn: [
-    serviceBusNamespaceRes
-  ]
 }]
 
 resource serviceBusNamespaceDiagnosticsRes 'Microsoft.Insights/diagnosticSettings@2017-05-01-preview' = {
@@ -223,9 +219,6 @@ resource serviceBusNamespaceDiagnosticsRes 'Microsoft.Insights/diagnosticSetting
       }
     ]
   }
-  dependsOn: [
-    serviceBusNamespaceRes
-  ]
 }
 
 resource logicAppFtpDemoRes 'Microsoft.Resources/deployments@2021-01-01' = if (deployLogicApps) {
@@ -236,12 +229,11 @@ resource logicAppFtpDemoRes 'Microsoft.Resources/deployments@2021-01-01' = if (d
       uri: '${logicAppFtpDemoDefUri}?${listAccountSas(storageAccountRes.id, '2019-06-01', storageAccountFunctionSasParams).accountSasToken}'
     }
     parameters: {
-      LogicAppName: logicAppFtpDemoName
+      LogicAppName:  { 
+        value: logicAppFtpDemoName
+      }
     }
   }
-  dependsOn: [
-    storageAccountRes
-  ]
 }
 
 resource logicAppFtpDemoDiagnosticsRes 'Microsoft.Insights/diagnosticSettings@2017-05-01-preview' = {
@@ -262,7 +254,4 @@ resource logicAppFtpDemoDiagnosticsRes 'Microsoft.Insights/diagnosticSettings@20
       }
     ]
   }
-  dependsOn: [
-    logicAppFtpDemoRes
-  ]
 }
