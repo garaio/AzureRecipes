@@ -1,0 +1,27 @@
+variables:
+  resourceName: 'any-resource-name-unique-in-subscription'
+  subscriptionId: '00000000-0000-0000-0000-000000000000'
+
+steps:
+- task: AzureCLI@2
+  displayName: 'Determine if Azure Resource exists'
+  inputs:
+    azureSubscription: '${{ parameters.armServiceConnection }}'
+    scriptType: bash
+    scriptLocation: inlineScript
+    inlineScript: |
+      resourceCount=$(az resource list --query "[?name=='$(resourceName)'] | length(@)" --subscription $(subscriptionId))
+      if [ $resourceCount -gt 0 ]; then
+        echo "##vso[task.setvariable variable=resourceExists;]true"
+      else
+        echo "##vso[task.setvariable variable=resourceExists;]false"
+      fi
+
+- task: AzureCLI@2
+  displayName: 'Demo: Use created boolean variable like any other pipeline variable'
+  inputs:
+    azureSubscription: '${{ parameters.armServiceConnection }}'
+    scriptType: bash
+    scriptLocation: inlineScript
+    inlineScript: |
+      echo "$(resourceExists)"

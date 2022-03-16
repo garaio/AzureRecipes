@@ -16,3 +16,5 @@ General resources:
 | Container Registry / Instance | CaaS | Build and publish Docker container to Container Registry (CI pipeline) and deploy image to a Container Instance in a subsequent CD pipeline | - | [build-and-deploy-docker-to-container-instance](./build-and-deploy-docker-to-container-instance) |
 | (any) | - | Reuse common deployment steps in a CD pipeline for multiple stages by using a template | [cascading-ci-cd-pipelines](./cascading-ci-cd-pipelines) | [multi-stage-deployment-with-template](./
 multi-stage-deployment-with-template) |
+| (any) | - | Check if a specific resource already exists in a subscription | - | [check-if-azure-resource-exists](./check-if-azure-resource-exists) |
+| (any) | - | Mainly to access KeyVault secrets from pipelines, an according Access Policy for the Service Principal must be deployed first. This snippet shows how to gather the necessary AAD Object ID. | - | [get-principal-objectid-from-arm-service-connection](./get-principal-objectid-from-arm-service-connection) |
