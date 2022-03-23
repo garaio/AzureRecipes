@@ -1,5 +1,5 @@
-# Policy Assigments for PaaS Applications
-The following set of built-in policies is recommended as initial basis for typical PaaS applications. Ideally this are applied to an appropriate Management Group beeing parent of these applications.
+# Policy Assignments for PaaS Applications
+The following set of built-in policies is recommended as initial basis for typical PaaS applications. Ideally this are applied to an appropriate Management Group being parent of these applications.
 
 | Policy | Resource Type(s) | Configuration | Effect | Purpose |
 |--------|------------------|---------------|--------|---------|
@@ -80,7 +80,7 @@ The following set of built-in policies is recommended as initial basis for typic
 - avs/privateclouds
 
 # Best Practices
-* Create a User-assigned Managed Identity in advance with the roles `Contributor` and `Security Admin` on the Management Group. Use this identity in policy assignements, this prevents the generation of hardly identifiable Service Principals.
+* Create a User-assigned Managed Identity in advance with the roles `Contributor` and `Security Admin` on the Management Group. Use this identity in policy assignments, this prevents the generation of hardly identifiable Service Principals.
 * Especially policy assignments with many configurations (like the `Not allowed resource types`) may be hardly manageable in the Azure Portal UI. Consider its definition with ARM/Bicep templates and an according deployment process.
 * Tip: Azure CLI command to show current assignments: `az policy assignment list --scope "/providers/Microsoft.Management/managementGroups/mg-applications"` 
 

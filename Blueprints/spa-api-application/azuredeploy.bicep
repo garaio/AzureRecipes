@@ -215,7 +215,7 @@ resource keyVaultSecretSignalRConnectionStringRes 'Microsoft.KeyVault/vaults/sec
   parent: keyVaultRes
   name: keyVaultSecretSignalRConnectionString
   properties: {
-    value: listKeys(signalRServiceRes.id, '2021-06-01-preview').primaryConnectionString
+    value: listKeys(signalRServiceRes.id, '2021-10-01').primaryConnectionString
   }
 }
 
@@ -565,7 +565,7 @@ resource cdnEndpointDiagnosticsRes 'Microsoft.Insights/diagnosticSettings@2017-0
   }
 }
 
-resource signalRServiceRes 'Microsoft.SignalRService/signalR@2021-06-01-preview' = if(deploySignalRService) {
+resource signalRServiceRes 'Microsoft.SignalRService/signalR@2021-10-01' = if(deploySignalRService) {
   name: signalRServiceName
   location: resourceLocation
   sku: {

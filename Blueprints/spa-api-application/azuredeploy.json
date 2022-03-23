@@ -4,8 +4,8 @@
   "metadata": {
     "_generator": {
       "name": "bicep",
-      "version": "0.4.1272.37030",
-      "templateHash": "9730111920135023225"
+      "version": "0.4.1318.3566",
+      "templateHash": "12905000635742347117"
     }
   },
   "parameters": {
@@ -285,7 +285,7 @@
       "apiVersion": "2019-09-01",
       "name": "[format('{0}/{1}', variables('keyVaultName'), variables('keyVaultSecretSignalRConnectionString'))]",
       "properties": {
-        "value": "[listKeys(resourceId('Microsoft.SignalRService/signalR', variables('signalRServiceName')), '2021-06-01-preview').primaryConnectionString]"
+        "value": "[listKeys(resourceId('Microsoft.SignalRService/signalR', variables('signalRServiceName')), '2021-10-01').primaryConnectionString]"
       },
       "dependsOn": [
         "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]",
@@ -684,7 +684,7 @@
     {
       "condition": "[parameters('deploySignalRService')]",
       "type": "Microsoft.SignalRService/signalR",
-      "apiVersion": "2021-06-01-preview",
+      "apiVersion": "2021-10-01",
       "name": "[variables('signalRServiceName')]",
       "location": "[parameters('resourceLocation')]",
       "sku": {
