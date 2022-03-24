@@ -1,0 +1,166 @@
+parameters:
+  - name: envName
+    type: string
+    values:
+    - DEV
+    - TEST
+    - PROD
+  - name: resNameEnv
+    type: string
+  - name: releaseDate
+    type: string
+  - name: armServiceConnection
+    type: string
+
+jobs:
+  - deployment: base
+    displayName: 'Base Resources'
+    pool:
+      vmImage: 'ubuntu-latest'
+    environment: ${{ parameters.envName }}
+    variables:
+      - group: Release - Common
+      - group: ${{ format('Release - {0}', parameters.envName) }}
+      - name: ciArtifactName
+        value: 'services'
+      - name: resourceGroupName
+        value: '$(baseResourceNamePrefix)-${{ parameters.resNameEnv }}'
+      - name: keyVaultName
+        value: '$(baseResourceNamePrefix)-kv-${{ parameters.resNameEnv }}'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+            - task: AzureCLI@2
+              displayName: 'Create Resource Group'
+              inputs:
+                azureSubscription: '${{ parameters.armServiceConnection }}'
+                scriptType: bash
+                scriptLocation: inlineScript
+                inlineScript: |
+                  az group create --location $(resourceLocation) --name $(resourceGroupName) --tags 'DeployedAt=${{ parameters.releaseDate }}' 'DeployedBy=$(Build.RequestedFor)' 'DeployedFrom=$(System.TeamProject)'
+
+            # 1. Gets AAD ObjectId of Service Principal which executes this pipeline -> This is added to Key Vault which allows that secrets can be read in later steps of this pipeline
+            # 2. KeyVault has to be deployed with a different deployment mode, if existing Access Policies shall be kept. But this mode fails for initial deployments. So we determine if the KeyVault already exists.
+            - task: AzureCLI@2
+              displayName: 'Evaluate variables for KeyVault deployment'
+              inputs:
+                azureSubscription: '${{ parameters.armServiceConnection }}'
+                scriptType: bash
+                scriptLocation: inlineScript
+                addSpnToEnvironment: true # Important: This makes the built-in variable `servicePrincipalId` available
+                inlineScript: |
+                  svcConObjectId=$(az ad sp show --id $servicePrincipalId --query objectId -o tsv)
+                  echo "##vso[task.setvariable variable=armServicePrincipalId;]$svcConObjectId"
+
+                  keyVaultCount=$(az keyvault list --query "[?name=='$(keyVaultName)'] | length(@)" --subscription $(subscriptionId))
+                  if [ $keyVaultCount -gt 0 ]; then
+                    echo "##vso[task.setvariable variable=keyVaultExists;]true"
+                  else
+                    echo "##vso[task.setvariable variable=keyVaultExists;]false"
+                  fi
+
+            - task: AzureResourceManagerTemplateDeployment@3
+              displayName: 'Deploy ARM Template (ResourceGroup)'
+              inputs:
+                azureResourceManagerConnection: '${{ parameters.armServiceConnection }}'
+                subscriptionId: '$(subscriptionId)'
+                resourceGroupName: '$(resourceGroupName)'
+                location: '$(resourceLocation)'
+                csmFile: '$(Pipeline.Workspace)/CI-Pipeline/$(ciArtifactName)/azuredeploy.base.json'
+                overrideParameters: '-resourceNamePrefix "$(baseResourceNamePrefix)" -resourceNameSuffix "${{ parameters.resNameEnv }}" -useExistingKeyVault $(keyVaultExists) -servicePrincipalId "$(armServicePrincipalId)"'
+                deploymentMode: 'Incremental'
+                deploymentName: 'Base-$(Build.BuildId)-$(Environment.Name)'
+
+  - deployment: extensions
+    dependsOn: base
+    displayName: 'Extensions Resources'
+    pool:
+      vmImage: 'ubuntu-latest'
+    environment: ${{ parameters.envName }}
+    variables:
+      - group: Release - Common
+      - group: ${{ format('Release - {0}', parameters.envName) }}
+      - name: ciArtifactName
+        value: 'services'
+      - name: resourceGroupName
+        value: '$(extResourceNamePrefix)-${{ parameters.resNameEnv }}'
+      - name: keyVaultResourceGroupName
+        value: '$(baseResourceNamePrefix)-${{ parameters.resNameEnv }}'
+      - name: keyVaultName
+        value: '$(baseResourceNamePrefix)-kv-${{ parameters.resNameEnv }}'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+            - task: AzureCLI@2
+              displayName: 'Create Resource Group'
+              inputs:
+                azureSubscription: '${{ parameters.armServiceConnection }}'
+                scriptType: bash
+                scriptLocation: inlineScript
+                inlineScript: |
+                  az group create --location $(resourceLocation) --name $(resourceGroupName) --tags 'DeployedAt=${{ parameters.releaseDate }}' 'DeployedBy=$(Build.RequestedFor)' 'DeployedFrom=$(System.TeamProject)'
+
+            - task: AzureResourceManagerTemplateDeployment@3
+              displayName: 'Deploy ARM Template (ResourceGroup)'
+              inputs:
+                azureResourceManagerConnection: '${{ parameters.armServiceConnection }}'
+                subscriptionId: '$(subscriptionId)'
+                resourceGroupName: '$(resourceGroupName)'
+                location: '$(resourceLocation)'
+                csmFile: '$(Pipeline.Workspace)/CI-Pipeline/$(ciArtifactName)/azuredeploy.extension.json'
+                overrideParameters: '-resourceNamePrefix "$(extResourceNamePrefix)" -resourceNameSuffix "${{ parameters.resNameEnv }}" -keyVaultName "$(keyVaultName)" -keyVaultResourceGroupName "$(keyVaultResourceGroupName)"'
+                deploymentMode: 'Incremental'
+                deploymentName: 'Extension-$(Build.BuildId)-$(Environment.Name)'
+
+  - deployment: application
+    dependsOn: extensions
+    displayName: 'Application Resources'
+    pool:
+      vmImage: 'ubuntu-latest'
+    environment: ${{ parameters.envName }}
+    variables:
+      - group: Release - Common
+      - group: ${{ format('Release - {0}', parameters.envName) }}
+      - name: ciArtifactName
+        value: 'services'
+      - name: resourceGroupName
+        value: '$(appResourceNamePrefix)-${{ parameters.resNameEnv }}'
+      - name: keyVaultResourceGroupName
+        value: '$(baseResourceNamePrefix)-${{ parameters.resNameEnv }}'
+      - name: keyVaultName
+        value: '$(baseResourceNamePrefix)-kv-${{ parameters.resNameEnv }}'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+            - task: AzureCLI@2
+              displayName: 'Create Resource Group'
+              inputs:
+                azureSubscription: '${{ parameters.armServiceConnection }}'
+                scriptType: bash
+                scriptLocation: inlineScript
+                inlineScript: |
+                  az group create --location $(resourceLocation) --name $(resourceGroupName) --tags 'DeployedAt=${{ parameters.releaseDate }}' 'DeployedBy=$(Build.RequestedFor)' 'DeployedFrom=$(System.TeamProject)'
+
+            # Note: This step bases on the Access Policy created for the pipeline's Service Principal in first deployment job
+            - task: AzureKeyVault@1
+              displayName: 'Gather KeyVault values'
+              inputs:
+                azureSubscription: '${{ parameters.armServiceConnection }}'
+                KeyVaultName: '$(keyVaultName)'
+                SecretsFilter: 'appInsightsInstrumentationKey' # Comma-separated list of secrets -> The're made available as pipeline variables with same name
+                RunAsPreJob: false # No impact: https://docs.microsoft.com/en-us/azure/devops/pipelines/tasks/deploy/azure-key-vault?view=azure-devops#arguments
+
+            - task: AzureResourceManagerTemplateDeployment@3
+              displayName: 'Deploy ARM Template (ResourceGroup)'
+              inputs:
+                azureResourceManagerConnection: '${{ parameters.armServiceConnection }}'
+                subscriptionId: '$(subscriptionId)'
+                resourceGroupName: '$(resourceGroupName)'
+                location: '$(resourceLocation)'
+                csmFile: '$(Pipeline.Workspace)/CI-Pipeline/$(ciArtifactName)/azuredeploy.application.json'
+                overrideParameters: '-resourceNamePrefix "$(appResourceNamePrefix)" -resourceNameSuffix "${{ parameters.resNameEnv }}" -keyVaultName "$(keyVaultName)" -keyVaultResourceGroupName "$(keyVaultResourceGroupName)" -appInsightsInstrumentationKey "$(appInsightsInstrumentationKey)"'
+                deploymentMode: 'Incremental'
+                deploymentName: 'Application-$(Build.BuildId)-$(Environment.Name)'

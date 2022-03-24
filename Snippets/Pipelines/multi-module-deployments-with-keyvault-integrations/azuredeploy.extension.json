@@ -1,0 +1,198 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.4.1318.3566",
+      "templateHash": "17731193765141551802"
+    }
+  },
+  "parameters": {
+    "resourceNamePrefix": {
+      "type": "string",
+      "defaultValue": "customer-project",
+      "metadata": {
+        "description": "The prefix will be used for every parameter that represents a resource name. See the description of the parameter."
+      }
+    },
+    "resourceNameSuffix": {
+      "type": "string",
+      "metadata": {
+        "description": "The suffix will be appended to every parameter that represents a resource name. See the description of the parameter."
+      }
+    },
+    "resourceLocation": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]"
+    },
+    "keyVaultName": {
+      "type": "string"
+    },
+    "keyVaultResourceGroupName": {
+      "type": "string"
+    },
+    "signalRServiceSku": {
+      "type": "string",
+      "defaultValue": "Free_F1",
+      "allowedValues": [
+        "Free_F1",
+        "Standard_S1"
+      ]
+    }
+  },
+  "variables": {
+    "logAnalyticsWsName": "[format('{0}-law-{1}', parameters('resourceNamePrefix'), parameters('resourceNameSuffix'))]",
+    "keyVaultSecretSignalRConnectionString": "signalRConnectionString",
+    "signalRServiceName": "[format('{0}-sigr-{1}', parameters('resourceNamePrefix'), parameters('resourceNameSuffix'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-06-01",
+      "name": "pid-d16e7b59-716a-407d-96db-18d1cac40407",
+      "properties": {
+        "mode": "Incremental",
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "resources": []
+        }
+      }
+    },
+    {
+      "type": "Microsoft.OperationalInsights/workspaces",
+      "apiVersion": "2020-08-01",
+      "name": "[variables('logAnalyticsWsName')]",
+      "location": "[parameters('resourceLocation')]",
+      "properties": {
+        "sku": {
+          "name": "PerGB2018"
+        },
+        "retentionInDays": 30
+      }
+    },
+    {
+      "type": "Microsoft.SignalRService/signalR",
+      "apiVersion": "2021-10-01",
+      "name": "[variables('signalRServiceName')]",
+      "location": "[parameters('resourceLocation')]",
+      "sku": {
+        "name": "[parameters('signalRServiceSku')]",
+        "capacity": 1
+      },
+      "properties": {
+        "features": [
+          {
+            "flag": "ServiceMode",
+            "value": "Serverless"
+          },
+          {
+            "flag": "EnableConnectivityLogs",
+            "value": "true"
+          },
+          {
+            "flag": "EnableMessagingLogs",
+            "value": "true"
+          },
+          {
+            "flag": "EnableLiveTrace",
+            "value": "true"
+          }
+        ],
+        "cors": {
+          "allowedOrigins": [
+            "*"
+          ]
+        },
+        "tls": {
+          "clientCertEnabled": false
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Insights/diagnosticSettings",
+      "apiVersion": "2017-05-01-preview",
+      "scope": "[format('Microsoft.SignalRService/signalR/{0}', variables('signalRServiceName'))]",
+      "name": "LogAnalytics",
+      "properties": {
+        "workspaceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]",
+        "logs": [
+          {
+            "category": "AllLogs",
+            "enabled": true
+          }
+        ],
+        "metrics": [
+          {
+            "category": "AllMetrics",
+            "enabled": true
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsWsName'))]",
+        "[resourceId('Microsoft.SignalRService/signalR', variables('signalRServiceName'))]"
+      ]
+    },
+    {
+      "condition": "[and(not(empty(parameters('keyVaultName'))), not(empty(parameters('keyVaultResourceGroupName'))))]",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2020-10-01",
+      "name": "[variables('keyVaultSecretSignalRConnectionString')]",
+      "resourceGroup": "[parameters('keyVaultResourceGroupName')]",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "keyVaultName": {
+            "value": "[parameters('keyVaultName')]"
+          },
+          "secretName": {
+            "value": "[variables('keyVaultSecretSignalRConnectionString')]"
+          },
+          "secretValue": {
+            "value": "[listKeys(resourceId('Microsoft.SignalRService/signalR', variables('signalRServiceName')), '2021-10-01').primaryConnectionString]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.4.1318.3566",
+              "templateHash": "3513165038850413405"
+            }
+          },
+          "parameters": {
+            "keyVaultName": {
+              "type": "string"
+            },
+            "secretName": {
+              "type": "string"
+            },
+            "secretValue": {
+              "type": "secureString"
+            }
+          },
+          "resources": [
+            {
+              "type": "Microsoft.KeyVault/vaults/secrets",
+              "apiVersion": "2021-10-01",
+              "name": "[format('{0}/{1}', parameters('keyVaultName'), parameters('secretName'))]",
+              "properties": {
+                "value": "[parameters('secretValue')]"
+              }
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.SignalRService/signalR', variables('signalRServiceName'))]"
+      ]
+    }
+  ]
+}

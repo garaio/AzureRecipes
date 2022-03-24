@@ -1,0 +1,108 @@
+@description('The prefix will be used for every parameter that represents a resource name. See the description of the parameter.')
+param resourceNamePrefix string = 'customer-project'
+
+@description('The suffix will be appended to every parameter that represents a resource name. See the description of the parameter.')
+param resourceNameSuffix string
+
+param resourceLocation string = resourceGroup().location
+
+param keyVaultName string
+param keyVaultResourceGroupName string
+param keyVaultSecretStorageAccountConnectionString string = 'storageAccountConnectionString'
+param keyVaultSecretServiceBusConnectionString string = 'serviceBusConnectionString'
+param keyVaultSecretSignalRConnectionString string = 'signalRConnectionString'
+
+param appInsightsInstrumentationKey string = ''
+
+var appServicePlanName = '${resourceNamePrefix}-asp-${resourceNameSuffix}'
+var appServicePlanSku = {
+  name: 'Y1'
+  tier: 'Dynamic'
+}
+
+var serviceFuncName = '${resourceNamePrefix}-service-f-${resourceNameSuffix}'
+
+resource partnerIdRes 'Microsoft.Resources/deployments@2020-06-01' = {
+  name: 'pid-d16e7b59-716a-407d-96db-18d1cac40407'
+  properties: {
+    mode: 'Incremental'
+    template: {
+      '$schema': 'https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#'
+      contentVersion: '1.0.0.0'
+      resources: []
+    }
+  }
+}
+
+resource appServicePlanRes 'Microsoft.Web/serverfarms@2020-09-01' = {
+  name: appServicePlanName
+  location: resourceLocation
+  sku: appServicePlanSku
+  properties: {}
+}
+
+resource serviceFuncRes 'Microsoft.Web/sites@2021-03-01' = {
+  name: serviceFuncName
+  location: resourceLocation
+  kind: 'functionapp'
+  properties: {
+    enabled: true
+    hostNameSslStates: [
+      {
+        name: '${serviceFuncName}.azurewebsites.net'
+        sslState: 'Disabled'
+        hostType: 'Standard'
+      }
+      {
+        name: '${serviceFuncName}.scm.azurewebsites.net'
+        sslState: 'Disabled'
+        hostType: 'Repository'
+      }
+    ]
+    serverFarmId: appServicePlanRes.id
+    clientAffinityEnabled: true
+    containerSize: 1536
+    dailyMemoryTimeQuota: 0
+    httpsOnly: true
+    siteConfig: {
+      cors: {
+        allowedOrigins: [
+          '*'
+        ]
+      }
+    }
+  }
+  identity: {
+    type: 'SystemAssigned'
+  }
+}
+
+resource keyVaultRes 'Microsoft.KeyVault/vaults@2021-10-01' existing = if (!empty(keyVaultName) && !empty(keyVaultResourceGroupName)) {
+  name: keyVaultName
+  scope: resourceGroup(keyVaultResourceGroupName)
+}
+
+module serviceFuncAppSettingsRes './modules.funcAppSettings.bicep' = if (!empty(keyVaultName) && !empty(keyVaultResourceGroupName)) {
+  name: 'func-appsettings'
+  params: {
+    keyVaultName: keyVaultName
+    serviceFuncName: serviceFuncName
+    storageAccountConnectionString: keyVaultRes.getSecret(keyVaultSecretStorageAccountConnectionString)
+    appInsightsInstrumentationKey: appInsightsInstrumentationKey
+    keyVaultSecretServiceBusConnectionString: keyVaultSecretServiceBusConnectionString
+    keyVaultSecretSignalRConnectionString: keyVaultSecretSignalRConnectionString
+    keyVaultSecretStorageAccountConnectionString: keyVaultSecretStorageAccountConnectionString
+  }
+  dependsOn: [
+    keyVaultAccessPolicyRes
+  ]
+}
+
+module keyVaultAccessPolicyRes './modules.keyVaultAccessPolicy.bicep' = if (!empty(keyVaultName) && !empty(keyVaultResourceGroupName)) {
+  name: 'keyvault-accesspolicy-service'
+  scope: resourceGroup(keyVaultResourceGroupName)
+  params: {
+    keyVaultName: keyVaultName
+    principalId: reference(serviceFuncRes.id, '2021-03-01', 'Full').identity.principalId
+  }
+}
