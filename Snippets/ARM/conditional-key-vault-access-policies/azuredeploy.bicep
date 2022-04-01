@@ -41,7 +41,7 @@ resource logAnalyticsWsRes 'Microsoft.OperationalInsights/workspaces@2020-08-01'
   }
 }
 
-resource appInsightsRes 'Microsoft.Insights/components@2020-02-02-preview' = {
+resource appInsightsRes 'Microsoft.Insights/components@2020-02-02' = {
   name: appInsightsName
   location: resourceLocation
   kind: 'web'
@@ -91,21 +91,21 @@ resource keyVaultAccessPoliciesRes  'Microsoft.KeyVault/vaults/accessPolicies@20
     accessPolicies: [
       {
         tenantId: subscription().tenantId
-        objectId: deployDemoFunction ? reference(demoFuncRes.id, '2020-09-01', 'Full').identity.principalId : '00000000-0000-0000-0000-000000000000'
+        objectId: deployDemoFunction ? reference(demoFuncRes.id, '2021-03-01', 'Full').identity.principalId : '00000000-0000-0000-0000-000000000000'
         permissions: deployDemoFunction ? keyVaultAppPermissions : {}
       }
     ]
   }
 }
 
-resource appServicePlanRes 'Microsoft.Web/serverfarms@2020-09-01' = {
+resource appServicePlanRes 'Microsoft.Web/serverfarms@2021-03-01' = {
   name: appServicePlanName
   location: resourceLocation
   sku: appServicePlanSku
   properties: {}
 }
 
-resource demoFuncRes 'Microsoft.Web/sites@2020-09-01' = {
+resource demoFuncRes 'Microsoft.Web/sites@2021-03-01' = {
   name: demoFuncName
   kind: 'functionapp'
   location: resourceLocation

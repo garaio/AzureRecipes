@@ -112,7 +112,7 @@ resource logAnalyticsWsRes 'Microsoft.OperationalInsights/workspaces@2020-08-01'
   }
 }
 
-resource appInsightsRes 'Microsoft.Insights/components@2020-02-02-preview' = {
+resource appInsightsRes 'Microsoft.Insights/components@2020-02-02' = {
   name: appInsightsName
   location: resourceLocation
   kind: 'web'
@@ -239,7 +239,7 @@ resource serviceBusNamespaceDiagnosticsRes 'Microsoft.Insights/diagnosticSetting
   }
 }
 
-resource appServicePlanRes 'Microsoft.Web/serverfarms@2020-09-01' = {
+resource appServicePlanRes 'Microsoft.Web/serverfarms@2021-03-01' = {
   name: appServicePlanName
   location: resourceLocation
   sku: appServicePlanSku
@@ -247,7 +247,7 @@ resource appServicePlanRes 'Microsoft.Web/serverfarms@2020-09-01' = {
   }
 }
 
-resource schedulerFuncRes 'Microsoft.Web/sites@2020-09-01' = {
+resource schedulerFuncRes 'Microsoft.Web/sites@2021-03-01' = {
   name: schedulerFuncName
   kind: 'functionapp'
   location: resourceLocation
@@ -287,7 +287,7 @@ resource schedulerFuncRes 'Microsoft.Web/sites@2020-09-01' = {
   ]
 }
 
-resource processFuncAppSettingsRes 'Microsoft.Web/sites/config@2020-09-01' = {
+resource processFuncAppSettingsRes 'Microsoft.Web/sites/config@2021-03-01' = {
   name: '${schedulerFuncRes.name}/appsettings'
   properties: {
     AzureWebJobsStorage: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${keyVaultSecretStorageAccountConnectionString})'

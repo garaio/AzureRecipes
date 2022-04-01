@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.4.1318.3566",
-      "templateHash": "6980503790424577193"
+      "templateHash": "33025851658888886"
     }
   },
   "parameters": {
@@ -143,7 +143,7 @@
     },
     {
       "type": "Microsoft.Insights/components",
-      "apiVersion": "2020-02-02-preview",
+      "apiVersion": "2020-02-02",
       "name": "[variables('appInsightsName')]",
       "location": "[parameters('resourceLocation')]",
       "kind": "web",

@@ -4,8 +4,8 @@
   "metadata": {
     "_generator": {
       "name": "bicep",
-      "version": "0.4.1272.37030",
-      "templateHash": "16426209696706450998"
+      "version": "0.4.1318.3566",
+      "templateHash": "2722653132569687378"
     }
   },
   "parameters": {
@@ -148,7 +148,7 @@
     },
     {
       "type": "Microsoft.Insights/components",
-      "apiVersion": "2020-02-02-preview",
+      "apiVersion": "2020-02-02",
       "name": "[variables('appInsightsName')]",
       "location": "[parameters('resourceLocation')]",
       "kind": "web",

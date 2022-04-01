@@ -30,6 +30,7 @@ Some quickstart templates for projects with standardized architectures.
 | SPA / API Application | UI applications for customer or employees | Single-page application (framework agnostic) consuming a REST API connected to a database, optionally including Active Directory based user authentication | [Show](./Blueprints/spa-api-application) |
 | Bot Framework Application | Bots connected with enterprise systems for knowledge and processes | Bot Framework based App Service with Cognitive Services LUIS and QnA Maker, the latter being integrated with enterprise data sources | [Show](./Blueprints/virtual-agent) |
 | Analytics Platform | Central BI infrastructure | Central Synapse Workspace efficently providing Power BI workspaces with pre-processed data | [Show](./Blueprints/analytics-platform) |
+| Central API Management | Integration scenarios | Provide secure, observable and managed access to enterprise APIs of various application including Developer Portal for API definitions and testing | [Show](./Blueprints/central-api-management) |
 
 ### Snippets
 Directly reusable code artefacts for development, deployment or monitoring / analytics grouped by type of language or format.

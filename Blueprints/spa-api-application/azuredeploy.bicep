@@ -151,7 +151,7 @@ resource logAnalyticsWsRes 'Microsoft.OperationalInsights/workspaces@2020-08-01'
   }
 }
 
-resource appInsightsRes 'Microsoft.Insights/components@2020-02-02-preview' = {
+resource appInsightsRes 'Microsoft.Insights/components@2020-02-02' = {
   name: appInsightsName
   location: resourceLocation
   kind: 'web'
