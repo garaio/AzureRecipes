@@ -55,7 +55,7 @@
                 "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING": "<storage-account-connection-string>",
                 "WEBSITE_CONTENTSHARE": "<function-name>",
                 "APPINSIGHTS_INSTRUMENTATIONKEY": "<app-insights-instrumentation-key>",
-                "FUNCTIONS_EXTENSION_VERSION": "~3",
+                "FUNCTIONS_EXTENSION_VERSION": "~4",
                 "FUNCTIONS_WORKER_RUNTIME": "dotnet"
             }
         }

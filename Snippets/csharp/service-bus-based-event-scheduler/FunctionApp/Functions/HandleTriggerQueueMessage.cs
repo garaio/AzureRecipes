@@ -1,6 +1,5 @@
 ﻿using Azure.Messaging.ServiceBus;
 using FunctionApp.Model;
-using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -16,16 +15,16 @@ namespace FunctionApp.Functions
         public static async Task RunAsync([ServiceBusTrigger(
             queueName: "%" + Constants.Configurations.ServiceBusQueueName + "%",
             Connection = Constants.Configurations.ServiceBusConnectionString)]
-            Message message,
+            ServiceBusReceivedMessage message,
             ILogger log,
             CancellationToken cancellationToken)
         {
-            if (message == null || (message.Body?.Length ?? 0) < 0 || message.Label != nameof(EventDispatchTrigger))
+            if (message == null || (message.Body?.ToArray()?.Length ?? 0) < 0 || message.Subject != nameof(EventDispatchTrigger))
                 return;
 
-            log.LogInformation($"Service Bus trigger message received (id={message.MessageId}, enqueued={message.ScheduledEnqueueTimeUtc})");
+            log.LogInformation($"Service Bus trigger message received (id={message.MessageId}, enqueued={message.EnqueuedTime})");
 
-            var trigger = BinaryData.FromBytes(message.Body).ToObjectFromJson<EventDispatchTrigger>();
+            var trigger = message.Body.ToObjectFromJson<EventDispatchTrigger>();
 
             // Note: At this place you would load the entity referenced by trigger information from data storage
             var entity = JsonConvert.DeserializeObject<PseudoEvent>(JsonConvert.SerializeObject(trigger.Payload));
@@ -34,7 +33,7 @@ namespace FunctionApp.Functions
             // Check if entity version is still current: If not, another message has been scheduled already
             if (entityTag != trigger.EntityTag)
             {
-                log.LogInformation($"Non-current trigger message detected and ignored (id={message.MessageId}, enqueued={message.ScheduledEnqueueTimeUtc})");
+                log.LogInformation($"Non-current trigger message detected and ignored (id={message.MessageId}, enqueued={message.EnqueuedTime})");
                 return;
             }
 

@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.4.1318.3566",
-      "templateHash": "14398034648953311134"
+      "templateHash": "16327420912376860396"
     }
   },
   "parameters": {
@@ -576,7 +576,7 @@
         "AzureWebJobsDisableHomepage": "true",
         "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING": "[format('DefaultEndpointsProtocol=https;AccountName={0};AccountKey={1}', variables('storageAccountName'), listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2019-06-01').keys[0].value)]",
         "APPINSIGHTS_INSTRUMENTATIONKEY": "[reference(resourceId('Microsoft.Insights/components', variables('appInsightsName'))).InstrumentationKey]",
-        "FUNCTIONS_EXTENSION_VERSION": "~3",
+        "FUNCTIONS_EXTENSION_VERSION": "~4",
         "FUNCTIONS_WORKER_RUNTIME": "dotnet",
         "WEBSITE_TIME_ZONE": "W. Europe Standard Time",
         "WEBSITE_RUN_FROM_PACKAGE": "[format('{0}{1}{2}?{3}', variables('storageAccountBlobUri'), variables('blobContainerDeployment'), variables('indexerFuncPackagePath'), listAccountSas(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2019-06-01', variables('storageAccountFunctionSasParams')).accountSasToken)]",

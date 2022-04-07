@@ -22,7 +22,7 @@ resource serviceFuncAppSettingsRes 'Microsoft.Web/sites/config@2021-03-01' = {
     AzureWebJobsDisableHomepage: 'true'
     WEBSITE_CONTENTAZUREFILECONNECTIONSTRING: storageAccountConnectionString
     APPINSIGHTS_INSTRUMENTATIONKEY: appInsightsInstrumentationKey
-    FUNCTIONS_EXTENSION_VERSION: '~3'
+    FUNCTIONS_EXTENSION_VERSION: '~4'
     FUNCTIONS_WORKER_RUNTIME: 'dotnet'
     WEBSITE_TIME_ZONE: 'W. Europe Standard Time'
     WEBSITE_CONTENTSHARE: serviceFuncName

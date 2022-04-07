@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.4.1318.3566",
-      "templateHash": "15410656405897602923"
+      "templateHash": "9431966570831374632"
     }
   },
   "parameters": {
@@ -164,7 +164,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.4.1318.3566",
-              "templateHash": "9947775184844058680"
+              "templateHash": "11566092077068057594"
             }
           },
           "parameters": {
@@ -200,7 +200,7 @@
                 "AzureWebJobsDisableHomepage": "true",
                 "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING": "[parameters('storageAccountConnectionString')]",
                 "APPINSIGHTS_INSTRUMENTATIONKEY": "[parameters('appInsightsInstrumentationKey')]",
-                "FUNCTIONS_EXTENSION_VERSION": "~3",
+                "FUNCTIONS_EXTENSION_VERSION": "~4",
                 "FUNCTIONS_WORKER_RUNTIME": "dotnet",
                 "WEBSITE_TIME_ZONE": "W. Europe Standard Time",
                 "WEBSITE_CONTENTSHARE": "[parameters('serviceFuncName')]",

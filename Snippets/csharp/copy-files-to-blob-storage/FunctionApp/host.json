@@ -3,9 +3,9 @@
 	"functionTimeout": "00:10:00",
 	"logging": {
         "applicationInsights": {
-            "samplingExcludedTypes": "Request",
             "samplingSettings": {
-                "isEnabled": true
+                "isEnabled": true,
+                "excludedTypes": "Request"
             }
         }
     }

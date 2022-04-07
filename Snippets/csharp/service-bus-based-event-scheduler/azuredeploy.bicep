@@ -298,7 +298,7 @@ resource processFuncAppSettingsRes 'Microsoft.Web/sites/config@2021-03-01' = {
     APPINSIGHTS_SNAPSHOTFEATURE_VERSION: '1.0.0'
     DiagnosticServices_EXTENSION_VERSION: '~3'
     ApplicationInsightsAgent_EXTENSION_VERSION: '~2'
-    FUNCTIONS_EXTENSION_VERSION: '~3'
+    FUNCTIONS_EXTENSION_VERSION: '~4'
     FUNCTIONS_WORKER_RUNTIME: 'dotnet'
     WEBSITE_TIME_ZONE: 'W. Europe Standard Time'
     WEBSITE_RUN_FROM_PACKAGE: '${storageAccountBlobUri}${blobContainerDeployment}${schedulerFuncPackagePath}?${listAccountSas(storageAccountRes.id, '2019-06-01', storageAccountFunctionSasParams).accountSasToken}'
