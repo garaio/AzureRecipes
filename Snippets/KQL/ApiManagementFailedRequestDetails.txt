@@ -1,4 +1,28 @@
+For connected Log Analytics Workspaces:
+------------------------------------------
 AzureDiagnostics
 | where ResourceProvider =~ "Microsoft.ApiManagement"
 | where isRequestSuccess_b == false
 | project TimeGenerated, ResourceName=tolower(Resource), ApiName=apiId_s, OperationName=operationId_s, ResponseCode=responseCode_d, ErrorType=lastError_source_s, ErrorReason=lastError_reason_s, ErrorMessage=lastError_message_s
+
+For connected Application Insights:
+------------------------------------------
+requests 
+| where sdkVersion startswith "apim:" and success == false
+| project timestamp, operation_Id = tostring(operation_Id), requestId=customDimensions["Request Id"], requestName=name, url, httpCode=resultCode, httpMethod=customDimensions["HTTP Method"], duration, userId=user_AuthenticatedId, apiName=customDimensions["API Name"], apiRevision=customDimensions["API Revision"], apiOperation=customDimensions["Operation Name"], apiProduct=customDimensions["Product Name"], apiSubscription=customDimensions["Subscription Name"]
+| order by timestamp desc 
+| lookup kind=leftouter (
+  requests 
+  | where operation_Id <> operation_ParentId
+  | project operation_Id=tostring(split(trim_start(@"\|", operation_ParentId), ".")[0]), inner_operation_Id=operation_Id) on operation_Id
+| lookup kind=leftouter (
+  exceptions 
+  | where customDimensions['Category'] == "Host.Results"
+  | project exceptionType=type, severityLevel, resourceName = cloud_RoleName, operation_Id, operationName = operation_Name, exceptions = array_reverse(['details'])
+  | mv-apply exceptions on
+  ( 
+    project message = exceptions["message"]
+    | summarize messages = make_list(message, 5)
+    | project exceptionMessages = strcat_array(messages, " | ")
+  )) on $left.inner_operation_Id == $right.operation_Id
+| project-away inner_operation_Id, operation_Id
