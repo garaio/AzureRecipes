@@ -1,0 +1,30 @@
+let AnalyticsQuery =
+    let Source = Json.Document(Web.Contents("https://api.loganalytics.io/v1/workspaces/"&#"LogAnalyticsWorkspaceId"&"/query", 
+    [Headers=[#"Authorization"="Bearer " & GetLogAnalyticsApiToken()],
+    Query=[#"query"="AzureDiagnostics
+    | where ResourceProvider =~ ""Microsoft.ApiManagement""
+    | where isRequestSuccess_b == false
+    | project TimeGenerated, ResourceName=tolower(Resource), ApiName=apiId_s, OperationName=operationId_s, ResponseCode=responseCode_d, ErrorType=lastError_source_s, ErrorReason=lastError_reason_s, ErrorMessage=lastError_message_s",#"x-ms-app"="OmsAnalyticsPBI",#"timespan"=AzureDataTimespan,#"prefer"="ai.response-thinning=true"],Timeout=#duration(0,0,4,0)])),
+    TypeMap = #table(
+    { "AnalyticsTypes", "Type" }, 
+    { 
+    { "string",   Text.Type },
+    { "int",      Int32.Type },
+    { "long",     Int64.Type },
+    { "real",     Double.Type },
+    { "timespan", Duration.Type },
+    { "datetime", DateTimeZone.Type },
+    { "bool",     Logical.Type },
+    { "guid",     Text.Type },
+    { "dynamic",  Text.Type }
+    }),
+    DataTable = Source[tables]{0},
+    Columns = Table.FromRecords(DataTable[columns]),
+    ColumnsWithType = Table.Join(Columns, {"type"}, TypeMap , {"AnalyticsTypes"}),
+    Rows = Table.FromRows(DataTable[rows], Columns[name]), 
+    Table = Table.TransformColumnTypes(Rows, Table.ToList(ColumnsWithType, (c) => { c{0}, c{3}}))
+in
+    Table,
+    #"Added Date" = Table.AddColumn(AnalyticsQuery, "Date", each Date.From([TimeGenerated])),
+    #"Changed Type" = Table.TransformColumnTypes(#"Added Date",{{"Date", type date}})
+in #"Changed Type"

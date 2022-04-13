@@ -1,6 +1,6 @@
 let
     Source = () => let
-        Source = Json.Document(Web.Contents("https://login.microsoftonline.com/"&#"ActiveDirectoryId"&"/oauth2/token", 
+        Source = Json.Document(Web.Contents("https://login.microsoftonline.com/"&#"TenantId"&"/oauth2/token", 
         [
             Headers=[Accept="application/json", ContentType="application/x-www-form-urlencoded"],
             Content=Text.ToBinary(
