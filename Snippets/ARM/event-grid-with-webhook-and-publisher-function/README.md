@@ -1,4 +1,4 @@
-﻿[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fgaraio%2FAzureRecipes%2Fmaster%2FSnippets%2FARM%2Fevent-grid-with-webhook-and-publisher-function%2Fazuredeploy.json)
+﻿[![Deploy to Azure](https://github.com/garaio/AzureRecipes/raw/master/Resources/deploybutton.svg?sanitize=true)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fgaraio%2FAzureRecipes%2Fmaster%2FSnippets%2FARM%2Fevent-grid-with-webhook-and-publisher-function%2Fazuredeploy.json)
 
 # Azure Event Grid Viewer
 Microsoft provided a simple test application which provides a WebHook URL. You get it from: https://docs.microsoft.com/en-us/samples/azure-samples/azure-event-grid-viewer/azure-event-grid-viewer

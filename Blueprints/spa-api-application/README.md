@@ -22,5 +22,5 @@ App Services and Functions support [built-in authentication](https://docs.micros
 The deployment generates a [Cosmos DB in serverless tier](https://docs.microsoft.com/en-us/azure/cosmos-db/serverless) which is a simple approach during development. For production deployment this should be examined as well as the configuration of backup / disaster recovery functionality.
 
 ## Deployment
-[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fgaraio%2FAzureRecipes%2Fmaster%2FBlueprints%2Fspa-api-application%2Fazuredeploy.json)
+[![Deploy to Azure](https://github.com/garaio/AzureRecipes/raw/master/Resources/deploybutton.svg?sanitize=true)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fgaraio%2FAzureRecipes%2Fmaster%2FBlueprints%2Fspa-api-application%2Fazuredeploy.json)
 [![Visualize](https://github.com/garaio/AzureRecipes/raw/master/Resources/visualizebutton.svg?sanitize=true)](http://armviz.io/#/?load=https%3A%2F%2Fraw.githubusercontent.com%2Fgaraio%2FAzureRecipes%2Fmaster%2FBlueprints%2Fspa-api-application%2Fazuredeploy.json)

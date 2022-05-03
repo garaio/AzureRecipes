@@ -37,7 +37,7 @@ The snippet provides do slightly different solutions represented by the two func
 * [AccessGraphWithMsal](./FunctionApp/Functions/AccessGraphWithMsal.cs)
 
 ## Deployment (Azure Resources)
-[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fgaraio%2FAzureRecipes%2Fmaster%2FSnippets%2Fcsharp%2Ffunction-built-in-auth-token-for-graph-api%2Fazuredeploy.json)
+[![Deploy to Azure](https://github.com/garaio/AzureRecipes/raw/master/Resources/deploybutton.svg?sanitize=true)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fgaraio%2FAzureRecipes%2Fmaster%2FSnippets%2Fcsharp%2Ffunction-built-in-auth-token-for-graph-api%2Fazuredeploy.json)
 
 # Further Reading
 ## Built-In AuthN / AuthZ
