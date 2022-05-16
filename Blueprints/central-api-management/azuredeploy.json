@@ -4,8 +4,8 @@
   "metadata": {
     "_generator": {
       "name": "bicep",
-      "version": "0.4.1318.3566",
-      "templateHash": "1544388432730692038"
+      "version": "0.6.11.53198",
+      "templateHash": "9847471072802028914"
     }
   },
   "parameters": {
@@ -395,14 +395,14 @@
       },
       "dependsOn": [
         "[resourceId('Microsoft.ApiManagement/service', variables('apiMgmtName'))]",
-        "[resourceId('Microsoft.Cdn/profiles/originGroups', variables('frontDoorName'), 'api')]",
-        "[resourceId('Microsoft.Cdn/profiles', variables('frontDoorName'))]"
+        "[resourceId('Microsoft.Cdn/profiles/originGroups', variables('frontDoorName'), 'api')]"
       ]
     },
     {
+      "condition": "[not(empty(parameters('customDomainApimApi')))]",
       "type": "Microsoft.Cdn/profiles/customDomains",
       "apiVersion": "2021-06-01",
-      "name": "[format('{0}/{1}', variables('frontDoorName'), 'api-domain')]",
+      "name": "[format('{0}/{1}', variables('frontDoorName'), replace(parameters('customDomainApimApi'), '.', '-'))]",
       "properties": {
         "hostName": "[parameters('customDomainApimApi')]",
         "tlsSettings": {
@@ -421,7 +421,7 @@
       "properties": {
         "customDomains": [
           {
-            "id": "[resourceId('Microsoft.Cdn/profiles/customDomains', variables('frontDoorName'), 'api-domain')]"
+            "id": "[resourceId('Microsoft.Cdn/profiles/customDomains', variables('frontDoorName'), replace(parameters('customDomainApimApi'), '.', '-'))]"
           }
         ],
         "originGroup": {
@@ -441,11 +441,10 @@
         "enabledState": "Enabled"
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Cdn/profiles/customDomains', variables('frontDoorName'), 'api-domain')]",
+        "[resourceId('Microsoft.Cdn/profiles/customDomains', variables('frontDoorName'), replace(parameters('customDomainApimApi'), '.', '-'))]",
         "[resourceId('Microsoft.Cdn/profiles/afdEndpoints', variables('frontDoorName'), variables('frontDoorApiEndpoint'))]",
         "[resourceId('Microsoft.Cdn/profiles/originGroups/origins', variables('frontDoorName'), 'api', 'ApiManagement')]",
         "[resourceId('Microsoft.Cdn/profiles/originGroups', variables('frontDoorName'), 'api')]",
-        "[resourceId('Microsoft.Cdn/profiles', variables('frontDoorName'))]",
         "[resourceId('Microsoft.Cdn/profiles/ruleSets', variables('frontDoorName'), 'apimDevPortal')]"
       ]
     },
@@ -462,7 +461,7 @@
       "condition": "[parameters('configureApiManagementDevPortal')]",
       "type": "Microsoft.Cdn/profiles/ruleSets/rules",
       "apiVersion": "2021-06-01",
-      "name": "[format('{0}/{1}/{2}', variables('frontDoorName'), 'apimDevPortal', 'CORS')]",
+      "name": "[format('{0}/{1}/{2}', variables('frontDoorName'), 'apimDevPortal', 'DefaultHostCors')]",
       "properties": {
         "order": 1,
         "conditions": [
@@ -523,7 +522,73 @@
       },
       "dependsOn": [
         "[resourceId('Microsoft.Cdn/profiles/afdEndpoints', variables('frontDoorName'), variables('frontDoorDevPortalEndpoint'))]",
-        "[resourceId('Microsoft.Cdn/profiles', variables('frontDoorName'))]",
+        "[resourceId('Microsoft.Cdn/profiles/ruleSets', variables('frontDoorName'), 'apimDevPortal')]"
+      ]
+    },
+    {
+      "condition": "[and(parameters('configureApiManagementDevPortal'), not(empty(parameters('customDomainApimPortal'))))]",
+      "type": "Microsoft.Cdn/profiles/ruleSets/rules",
+      "apiVersion": "2021-06-01",
+      "name": "[format('{0}/{1}/{2}', variables('frontDoorName'), 'apimDevPortal', 'CustomDomainCors')]",
+      "properties": {
+        "order": 2,
+        "conditions": [
+          {
+            "name": "RequestHeader",
+            "parameters": {
+              "typeName": "DeliveryRuleRequestHeaderConditionParameters",
+              "operator": "BeginsWith",
+              "selector": "Referer",
+              "negateCondition": false,
+              "matchValues": [
+                "[format('https://{0}', parameters('customDomainApimPortal'))]"
+              ],
+              "transforms": [
+                "Lowercase",
+                "Trim"
+              ]
+            }
+          },
+          {
+            "name": "RequestHeader",
+            "parameters": {
+              "typeName": "DeliveryRuleRequestHeaderConditionParameters",
+              "operator": "Equal",
+              "selector": "Origin",
+              "negateCondition": false,
+              "matchValues": [
+                "null"
+              ],
+              "transforms": [
+                "Lowercase",
+                "Trim"
+              ]
+            }
+          }
+        ],
+        "actions": [
+          {
+            "name": "ModifyRequestHeader",
+            "parameters": {
+              "typeName": "DeliveryRuleHeaderActionParameters",
+              "headerAction": "Overwrite",
+              "headerName": "Origin",
+              "value": "[format('https://{0}', parameters('customDomainApimPortal'))]"
+            }
+          },
+          {
+            "name": "ModifyResponseHeader",
+            "parameters": {
+              "typeName": "DeliveryRuleHeaderActionParameters",
+              "headerAction": "Overwrite",
+              "headerName": "Access-Control-Allow-Origin",
+              "value": "null"
+            }
+          }
+        ],
+        "matchProcessingBehavior": "Continue"
+      },
+      "dependsOn": [
         "[resourceId('Microsoft.Cdn/profiles/ruleSets', variables('frontDoorName'), 'apimDevPortal')]"
       ]
     },
@@ -577,15 +642,14 @@
       },
       "dependsOn": [
         "[resourceId('Microsoft.ApiManagement/service', variables('apiMgmtName'))]",
-        "[resourceId('Microsoft.Cdn/profiles/originGroups', variables('frontDoorName'), 'developer-portal')]",
-        "[resourceId('Microsoft.Cdn/profiles', variables('frontDoorName'))]"
+        "[resourceId('Microsoft.Cdn/profiles/originGroups', variables('frontDoorName'), 'developer-portal')]"
       ]
     },
     {
-      "condition": "[parameters('configureApiManagementDevPortal')]",
+      "condition": "[and(parameters('configureApiManagementDevPortal'), not(empty(parameters('customDomainApimPortal'))))]",
       "type": "Microsoft.Cdn/profiles/customDomains",
       "apiVersion": "2021-06-01",
-      "name": "[format('{0}/{1}', variables('frontDoorName'), 'developer-portal-domain')]",
+      "name": "[format('{0}/{1}', variables('frontDoorName'), replace(parameters('customDomainApimPortal'), '.', '-'))]",
       "properties": {
         "hostName": "[parameters('customDomainApimPortal')]",
         "tlsSettings": {
@@ -605,7 +669,7 @@
       "properties": {
         "customDomains": [
           {
-            "id": "[resourceId('Microsoft.Cdn/profiles/customDomains', variables('frontDoorName'), 'developer-portal-domain')]"
+            "id": "[resourceId('Microsoft.Cdn/profiles/customDomains', variables('frontDoorName'), replace(parameters('customDomainApimPortal'), '.', '-'))]"
           }
         ],
         "originGroup": {
@@ -624,11 +688,10 @@
         "enabledState": "Enabled"
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Cdn/profiles/customDomains', variables('frontDoorName'), 'developer-portal-domain')]",
+        "[resourceId('Microsoft.Cdn/profiles/customDomains', variables('frontDoorName'), replace(parameters('customDomainApimPortal'), '.', '-'))]",
         "[resourceId('Microsoft.Cdn/profiles/afdEndpoints', variables('frontDoorName'), variables('frontDoorDevPortalEndpoint'))]",
         "[resourceId('Microsoft.Cdn/profiles/originGroups/origins', variables('frontDoorName'), 'developer-portal', 'DeveloperPortal')]",
-        "[resourceId('Microsoft.Cdn/profiles/originGroups', variables('frontDoorName'), 'developer-portal')]",
-        "[resourceId('Microsoft.Cdn/profiles', variables('frontDoorName'))]"
+        "[resourceId('Microsoft.Cdn/profiles/originGroups', variables('frontDoorName'), 'developer-portal')]"
       ]
     },
     {
@@ -725,15 +788,15 @@
     },
     "frontDoorApiDnsTxtRecordName": {
       "type": "string",
-      "value": "[format('_dnsauth.{0}', reference(resourceId('Microsoft.Cdn/profiles/customDomains', variables('frontDoorName'), 'api-domain')).hostName)]"
+      "value": "[format('_dnsauth.{0}', reference(resourceId('Microsoft.Cdn/profiles/customDomains', variables('frontDoorName'), replace(parameters('customDomainApimApi'), '.', '-')), '2021-06-01').hostName)]"
     },
     "frontDoorApiDnsTxtRecordValue": {
       "type": "string",
-      "value": "[reference(resourceId('Microsoft.Cdn/profiles/customDomains', variables('frontDoorName'), 'api-domain')).validationProperties.validationToken]"
+      "value": "[reference(resourceId('Microsoft.Cdn/profiles/customDomains', variables('frontDoorName'), replace(parameters('customDomainApimApi'), '.', '-')), '2021-06-01').validationProperties.validationToken]"
     },
     "frontDoorApiDnsExpiry": {
       "type": "string",
-      "value": "[reference(resourceId('Microsoft.Cdn/profiles/customDomains', variables('frontDoorName'), 'api-domain')).validationProperties.expirationDate]"
+      "value": "[reference(resourceId('Microsoft.Cdn/profiles/customDomains', variables('frontDoorName'), replace(parameters('customDomainApimApi'), '.', '-')), '2021-06-01').validationProperties.expirationDate]"
     },
     "frontDoorDeveloperPortalEndpointHostName": {
       "type": "string",
@@ -741,15 +804,15 @@
     },
     "frontDoorDeveloperPortalDnsTxtRecordName": {
       "type": "string",
-      "value": "[if(parameters('configureApiManagementDevPortal'), format('_dnsauth.{0}', reference(resourceId('Microsoft.Cdn/profiles/customDomains', variables('frontDoorName'), 'developer-portal-domain'), '2021-06-01').hostName), '')]"
+      "value": "[if(parameters('configureApiManagementDevPortal'), format('_dnsauth.{0}', reference(resourceId('Microsoft.Cdn/profiles/customDomains', variables('frontDoorName'), replace(parameters('customDomainApimPortal'), '.', '-')), '2021-06-01').hostName), '')]"
     },
     "frontDoorDeveloperPortalDnsTxtRecordValue": {
       "type": "string",
-      "value": "[if(parameters('configureApiManagementDevPortal'), reference(resourceId('Microsoft.Cdn/profiles/customDomains', variables('frontDoorName'), 'developer-portal-domain'), '2021-06-01').validationProperties.validationToken, '')]"
+      "value": "[if(parameters('configureApiManagementDevPortal'), reference(resourceId('Microsoft.Cdn/profiles/customDomains', variables('frontDoorName'), replace(parameters('customDomainApimPortal'), '.', '-')), '2021-06-01').validationProperties.validationToken, '')]"
     },
     "frontDoorDeveloperPortalDnsExpiry": {
       "type": "string",
-      "value": "[if(parameters('configureApiManagementDevPortal'), reference(resourceId('Microsoft.Cdn/profiles/customDomains', variables('frontDoorName'), 'developer-portal-domain'), '2021-06-01').validationProperties.expirationDate, '')]"
+      "value": "[if(parameters('configureApiManagementDevPortal'), reference(resourceId('Microsoft.Cdn/profiles/customDomains', variables('frontDoorName'), replace(parameters('customDomainApimPortal'), '.', '-')), '2021-06-01').validationProperties.expirationDate, '')]"
     }
   }
 }

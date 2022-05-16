@@ -302,8 +302,8 @@ resource frontDoorOriginApiRes 'Microsoft.Cdn/profiles/originGroups/origins@2021
   }
 }
 
-resource frontDoorDomainApiRes 'Microsoft.Cdn/profiles/customdomains@2021-06-01' = {
-  name: 'api-domain'
+resource frontDoorDomainApiRes 'Microsoft.Cdn/profiles/customdomains@2021-06-01' = if (!empty(customDomainApimApi)) {
+  name: replace(customDomainApimApi, '.', '-')
   parent: frontDoorRes
   properties: {
     hostName: customDomainApimApi
@@ -355,8 +355,8 @@ resource frontDoorRulesetDevPortalRes 'Microsoft.Cdn/profiles/rulesets@2021-06-0
 
 // API Management Developer Portal completely fails to make CORS-proper calls when receiving a 3xx redirection - these rules fixes it by transforming request and response headers
 // Info: The conditional references inside this resource are necessary because of this Bicep/ARM bug: https://github.com/Azure/bicep/issues/3990
-resource frontDoorRulesetDevPortalRulesRes 'Microsoft.Cdn/profiles/rulesets/rules@2021-06-01' = if(configureApiManagementDevPortal) {
-  name: 'CORS'
+resource frontDoorRulesetDevPortalDefaultHostCorsRuleRes 'Microsoft.Cdn/profiles/rulesets/rules@2021-06-01' = if(configureApiManagementDevPortal) {
+  name: 'DefaultHostCors'
   parent: frontDoorRulesetDevPortalRes
   properties: {
     order: 1
@@ -418,6 +418,69 @@ resource frontDoorRulesetDevPortalRulesRes 'Microsoft.Cdn/profiles/rulesets/rule
   }
 }
 
+resource frontDoorRulesetDevPortalCustomDomainCorsRuleRes 'Microsoft.Cdn/profiles/rulesets/rules@2021-06-01' = if(configureApiManagementDevPortal && !empty(customDomainApimPortal)) {
+  name: 'CustomDomainCors'
+  parent: frontDoorRulesetDevPortalRes
+  properties: {
+    order: 2
+    conditions: [
+      {
+        name: 'RequestHeader'
+        parameters: {
+          typeName: 'DeliveryRuleRequestHeaderConditionParameters'
+          operator: 'BeginsWith'
+          selector: 'Referer'
+          negateCondition: false
+          matchValues: [
+            'https://${customDomainApimPortal}'
+          ]
+          transforms: [
+            'Lowercase'
+            'Trim'
+          ]
+        }
+      }
+      {
+        name: 'RequestHeader'
+        parameters: {
+          typeName: 'DeliveryRuleRequestHeaderConditionParameters'
+          operator: 'Equal'
+          selector: 'Origin'
+          negateCondition: false
+          matchValues: [
+            'null'
+          ]
+          transforms: [
+            'Lowercase'
+            'Trim'
+          ]
+        }
+      }
+    ]
+    actions: [
+      {
+        name: 'ModifyRequestHeader'
+        parameters: {
+          typeName: 'DeliveryRuleHeaderActionParameters'
+          headerAction: 'Overwrite'
+          headerName: 'Origin'
+          value: 'https://${customDomainApimPortal}'
+        }
+      }
+      {
+        name: 'ModifyResponseHeader'
+        parameters: {
+          typeName: 'DeliveryRuleHeaderActionParameters'
+          headerAction: 'Overwrite'
+          headerName: 'Access-Control-Allow-Origin'
+          value: 'null'
+        }
+      }
+    ]
+    matchProcessingBehavior: 'Continue'
+  }
+}
+
 resource frontDoorEndpointDevPortalRes 'Microsoft.Cdn/profiles/afdEndpoints@2021-06-01' = if(configureApiManagementDevPortal) {
   name: frontDoorDevPortalEndpoint
   parent: frontDoorRes
@@ -458,8 +521,8 @@ resource frontDoorOriginDevPortalRes 'Microsoft.Cdn/profiles/originGroups/origin
   }
 }
 
-resource frontDoorDomainDevPortalRes 'Microsoft.Cdn/profiles/customdomains@2021-06-01' = if(configureApiManagementDevPortal) {
-  name: 'developer-portal-domain'
+resource frontDoorDomainDevPortalRes 'Microsoft.Cdn/profiles/customdomains@2021-06-01' = if(configureApiManagementDevPortal && !empty(customDomainApimPortal)) {
+  name: replace(customDomainApimPortal, '.', '-')
   parent: frontDoorRes
   properties: {
     hostName: customDomainApimPortal
