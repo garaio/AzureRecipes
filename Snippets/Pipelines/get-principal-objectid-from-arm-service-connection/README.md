@@ -12,6 +12,6 @@ Note: The variable `$servicePrincipalId` is automatically propagated to the envi
     scriptLocation: inlineScript
     addSpnToEnvironment: true
     inlineScript: |
-      svcConObjectId=$(az ad sp show --id $servicePrincipalId --query objectId -o tsv)
+      svcConObjectId=$(az ad sp show --id $servicePrincipalId --query id -o tsv)
       echo "##vso[task.setvariable variable=armServicePrincipalId;]$svcConObjectId"
 ```

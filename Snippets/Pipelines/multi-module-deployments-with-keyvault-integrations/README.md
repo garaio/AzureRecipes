@@ -192,7 +192,7 @@ Gather AAD identifier of Service Principal ([`templates.deploy-to-stage.yml`](./
     scriptLocation: inlineScript
     addSpnToEnvironment: true # Important: This makes the built-in variable `servicePrincipalId` available
     inlineScript: |
-      svcConObjectId=$(az ad sp show --id $servicePrincipalId --query objectId -o tsv)
+      svcConObjectId=$(az ad sp show --id $servicePrincipalId --query id -o tsv)
       echo "##vso[task.setvariable variable=armServicePrincipalId;]$svcConObjectId"
 
 - task: AzureResourceManagerTemplateDeployment@3
