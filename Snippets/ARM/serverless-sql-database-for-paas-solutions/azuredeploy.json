@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.9.1.41621",
-      "templateHash": "14386089019469276018"
+      "templateHash": "6185654318166877793"
     }
   },
   "parameters": {
@@ -49,11 +49,18 @@
       "defaultValue": 100,
       "minValue": 1
     },
-    "autoPauseDelayInMinutes": {
+    "sqlDatabaseAutoPauseDelayInMinutes": {
       "type": "int",
       "defaultValue": 60,
       "metadata": {
         "description": "If either geo-replication or long-term backup retention shall be enabled, this value has to be '-1', which disables pausing functionality (and thus removes a key benefit from serverless mode)"
+      }
+    },
+    "sqlDatabaseEnableBackupLtr": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "If auto-pausing is enabled, this is not supported"
       }
     }
   },
@@ -190,7 +197,7 @@
         "maxSizeBytes": "[mul(parameters('sqlDatabaseMaxSizeInGb'), 1073741824)]",
         "zoneRedundant": false,
         "readScale": "Disabled",
-        "autoPauseDelay": "[parameters('autoPauseDelayInMinutes')]",
+        "autoPauseDelay": "[parameters('sqlDatabaseAutoPauseDelayInMinutes')]",
         "requestedBackupStorageRedundancy": "Geo",
         "minCapacity": "[variables('sqlDatabaseSkuDetails')[parameters('sqlDatabaseSku')].min]",
         "isLedgerOn": false,
@@ -202,7 +209,7 @@
     },
     {
       "type": "Microsoft.Sql/servers/databases/geoBackupPolicies",
-      "apiVersion": "2022-02-01-preview",
+      "apiVersion": "2014-04-01",
       "name": "[format('{0}/{1}/{2}', variables('sqlServerName'), variables('sqlDatabaseName'), 'Default')]",
       "properties": {
         "state": "Enabled"
@@ -212,6 +219,7 @@
       ]
     },
     {
+      "condition": "[parameters('sqlDatabaseEnableBackupLtr')]",
       "type": "Microsoft.Sql/servers/databases/backupLongTermRetentionPolicies",
       "apiVersion": "2022-02-01-preview",
       "name": "[format('{0}/{1}/{2}', variables('sqlServerName'), variables('sqlDatabaseName'), 'default')]",
@@ -219,7 +227,7 @@
         "weeklyRetention": "PT0S",
         "monthlyRetention": "PT0S",
         "yearlyRetention": "PT0S",
-        "weekOfYear": 0
+        "weekOfYear": 1
       },
       "dependsOn": [
         "[resourceId('Microsoft.Sql/servers/databases', variables('sqlServerName'), variables('sqlDatabaseName'))]"

@@ -21,7 +21,9 @@ param sqlDatabaseSku string = 'GP_S_Gen5_2'
 @minValue(1)
 param sqlDatabaseMaxSizeInGb int = 100
 @description('If either geo-replication or long-term backup retention shall be enabled, this value has to be \'-1\', which disables pausing functionality (and thus removes a key benefit from serverless mode)')
-param autoPauseDelayInMinutes int = 60 // https://docs.microsoft.com/en-us/azure/azure-sql/database/serverless-tier-overview?view=azuresql#auto-pausing
+param sqlDatabaseAutoPauseDelayInMinutes int = 60 // https://docs.microsoft.com/en-us/azure/azure-sql/database/serverless-tier-overview?view=azuresql#auto-pausing
+@description('If auto-pausing is enabled, this is not supported')
+param sqlDatabaseEnableBackupLtr bool = false
 
 var logAnalyticsWsName = '${resourceNamePrefix}-law-${resourceNameSuffix}'
 
@@ -137,7 +139,7 @@ resource sqlDatabaseRes 'Microsoft.Sql/servers/databases@2022-02-01-preview' = {
     maxSizeBytes: sqlDatabaseMaxSizeInGb * 1073741824 // Note: 1 kilobyte = 1024 bytes
     zoneRedundant: false
     readScale: 'Disabled'
-    autoPauseDelay: autoPauseDelayInMinutes
+    autoPauseDelay: sqlDatabaseAutoPauseDelayInMinutes
     requestedBackupStorageRedundancy: 'Geo'
     minCapacity: sqlDatabaseSkuDetails[sqlDatabaseSku].min
     isLedgerOn: false
@@ -145,7 +147,7 @@ resource sqlDatabaseRes 'Microsoft.Sql/servers/databases@2022-02-01-preview' = {
   }
 }
 
-resource sqlDatabaseGeoBackupRes 'Microsoft.Sql/servers/databases/geoBackupPolicies@2022-02-01-preview' = {
+resource sqlDatabaseGeoBackupRes 'Microsoft.Sql/servers/databases/geoBackupPolicies@2014-04-01' = { // Note: Despite officially documented, newer versions such as '2022-02-01-preview' are not supported and fail on deployment
   parent: sqlDatabaseRes
   name: 'Default'
   properties: {
@@ -153,15 +155,16 @@ resource sqlDatabaseGeoBackupRes 'Microsoft.Sql/servers/databases/geoBackupPolic
   }
 }
 
-// Note: If long-term backup retention (LTR) is enabled, auto-pausing must be deactivated (set value to '-1')
-resource sqlDatabaseLtrBackupRes 'Microsoft.Sql/servers/databases/backupLongTermRetentionPolicies@2022-02-01-preview' = {
+// Note 1: If long-term backup retention (LTR) is enabled, auto-pausing must be deactivated (set value to '-1')
+// Note 2: It is not possible to disable LTR via ARM deployment, once it has been activated
+resource sqlDatabaseLtrBackupRes 'Microsoft.Sql/servers/databases/backupLongTermRetentionPolicies@2022-02-01-preview' = if (sqlDatabaseEnableBackupLtr) {
   parent: sqlDatabaseRes
   name: 'default'
   properties: {
     weeklyRetention: 'PT0S'
     monthlyRetention: 'PT0S'
     yearlyRetention: 'PT0S'
-    weekOfYear: 0
+    weekOfYear: 1 // Defines when to take the yearly backup, must be between 1 and 52 (validated on deployment) or omitted along with 'yearlyRetention'
   }
 }
 
