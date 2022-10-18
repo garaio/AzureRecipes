@@ -1,0 +1,172 @@
+trigger:
+  - master
+
+parameters:
+  - name: Version
+    type: string
+    default: "2.14.0"
+
+variables:
+#Build Variables
+  - group: Build
+  - name: BuildKey
+    value: ALLIANZPW-LIEF64-BUILD
+  - name: Version
+    value: ${{ parameters.Version }}
+
+#PublishToWiki Variables
+  - group: Publish
+  - name: OrganizationName
+    value: 'garaio-allianz'
+  - name: ProjectName
+    value: 'PriceWatch'
+  - name: WikiName
+    value: 'PriceWatch.wiki'
+  - name: WikiPublishParentPagePath
+    value: "%2FInstallation%2FInstallationspakete"
+  - name: WikiPublishNewPageNamePrefix
+    value: "Installationspaket"
+  - name: WikiPath
+    value: '$(WikiPublishParentPagePath)%2F$(WikiPublishNewPageNamePrefix)%20$(Version).$(Build.BuildId)'
+  - name: WikiFileName
+    value: 'PriceWatch-$(Version).$(Build.BuildId)'
+
+stages:
+  - stage: stage_build
+    displayName: "Clean & Build"
+    dependsOn: []
+    jobs:
+      - deployment: build_solution
+        displayName: 'Build Solution'
+        environment: 'DEV'
+      - job: job_build
+        displayName: "Clean & Build"
+        pool:
+          vmImage: "vs2017-win2016"
+        steps:
+
+          - task: MSBuild@1
+            displayName: "Clean Solution"
+            inputs:
+              solution: "autobuild.proj"
+              msbuildVersion: "15.0"
+              configuration: "Release"
+              msbuildArguments: "/t:Clean /p:Configuration=Release"
+              createLogFile: true
+
+          - task: MSBuild@1
+            displayName: "Build Solution"
+            inputs:
+              solution: 'autobuild.proj'
+              msbuildVersion: '15.0'
+              configuration: 'Release'
+              msbuildArguments: '/t:Build /p:Configuration=Release;RevisionNumber=$(Version).$(Build.BuildId);BambooBuildKey=$(BuildKey);BambooBuildNumber=$(Build.BuildId) /p:PackageLocation="$(Build.ArtifactStagingDirectory)\\"'
+              createLogFile: true
+
+          - task: CopyFiles@2
+            displayName: "Copy Output Files"
+            inputs:
+              contents: |
+                Artifacts/**
+                Allianz.PriceWatch.Setup/bin/Release/de-DE/PriceWatch.msi
+              targetFolder: "$(Build.ArtifactStagingDirectory)"
+
+          - task: PowerShell@2
+            displayName: "Versioning"
+            inputs:
+              targetType: "inline"
+              script: |
+                Move-Item -Path "$(build.artifactstagingdirectory)/Allianz.PriceWatch.Setup/bin/Release/de-DE/PriceWatch.msi" -Destination "$(build.artifactstagingdirectory)/$(WikiFileName).msi"
+                Remove-Item "$(build.artifactstagingdirectory)/Allianz.PriceWatch.Setup" -Recurse
+
+          - task: PublishBuildArtifacts@1
+            displayName: "Publish Artifacts"
+            inputs:
+              PathtoPublish: "$(build.artifactstagingdirectory)"
+              ArtifactName: publishedBuild
+
+
+
+  - stage: stage_publish
+    displayName: "Publish to Wiki"
+    dependsOn: ['stage_build']
+    condition: eq(variables['Build.Reason'], 'Manual')
+    jobs:
+      - deployment: deployment_publish
+        displayName: 'Deploy Package'
+        environment: 'PROD'
+      - job: job_publish
+        displayName: "Publish to Wiki"
+        pool:
+          vmImage: "vs2017-win2016"
+        steps:
+        
+        - task: DownloadBuildArtifacts@1
+          displayName: "Fetch Build Artifacts"
+          inputs:
+            buildType: 'current'
+            downloadType: 'single'
+            artifactName: 'publishedBuild'
+            downloadPath: '$(build.artifactstagingdirectory)'
+
+        - task: PowerShell@2
+          displayName: "Upload Artifacts to Wiki"
+          inputs:
+            targetType: "inline"
+            script: |
+              $uri = ('https://dev.azure.com/{0}/{1}/_apis/wiki/wikis/{2}/attachments?name={3}&api-version=6.0' -f '$(OrganizationName)', '$(ProjectName)', '$(WikiName)', '$(WikiFileName).zip')
+              $fileName = "$(build.artifactstagingdirectory)/publishedBuild/$(WikiFileName)"
+
+              Write-Host "Uploading attachment in organization '$(OrganizationName)' in project '$(ProjectName)' in wiki space '$(WikiName)' at path '$(WikiPath)'..."
+              Write-Host "PUT URL: $uri"
+              Write-Host "File Path: $fileName.zip"
+
+              $Header = @{
+                  'Authorization' = 'Basic ' + [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(":$(PersonalAccessToken)")) 
+              }
+
+              # compress file because .msi upload is not supported by DevOps
+              Compress-Archive -Path "$fileName.msi" -DestinationPath "$fileName.zip"
+              $base64File = [convert]::ToBase64String((Get-Content -path "$fileName.zip" -Encoding byte -ReadCount 0))
+
+              $params = @{
+                  'Uri'         = $uri
+                  'Headers'     = $Header
+                  'Method'      = 'Put'
+                  'ContentType' = 'application/octet-stream'
+                  'body'        = $base64File
+              }
+
+              Invoke-RestMethod @params
+
+              Write-Host "Attachment uploaded successfully."
+
+        - task: PowerShell@2
+          displayName: "Create Wiki Page"
+          inputs:
+            targetType: "inline"
+            script: |
+              $uri = ('https://dev.azure.com/{0}/{1}/_apis/wiki/wikis/{2}/pages?path={3}&api-version=6.0' -f '$(OrganizationName)', '$(ProjectName)', '$(WikiName)', '$(WikiPath)')
+
+              Write-Host "Creating wiki page in organization '$(OrganizationName)' in project '$(ProjectName)' in wiki space '$(WikiName)' at path '$(WikiPath)'..."
+              Write-Host "PUT URL: $uri"
+
+              $Header = @{
+                  'Authorization' = 'Basic ' + [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(":$(PersonalAccessToken)")) 
+              }
+
+
+              $date = Get-Date -Format "dd.MM.yyyy - HH:mm:ss"
+              $content = "**Erstellt am:** $date<br />**Installationspaket**: [$(WikiFileName).zip](/.attachments/$(WikiFileName).zip)"
+
+              $params = @{
+                  'Uri'         = $uri
+                  'Headers'     = $Header
+                  'Method'      = 'Put'
+                  'ContentType' = 'application/json; charset=utf-8'
+                  'body'        = @{content = $content; } | ConvertTo-Json
+              }
+
+              Invoke-RestMethod @params
+
+              Write-Host "Wiki page created successfully."
