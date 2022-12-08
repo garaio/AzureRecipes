@@ -1,0 +1,7 @@
+requests 
+| project timestamp, name, success, resultCode, cloud_RoleName, operation_Id
+| summarize
+    failurePercentage = todouble(countif(success == false)) / count(),
+    make_set_if(resultCode, success == false)
+    by cloud_RoleName
+| extend cloud_RoleName=tostring(split(cloud_RoleName, ' ')[0])
