@@ -1,8 +1,8 @@
 
-@description('The prefix will be used for every parameter that represents a resource name.')
+@description('The prefix will be used for every parameter that represents a resource name')
 param resourceNamePrefix string = 'customer-project'
 
-@description('The suffix will be appended to every parameter that represents a resource name.')
+@description('The suffix will be appended to every parameter that represents a resource name')
 param resourceNameSuffix string
 
 param resourceLocation string = resourceGroup().location
@@ -47,7 +47,7 @@ resource logAnalyticsWsRes 'Microsoft.OperationalInsights/workspaces@2020-08-01'
   }
 }
 
-resource sqlServerRes 'Microsoft.Sql/servers@2021-02-01-preview' = {
+resource sqlServerRes 'Microsoft.Sql/servers@2021-11-01' = {
   name: sqlServerName
   location: resourceLocation
   identity: {
@@ -63,7 +63,7 @@ resource sqlServerRes 'Microsoft.Sql/servers@2021-02-01-preview' = {
   }
 }
 
-resource sqlServerFirewallRuleRes 'Microsoft.Sql/servers/firewallRules@2021-02-01-preview' = {
+resource sqlServerFirewallRuleRes 'Microsoft.Sql/servers/firewallRules@2021-11-01' = {
   parent: sqlServerRes
   name: 'AllowAllWindowsAzureIps'
   properties: {
@@ -72,7 +72,7 @@ resource sqlServerFirewallRuleRes 'Microsoft.Sql/servers/firewallRules@2021-02-0
   }
 }
 
-resource sqlDatabaseRes 'Microsoft.Sql/servers/databases@2021-02-01-preview' = {
+resource sqlDatabaseRes 'Microsoft.Sql/servers/databases@2021-11-01' = {
   parent: sqlServerRes
   name: sqlDatabaseName
   location: resourceLocation

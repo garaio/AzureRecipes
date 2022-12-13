@@ -1,7 +1,7 @@
-@description('The prefix will be used for every parameter that represents a resource name. See the description of the parameter.')
+@description('The prefix will be used for every parameter that represents a resource name')
 param resourceNamePrefix string = 'customer-project'
 
-@description('The suffix will be appended to every parameter that represents a resource name. See the description of the parameter.')
+@description('The suffix will be appended to every parameter that represents a resource name')
 param resourceNameSuffix string
 
 param resourceLocation string = resourceGroup().location
@@ -108,7 +108,7 @@ resource logAnalyticsWsRes 'Microsoft.OperationalInsights/workspaces@2020-08-01'
   }
 }
 
-resource keyVaultRes 'Microsoft.KeyVault/vaults@2019-09-01' = {
+resource keyVaultRes 'Microsoft.KeyVault/vaults@2022-07-01' = {
   name: keyVaultName
   location: resourceLocation
   properties: {
@@ -118,6 +118,8 @@ resource keyVaultRes 'Microsoft.KeyVault/vaults@2019-09-01' = {
     }
     tenantId: subscription().tenantId
     enabledForTemplateDeployment: true
+    enableRbacAuthorization: false
+    enableSoftDelete: true // With default of softDeleteRetentionInDays = 90
     accessPolicies: []
   }
 }
@@ -156,8 +158,6 @@ resource dataLakeStorageRes 'Microsoft.Storage/storageAccounts@2019-06-01' = {
     isHnsEnabled: true
     networkAcls: {
       bypass: 'AzureServices'
-      virtualNetworkRules: []
-      ipRules: []
       defaultAction: 'Allow'
     }
     supportsHttpsTrafficOnly: true

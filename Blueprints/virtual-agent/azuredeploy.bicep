@@ -1,7 +1,7 @@
-@description('The prefix will be used for every parameter that represents a resource name. See the description of the parameter.')
+@description('The prefix will be used for every parameter that represents a resource name')
 param resourceNamePrefix string = 'customer-project'
 
-@description('The suffix will be appended to every parameter that represents a resource name. See the description of the parameter.')
+@description('The suffix will be appended to every parameter that represents a resource name')
 param resourceNameSuffix string
 
 param resourceLocation string = resourceGroup().location
@@ -17,7 +17,7 @@ param botAppId string
 
 @description('Client secret of the App Registration')
 @secure()
-param botAppSecret string
+param botAppSecret string = base64(newGuid())
 
 @description('Name displayed in the chat window')
 param botDisplayName string = 'GARAIO-Blueprint'
@@ -203,7 +203,7 @@ resource appInsightsRes 'Microsoft.Insights/components@2020-02-02' = {
   }
 }
 
-resource keyVaultRes 'Microsoft.KeyVault/vaults@2019-09-01' = {
+resource keyVaultRes 'Microsoft.KeyVault/vaults@2022-07-01' = {
   name: keyVaultName
   location: resourceLocation
   properties: {
@@ -213,6 +213,8 @@ resource keyVaultRes 'Microsoft.KeyVault/vaults@2019-09-01' = {
     }
     tenantId: subscription().tenantId
     enabledForTemplateDeployment: true
+    enableRbacAuthorization: false
+    enableSoftDelete: true // With default of softDeleteRetentionInDays = 90
     accessPolicies: []
   }
 }
@@ -237,7 +239,7 @@ resource keyVaultDiagnosticsRes 'Microsoft.Insights/diagnosticSettings@2017-05-0
   }
 }
 
-resource keyVaultSecretStorageAccountConnectionStringRes 'Microsoft.KeyVault/vaults/secrets@2019-09-01' = {
+resource keyVaultSecretStorageAccountConnectionStringRes 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
   parent: keyVaultRes
   name: keyVaultSecretStorageAccountConnectionString
   properties: {
@@ -245,7 +247,7 @@ resource keyVaultSecretStorageAccountConnectionStringRes 'Microsoft.KeyVault/vau
   }
 }
 
-resource keyVaultSecretCosmosDbConnectionStringRes 'Microsoft.KeyVault/vaults/secrets@2019-09-01' = {
+resource keyVaultSecretCosmosDbConnectionStringRes 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
   parent: keyVaultRes
   name: keyVaultSecretCosmosDbConnectionString
   properties: {
@@ -253,7 +255,7 @@ resource keyVaultSecretCosmosDbConnectionStringRes 'Microsoft.KeyVault/vaults/se
   }
 }
 
-resource keyVaultSecretBotAppSecretRes 'Microsoft.KeyVault/vaults/secrets@2019-09-01' = {
+resource keyVaultSecretBotAppSecretRes 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
   parent: keyVaultRes
   name: keyVaultSecretBotAppSecret
   properties: {
@@ -261,7 +263,7 @@ resource keyVaultSecretBotAppSecretRes 'Microsoft.KeyVault/vaults/secrets@2019-0
   }
 }
 
-resource keyVaultAccessPoliciesRes 'Microsoft.KeyVault/vaults/accessPolicies@2019-09-01' = {
+resource keyVaultAccessPoliciesRes 'Microsoft.KeyVault/vaults/accessPolicies@2022-07-01' = {
   parent: keyVaultRes
   name: 'add'
   properties: {
@@ -369,7 +371,7 @@ resource botNameRes 'Microsoft.BotService/botServices@2021-03-01' = {
     displayName: botDisplayName
     endpoint: botEndpoint
     msaAppId: botAppId
-    developerAppInsightsApplicationId: appInsightsName
+    developerAppInsightsApplicationId: appInsightsRes.properties.AppId
     developerAppInsightKey: reference(appInsightsRes.id, '2015-05-01').InstrumentationKey
   }
   dependsOn: [
@@ -457,6 +459,9 @@ resource indexerFuncRes 'Microsoft.Web/sites@2021-03-01' = {
     containerSize: 1536
     dailyMemoryTimeQuota: 0
     httpsOnly: true
+    siteConfig: {
+      ftpsState: 'Disabled'
+    }
   }
   identity: {
     type: 'SystemAssigned'

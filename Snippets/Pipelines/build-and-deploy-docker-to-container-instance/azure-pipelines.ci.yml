@@ -58,8 +58,7 @@ stages:
             azureResourceManagerConnection: '$(armServiceConnection)'
             resourceGroupName: '$(resourceGroupName)'
             location: '$(resourceLocation)'
-            csmFile: '$(deploymentFolderName)/azuredeploy.instance.json'
-            csmParametersFile: '$(deploymentFolderName)/azuredeploy.parameters.json'
+            csmFile: '$(deploymentFolderName)/azuredeploy.instance.bicep'
             overrideParameters: '-resourceNameSuffix "$(resourceNameSuffix)"'
             deploymentMode: 'Validation'
           continueOnError: true

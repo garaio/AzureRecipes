@@ -31,7 +31,7 @@ public static async Task ScheduleTrigger(ServiceBusMessage message, DateTimeOffs
 ```
 
 ## Deployment (Azure Resources)
-[![Deploy to Azure](https://github.com/garaio/AzureRecipes/raw/master/Resources/deploybutton.svg?sanitize=true)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fgaraio%2FAzureRecipes%2Fmaster%2FSnippets%2Fcsharp%2Fservice-bus-based-event-scheduler%2Fazuredeploy.json)
+[![Deploy to Azure](https://github.com/garaio/AzureRecipes/raw/master/Resources/deploybutton.svg?sanitize=true)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fgaraio%2FAzureRecipes%2Fmaster%2FSnippets%2Fcsharp%2Fservice-bus-based-event-scheduler%2Fazuredeploy.bicep)
 
 # References
 * [MSDN Message sequencing and timestamps](https://docs.microsoft.com/en-us/azure/service-bus-messaging/message-sequencing#scheduled-messages)

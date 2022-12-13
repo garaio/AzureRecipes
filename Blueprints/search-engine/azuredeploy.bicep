@@ -1,7 +1,7 @@
-@description('The prefix will be used for every parameter that represents a resource name. See the description of the parameter.')
+@description('The prefix will be used for every parameter that represents a resource name')
 param resourceNamePrefix string = 'customer-project'
 
-@description('The suffix will be appended to every parameter that represents a resource name. See the description of the parameter.')
+@description('The suffix will be appended to every parameter that represents a resource name')
 param resourceNameSuffix string
 
 param resourceLocation string = resourceGroup().location
@@ -128,7 +128,7 @@ resource appInsightsRes 'Microsoft.Insights/components@2020-02-02' = {
   }
 }
 
-resource keyVaultRes 'Microsoft.KeyVault/vaults@2019-09-01' = {
+resource keyVaultRes 'Microsoft.KeyVault/vaults@2022-07-01' = {
   name: keyVaultName
   location: resourceLocation
   properties: {
@@ -138,6 +138,8 @@ resource keyVaultRes 'Microsoft.KeyVault/vaults@2019-09-01' = {
     }
     tenantId: subscription().tenantId
     enabledForTemplateDeployment: true
+    enableRbacAuthorization: false
+    enableSoftDelete: true // With default of softDeleteRetentionInDays = 90
     accessPolicies: []
   }
 }
@@ -162,7 +164,7 @@ resource keyVaultDiagnosticsRes 'Microsoft.Insights/diagnosticSettings@2017-05-0
   }
 }
 
-resource keyVaultSecretStorageAccountConnectionStringRes 'Microsoft.KeyVault/vaults/secrets@2019-09-01' = {
+resource keyVaultSecretStorageAccountConnectionStringRes 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
   parent: keyVaultRes
   name: keyVaultSecretStorageAccountConnectionString
   properties: {
@@ -170,7 +172,7 @@ resource keyVaultSecretStorageAccountConnectionStringRes 'Microsoft.KeyVault/vau
   }
 }
 
-resource keyVaultSecretSearchServiceApiKeyRes 'Microsoft.KeyVault/vaults/secrets@2019-09-01' = {
+resource keyVaultSecretSearchServiceApiKeyRes 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
   parent: keyVaultRes
   name: keyVaultSecretSearchServiceApiKey
   properties: {
@@ -178,7 +180,7 @@ resource keyVaultSecretSearchServiceApiKeyRes 'Microsoft.KeyVault/vaults/secrets
   }
 }
 
-resource keyVaultAccessPoliciesRes 'Microsoft.KeyVault/vaults/accessPolicies@2019-09-01' = {
+resource keyVaultAccessPoliciesRes 'Microsoft.KeyVault/vaults/accessPolicies@2022-07-01' = {
   parent: keyVaultRes
   name: 'add'
   properties: {
@@ -243,14 +245,14 @@ resource cognitiveSearchDiagnosticsRes 'Microsoft.Insights/diagnosticSettings@20
   }
 }
 
-resource appServicePlanRes 'Microsoft.Web/serverfarms@2020-09-01' = {
+resource appServicePlanRes 'Microsoft.Web/serverfarms@2021-03-01' = {
   name: appServicePlanName
   location: resourceLocation
   sku: appServicePlanSku
   properties: {}
 }
 
-resource searchFuncRes 'Microsoft.Web/sites@2020-09-01' = {
+resource searchFuncRes 'Microsoft.Web/sites@2021-03-01' = {
   name: searchFuncName
   location: resourceLocation
   kind: 'functionapp'
@@ -273,13 +275,16 @@ resource searchFuncRes 'Microsoft.Web/sites@2020-09-01' = {
     containerSize: 1536
     dailyMemoryTimeQuota: 0
     httpsOnly: true
+    siteConfig: {
+      ftpsState: 'Disabled'
+    }
   }
   identity: {
     type: 'SystemAssigned'
   }
 }
 
-resource searchFuncAppSettingsRes 'Microsoft.Web/sites/config@2020-09-01' = {
+resource searchFuncAppSettingsRes 'Microsoft.Web/sites/config@2021-03-01' = {
   parent: searchFuncRes
   name: 'appsettings'
   properties: {
@@ -303,7 +308,7 @@ resource searchFuncAppSettingsRes 'Microsoft.Web/sites/config@2020-09-01' = {
   ]
 }
 
-resource indexerFuncRes 'Microsoft.Web/sites@2020-09-01' = {
+resource indexerFuncRes 'Microsoft.Web/sites@2021-03-01' = {
   name: indexerFuncName
   location: resourceLocation
   kind: 'functionapp'
@@ -326,13 +331,16 @@ resource indexerFuncRes 'Microsoft.Web/sites@2020-09-01' = {
     containerSize: 1536
     dailyMemoryTimeQuota: 0
     httpsOnly: true
+    siteConfig: {
+      ftpsState: 'Disabled'
+    }
   }
   identity: {
     type: 'SystemAssigned'
   }
 }
 
-resource indexerFuncAppSettingsRes 'Microsoft.Web/sites/config@2020-09-01' = {
+resource indexerFuncAppSettingsRes 'Microsoft.Web/sites/config@2021-03-01' = {
   parent: indexerFuncRes
   name: 'appsettings'
   properties: {

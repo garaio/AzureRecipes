@@ -1,7 +1,7 @@
-@description('The prefix will be used for every parameter that represents a resource name. See the description of the parameter.')
+@description('The prefix will be used for every parameter that represents a resource name')
 param resourceNamePrefix string = 'customer-project'
 
-@description('The suffix will be appended to every parameter that represents a resource name. See the description of the parameter.')
+@description('The suffix will be appended to every parameter that represents a resource name')
 param resourceNameSuffix string
 
 param resourceLocation string = resourceGroup().location
@@ -24,9 +24,9 @@ var keyVaultAppPermissions = {
     'get'
   ]
 }
-var keyVaultSecretStorageAccountConnectionString = 'storageAccountConnectionString'
-var keyVaultSecretAppInsightsInstrumentationKey = 'appInsightsInstrumentationKey'
-var keyVaultSecretServiceBusConnectionString = 'serviceBusConnectionString'
+var keyVaultSecretNameStorageAccountConnectionString = 'storageAccountConnectionString'
+var keyVaultSecretNameAppInsightsInstrumentationKey = 'appInsightsInstrumentationKey'
+var keyVaultSecretNameServiceBusConnectionString = 'serviceBusConnectionString'
 
 var blobContainerConfig = 'config'
 var blobContainerDeployment = 'deployment'
@@ -146,7 +146,7 @@ resource serviceBusNamespaceDiagnosticsRes 'Microsoft.Insights/diagnosticSetting
   }
 }
 
-resource keyVaultRes 'Microsoft.KeyVault/vaults@2021-10-01' = {
+resource keyVaultRes 'Microsoft.KeyVault/vaults@2022-07-01' = {
   name: keyVaultName
   location: resourceLocation
   properties: {
@@ -156,7 +156,9 @@ resource keyVaultRes 'Microsoft.KeyVault/vaults@2021-10-01' = {
     }
     tenantId: subscription().tenantId
     enabledForTemplateDeployment: true
+    enableRbacAuthorization: false
     createMode: useExistingKeyVault ? 'recover' : 'default'
+    enableSoftDelete: true // With default of softDeleteRetentionInDays = 90
     accessPolicies: []
   }
 }
@@ -181,7 +183,7 @@ resource keyVaultDiagnosticsRes 'Microsoft.Insights/diagnosticSettings@2017-05-0
   }
 }
 
-resource keyVaultAccessPoliciesRes 'Microsoft.KeyVault/vaults/accessPolicies@2019-09-01' = {
+resource keyVaultAccessPoliciesRes 'Microsoft.KeyVault/vaults/accessPolicies@2022-07-01' = {
   parent: keyVaultRes
   name: 'add'
   properties: {
@@ -196,25 +198,25 @@ resource keyVaultAccessPoliciesRes 'Microsoft.KeyVault/vaults/accessPolicies@201
   }
 }
 
-resource keyVaultSecretStorageAccountConnectionStringRes 'Microsoft.KeyVault/vaults/secrets@2021-10-01' = {
+resource keyVaultSecretStorageAccountConnectionStringRes 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
   parent: keyVaultRes
-  name: keyVaultSecretStorageAccountConnectionString
+  name: keyVaultSecretNameStorageAccountConnectionString
   properties: {
     value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccountName};AccountKey=${listKeys(storageAccountRes.id, '2019-06-01').keys[0].value}'
   }
 }
 
-resource keyVaultSecretServiceBusConnectionStringRes 'Microsoft.KeyVault/vaults/secrets@2021-10-01' = {
+resource keyVaultSecretServiceBusConnectionStringRes 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
   parent: keyVaultRes
-  name: keyVaultSecretServiceBusConnectionString
+  name: keyVaultSecretNameServiceBusConnectionString
   properties: {
     value: listkeys(resourceId('Microsoft.ServiceBus/namespaces/authorizationRules', serviceBusNamespaceName, 'RootManageSharedAccessKey'), '2021-11-01').primaryConnectionString
   }
 }
 
-resource keyVaultSecretAppInsightsInstrumentationKeyRes 'Microsoft.KeyVault/vaults/secrets@2021-10-01' = {
+resource keyVaultSecretAppInsightsInstrumentationKeyRes 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
   parent: keyVaultRes
-  name: keyVaultSecretAppInsightsInstrumentationKey
+  name: keyVaultSecretNameAppInsightsInstrumentationKey
   properties: {
     value: appInsightsRes.properties.InstrumentationKey
   }

@@ -1,16 +1,16 @@
-@description('The prefix will be used for every parameter that represents a resource name. See the description of the parameter.')
+@description('The prefix will be used for every parameter that represents a resource name')
 param resourceNamePrefix string = 'customer-project'
 
-@description('The suffix will be appended to every parameter that represents a resource name. See the description of the parameter.')
+@description('The suffix will be appended to every parameter that represents a resource name')
 param resourceNameSuffix string
 
 param resourceLocation string = resourceGroup().location
 
 param keyVaultName string
 param keyVaultResourceGroupName string
-param keyVaultSecretStorageAccountConnectionString string = 'storageAccountConnectionString'
-param keyVaultSecretServiceBusConnectionString string = 'serviceBusConnectionString'
-param keyVaultSecretSignalRConnectionString string = 'signalRConnectionString'
+param keyVaultSecretNameStorageAccountConnectionString string = 'storageAccountConnectionString'
+param keyVaultSecretNameServiceBusConnectionString string = 'serviceBusConnectionString'
+param keyVaultSecretNameSignalRConnectionString string = 'signalRConnectionString'
 
 param appInsightsInstrumentationKey string = ''
 
@@ -70,6 +70,7 @@ resource serviceFuncRes 'Microsoft.Web/sites@2021-03-01' = {
           '*'
         ]
       }
+      ftpsState: 'Disabled'
     }
   }
   identity: {
@@ -87,11 +88,11 @@ module serviceFuncAppSettingsRes './modules.funcAppSettings.bicep' = if (!empty(
   params: {
     keyVaultName: keyVaultName
     serviceFuncName: serviceFuncName
-    storageAccountConnectionString: keyVaultRes.getSecret(keyVaultSecretStorageAccountConnectionString)
+    storageAccountConnectionString: keyVaultRes.getSecret(keyVaultSecretNameStorageAccountConnectionString)
     appInsightsInstrumentationKey: appInsightsInstrumentationKey
-    keyVaultSecretServiceBusConnectionString: keyVaultSecretServiceBusConnectionString
-    keyVaultSecretSignalRConnectionString: keyVaultSecretSignalRConnectionString
-    keyVaultSecretStorageAccountConnectionString: keyVaultSecretStorageAccountConnectionString
+    keyVaultSecretNameServiceBusConnectionString: keyVaultSecretNameServiceBusConnectionString
+    keyVaultSecretNameSignalRConnectionString: keyVaultSecretNameSignalRConnectionString
+    keyVaultSecretNameStorageAccountConnectionString: keyVaultSecretNameStorageAccountConnectionString
   }
   dependsOn: [
     keyVaultAccessPolicyRes

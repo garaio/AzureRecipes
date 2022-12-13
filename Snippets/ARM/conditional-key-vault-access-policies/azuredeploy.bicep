@@ -1,8 +1,7 @@
-
-@description('The prefix will be used for every parameter that represents a resource name.')
+@description('The prefix will be used for every parameter that represents a resource name')
 param resourceNamePrefix string = 'customer-project'
 
-@description('The suffix will be appended to every parameter that represents a resource name.')
+@description('The suffix will be appended to every parameter that represents a resource name')
 param resourceNameSuffix string
 
 param resourceLocation string = resourceGroup().location
@@ -51,7 +50,7 @@ resource appInsightsRes 'Microsoft.Insights/components@2020-02-02' = {
   }
 }
 
-resource keyVaultRes 'Microsoft.KeyVault/vaults@2019-09-01' = {
+resource keyVaultRes 'Microsoft.KeyVault/vaults@2022-07-01' = {
   name: keyVaultName
   location: resourceLocation
   properties: {
@@ -61,6 +60,8 @@ resource keyVaultRes 'Microsoft.KeyVault/vaults@2019-09-01' = {
     }
     tenantId: subscription().tenantId
     enabledForTemplateDeployment: true
+    enableRbacAuthorization: false
+    enableSoftDelete: true // With default of softDeleteRetentionInDays = 90
     accessPolicies: []
   }
 }
@@ -85,7 +86,7 @@ resource keyVaultDiagnosticsRes 'Microsoft.Insights/diagnosticSettings@2017-05-0
   }
 }
 
-resource keyVaultAccessPoliciesRes  'Microsoft.KeyVault/vaults/accessPolicies@2019-09-01' = {
+resource keyVaultAccessPoliciesRes  'Microsoft.KeyVault/vaults/accessPolicies@2022-07-01' = {
   name: '${keyVaultRes.name}/add'
   properties: {
     accessPolicies: [
@@ -134,6 +135,7 @@ resource demoFuncRes 'Microsoft.Web/sites@2021-03-01' = {
           '*'
         ]
       }
+      ftpsState: 'Disabled'
     }
   }
   identity: {

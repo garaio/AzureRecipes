@@ -16,7 +16,7 @@ A CDN setup consists of following resources:
 ![](./cdn-endpoint.rules.png)
 
 # Deployment
-[![Deploy to Azure](https://github.com/garaio/AzureRecipes/raw/master/Resources/deploybutton.svg?sanitize=true)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fgaraio%2FAzureRecipes%2Fmaster%2FSnippets%2FARM%2Fsetup-CDN-with-rule-for-SPA%2Fazuredeploy.json)
+[![Deploy to Azure](https://github.com/garaio/AzureRecipes/raw/master/Resources/deploybutton.svg?sanitize=true)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fgaraio%2FAzureRecipes%2Fmaster%2FSnippets%2FARM%2Fsetup-CDN-with-rule-for-SPA%2Fazuredeploy.bicep)
 
 # Further Information
 https://stackoverflow.com/questions/58914446/azure-cdn-microsoft-standard-rewrite-url-angular

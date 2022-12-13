@@ -13,7 +13,7 @@ The image is built and pushed on every build using the ID of the pipeline run as
 1. Adjust the variables in the CI & CD pipeline accordingly (you may us a variable group)
 
 # Resources
-* [ARM Template for Container Registry](./Deployment/azuredeploy.registry.json)
-* [ARM Template for Container Instance](./Deployment/azuredeploy.instance.json)
+* [Bicep Template for Container Registry](./Deployment/azuredeploy.registry.bicep)
+* [Bicep Template for Container Instance](./Deployment/azuredeploy.instance.bicep)
 * [CI Pipeline](./azure-pipelines.ci.yml)
 * [CD Pipeline](./azure-pipelines.cd.yml)

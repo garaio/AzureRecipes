@@ -71,7 +71,7 @@ Following list may help to identify critical aspects of an application for monit
 | Resource | Aspect | Purpose | Examples / References |
 |----------|--------|---------|-----------------------|
 | Function | Duration | If running in consumption plan, the duration is limited to 5 minutes (default) and can be extended to maximally 10 minutes. An alert on durations of more than e.g. 80% can help to detect issues early and thus avoids unhandled timeout failures in production. | - |
-| App Service | HTTP 500 | Unhandled exception leads to HTTP results on HTTP-triggered Functions or Web Apps. This is okay on pre-production systems but should be analyzed for prevention of the failure or appropriate error handling | [Snippet for ARM-based deployment](../../Snippets/ARM/alert-rule-http500) |
+| App Service | HTTP 500 | Unhandled exception leads to HTTP results on HTTP-triggered Functions or Web Apps. This is okay on pre-production systems but should be analyzed for prevention of the failure or appropriate error handling | - |
 | App Service | Error-Rate | This may indicate systematic problems (e.g. configuration failures) typically after a deployment | - |
 | App Service | CPU / Memory / Disk Usage | For Functions on a dedicated App Service Plan or Web Apps without configured auto-scaling this should be monitor to prevent overload situations | - |
 | Resource Group | User Activities | Especially for productive environments it may be valuable to get notified of any manual changes (e.g. to make sure they are properly reflected in documentation or deployment scripts) | [Snippet for ARM-based deployment](../../Snippets/ARM/alert-rule-tampering) |

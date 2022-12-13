@@ -73,8 +73,7 @@ stages:
             subscriptionId: '$(subscriptionId)'
             resourceGroupName: '$(resourceGroupName)'
             location: '$(resourceLocation)'
-            csmFile: '$(deploymentFolderName)/azuredeploy.json'
-            csmParametersFile: '$(deploymentFolderName)/azuredeploy.parameters.json'
+            csmFile: '$(deploymentFolderName)/azuredeploy.bicep'
             overrideParameters: '-resourceNameSuffix "$(resourceNameSuffix)"'
             deploymentMode: 'Validation'
           continueOnError: true

@@ -9,11 +9,11 @@ param appPermissions object = {
   ]
 }
 
-resource keyVaultRes 'Microsoft.KeyVault/vaults@2021-10-01' existing = {
+resource keyVaultRes 'Microsoft.KeyVault/vaults@2022-07-01' existing = {
   name: keyVaultName
 }
 
-resource keyVaultAccessPoliciesRes 'Microsoft.KeyVault/vaults/accessPolicies@2021-10-01' = {
+resource keyVaultAccessPoliciesRes 'Microsoft.KeyVault/vaults/accessPolicies@2022-07-01' = {
   parent: keyVaultRes
   name: 'add'
   properties: {

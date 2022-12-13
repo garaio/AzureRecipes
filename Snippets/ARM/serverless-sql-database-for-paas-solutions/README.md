@@ -11,4 +11,4 @@ Further information:
 * [Auto-pausing in serverless mode](https://docs.microsoft.com/en-us/azure/azure-sql/database/serverless-tier-overview?view=azuresql#auto-pausing), currently not supported if either geo-replication or long-term backup retention shall be enabled
 * Hybrid Benefit and Reserved Instances are currently not supported with serverless mode (i.e. no cost-savings possible)
 
-[![Deploy to Azure](https://github.com/garaio/AzureRecipes/raw/master/Resources/deploybutton.svg?sanitize=true)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fgaraio%2FAzureRecipes%2Fmaster%2FSnippets%2FARM%2Fserverless-sql-database-for-paas-solutions%2Fazuredeploy.json)
+[![Deploy to Azure](https://github.com/garaio/AzureRecipes/raw/master/Resources/deploybutton.svg?sanitize=true)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fgaraio%2FAzureRecipes%2Fmaster%2FSnippets%2FARM%2Fserverless-sql-database-for-paas-solutions%2Fazuredeploy.bicep)

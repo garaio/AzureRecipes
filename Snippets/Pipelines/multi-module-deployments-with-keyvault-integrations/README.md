@@ -37,7 +37,7 @@ With the default creation mode, the KeyVault overrides all existing Access Polic
   inputs:
     azureResourceManagerConnection: '${{ parameters.armServiceConnection }}'
     ...
-    csmFile: '$(Pipeline.Workspace)/CI-Pipeline/$(ciArtifactName)/azuredeploy.base.json'
+    csmFile: '$(Pipeline.Workspace)/CI-Pipeline/$(ciArtifactName)/azuredeploy.base.bicep'
     overrideParameters: '-resourceNamePrefix "$(baseResourceNamePrefix)" -resourceNameSuffix "${{ parameters.resNameEnv }}" -useExistingKeyVault $(keyVaultExists) -servicePrincipalId "$(armServicePrincipalId)"'
 ```
 
@@ -200,7 +200,7 @@ Gather AAD identifier of Service Principal ([`templates.deploy-to-stage.yml`](./
   inputs:
     azureResourceManagerConnection: '${{ parameters.armServiceConnection }}'
     ...
-    csmFile: '$(Pipeline.Workspace)/CI-Pipeline/$(ciArtifactName)/azuredeploy.base.json'
+    csmFile: '$(Pipeline.Workspace)/CI-Pipeline/$(ciArtifactName)/azuredeploy.base.bicep'
     overrideParameters: '-resourceNamePrefix "$(baseResourceNamePrefix)" -resourceNameSuffix "${{ parameters.resNameEnv }}" -useExistingKeyVault $(keyVaultExists) -servicePrincipalId "$(armServicePrincipalId)"'
 ```
 
