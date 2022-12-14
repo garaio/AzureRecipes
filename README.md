@@ -37,7 +37,7 @@ Directly reusable code artefacts for development, deployment or monitoring / ana
 
 | Type | Description                           | Link             |
 |------|---------------------------------------|------------------|
-| ARM  | [Azure Resource Manager templates](https://docs.microsoft.com/en-us/azure/templates/) for deployment definitions    | [Show](./Snippets/ARM) |
+| ARM (Bicep)  | [Azure Resource Manager definitions](https://docs.microsoft.com/en-us/azure/templates/) for resource deployment | [Show](./Snippets/ARM) |
 | CLI  | Azure Command Line Interface commands. This also includes queries based on [JMESPath](https://jmespath.org/) | [Show](./Snippets/CLI)  |
 | csharp | Code snippets such as classes or methods for functionality e.g. in Functions. Class libraries are rather published via Nuget.  | [Show](./Snippets/csharp) |
 | KQL  | [Kusto Query Language](https://docs.microsoft.com/en-us/azure/data-explorer/kusto/query/) snippets used for analytics in various services such as Application Insights, Log Analytics Workspace or Data Explorer | [Show](./Snippets/KQL)  |
@@ -57,6 +57,7 @@ This contains document structures and contents for technical reviews and project
 | Guideline | Cloud Migrations | Simple implementation of [the concept known from the Cloud Adoption Framework](https://docs.microsoft.com/en-us/azure/cloud-adoption-framework/ready/landing-zone/) giving guidelines to migrate or newly realise PaaS or CaaS applications | [Show](./Templates/Guideline-ApplicationLandingZones) |
 | Miscellaneous | Cloud Migrations | Various templates for visualisation, planning and decision-making to support enterprise-level application migration (templates are mostly in German) | [Show](./Templates/Miscellaneous-CloudMigrationResources) |
 | Review | Application Architecture & Implementation | Technical review of application architecture and implementation quality (focused on PaaS solutions) | [Show](./Templates/Review-AppArchitectureAndImplementation.md) |
+| Guideline | DevOps | Strategy and implementation concept for consistent and standardized alerting with Azure PaaS applications| [Show](./Templates/Guideline-AlertingStrategy) |
 
 ### Knowledge
 In that folder various "Knowhow", "Tips & Tricks" and "Best Practices" content is collected, e.g. regarding setup of Azure service configurations or selection of most appropriate Azure Service for specific requirements.
@@ -76,4 +77,4 @@ If you need help with some content or find a bug then you may [create an issue](
 [![License](http://img.shields.io/:license-mit-blue.svg?style=flat-square)](http://badges.mit-license.org)
 
 - **[MIT license](http://opensource.org/licenses/mit-license.php)**
-- Copyright 2021 © <a href="https://garaio.com" target="_blank">GARAIO AG</a>
+- Copyright 2023 © <a href="https://garaio.com" target="_blank">GARAIO AG</a>

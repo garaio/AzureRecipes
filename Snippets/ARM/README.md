@@ -1,8 +1,9 @@
-# Azure Resource Manager Templates
+# Azure Resource Manager Definitions
 General resources:
 * [Schema Definition Reference](https://docs.microsoft.com/en-us/azure/templates)
-* [Official Best Practices](https://docs.microsoft.com/en-us/azure/azure-resource-manager/templates/template-best-practices)
-* [ARM Visualizer](http://armviz.io/designer)
+* [Bicep Language Specification (incl. operators and functions)](https://learn.microsoft.com/en-us/azure/azure-resource-manager/bicep/file)
+* [Official Best Practices](https://learn.microsoft.com/en-us/azure/azure-resource-manager/bicep/best-practices)
+* [Visual Studio Code Extension for Bicep (including graphical visualization)](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-bicep)
 
 <!-- Note: Edit tables with https://www.tablesgenerator.com/markdown_tables -->
 
