@@ -78,7 +78,7 @@ resource serviceFuncRes 'Microsoft.Web/sites@2021-03-01' = {
   }
 }
 
-resource keyVaultRes 'Microsoft.KeyVault/vaults@2021-10-01' existing = if (!empty(keyVaultName) && !empty(keyVaultResourceGroupName)) {
+resource keyVaultRes 'Microsoft.KeyVault/vaults@2022-07-01' existing = if (!empty(keyVaultName) && !empty(keyVaultResourceGroupName)) {
   name: keyVaultName
   scope: resourceGroup(keyVaultResourceGroupName)
 }
