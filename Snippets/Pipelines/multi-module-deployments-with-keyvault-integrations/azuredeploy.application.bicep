@@ -12,7 +12,8 @@ param keyVaultSecretNameStorageAccountConnectionString string = 'storageAccountC
 param keyVaultSecretNameServiceBusConnectionString string = 'serviceBusConnectionString'
 param keyVaultSecretNameSignalRConnectionString string = 'signalRConnectionString'
 
-param appInsightsInstrumentationKey string = ''
+@secure()
+param appInsightsConnectionString string = ''
 
 var appServicePlanName = '${resourceNamePrefix}-asp-${resourceNameSuffix}'
 var appServicePlanSku = {
@@ -89,7 +90,7 @@ module serviceFuncAppSettingsRes './modules.funcAppSettings.bicep' = if (!empty(
     keyVaultName: keyVaultName
     serviceFuncName: serviceFuncName
     storageAccountConnectionString: keyVaultRes.getSecret(keyVaultSecretNameStorageAccountConnectionString)
-    appInsightsInstrumentationKey: appInsightsInstrumentationKey
+    appInsightsConnectionString: appInsightsConnectionString
     keyVaultSecretNameServiceBusConnectionString: keyVaultSecretNameServiceBusConnectionString
     keyVaultSecretNameSignalRConnectionString: keyVaultSecretNameSignalRConnectionString
     keyVaultSecretNameStorageAccountConnectionString: keyVaultSecretNameStorageAccountConnectionString

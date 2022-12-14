@@ -53,6 +53,8 @@ resource keyVaultRes 'Microsoft.KeyVault/vaults@2021-10-01' = {
     }
     tenantId: subscription().tenantId
     enabledForTemplateDeployment: true
+    enableRbacAuthorization: false
+    enableSoftDelete: true // With default of softDeleteRetentionInDays = 90
     createMode: useExistingKeyVault ? 'recover' : 'default'
     accessPolicies: []
   }
@@ -230,7 +232,7 @@ Read all or selected secrets and provide them as variables ([`templates.deploy-t
   inputs:
     azureSubscription: '${{ parameters.armServiceConnection }}'
     KeyVaultName: '$(keyVaultName)'
-    SecretsFilter: 'appInsightsInstrumentationKey' # Comma-separated list of secrets -> The're made available as pipeline variables with same name
+    SecretsFilter: 'appInsightsConnectionString' # Comma-separated list of secrets -> The're made available as pipeline variables with same name
     RunAsPreJob: false # No impact: https://docs.microsoft.com/en-us/azure/devops/pipelines/tasks/deploy/azure-key-vault?view=azure-devops#arguments
 ```
 

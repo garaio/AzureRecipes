@@ -372,7 +372,7 @@ resource botNameRes 'Microsoft.BotService/botServices@2021-03-01' = {
     endpoint: botEndpoint
     msaAppId: botAppId
     developerAppInsightsApplicationId: appInsightsRes.properties.AppId
-    developerAppInsightKey: reference(appInsightsRes.id, '2015-05-01').InstrumentationKey
+    developerAppInsightKey: appInsightsRes.properties.InstrumentationKey
   }
   dependsOn: [
     botSiteRes
@@ -413,7 +413,11 @@ resource botSiteAppSettingsRes 'Microsoft.Web/sites/config@2021-03-01' = {
   parent: botSiteRes
   name: 'appsettings'
   properties: {
-    APPINSIGHTS_INSTRUMENTATIONKEY: appInsightsRes.properties.InstrumentationKey
+    APPLICATIONINSIGHTS_CONNECTION_STRING: appInsightsRes.properties.ConnectionString
+    APPINSIGHTS_PROFILERFEATURE_VERSION: '1.0.0'     // Profiler, only available for App Service based plans (i.e. no Function App plans) (recommendation: Basic+). More: https://learn.microsoft.com/en-us/azure/azure-monitor/profiler/profiler-azure-functions
+    ApplicationInsightsAgent_EXTENSION_VERSION: '~2' // Required for Profiler (remove when setting above is removed)
+    APPINSIGHTS_SNAPSHOTFEATURE_VERSION: '1.0.0'     // Snapshot Debugger, only available for Windows-based App Service Plans (recommendation: Basic+). More: https://learn.microsoft.com/en-us/azure/azure-monitor/snapshot-debugger/snapshot-debugger-app-service
+    DiagnosticServices_EXTENSION_VERSION: '~3'       // Required for Snapshot Debugger (remove when setting above is removed)
     WEBSITE_NODE_DEFAULT_VERSION: '10.14.1'
     MicrosoftAppId: botAppId
     MicrosoftAppPassword: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${keyVaultSecretBotAppSecret})'
@@ -476,7 +480,7 @@ resource indexerFuncAppSettingsRes 'Microsoft.Web/sites/config@2021-03-01' = {
     AzureWebJobsStorage: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${keyVaultSecretStorageAccountConnectionString})'
     AzureWebJobsDisableHomepage: 'true'
     WEBSITE_CONTENTAZUREFILECONNECTIONSTRING: 'DefaultEndpointsProtocol=https;AccountName=${storageAccountName};AccountKey=${listKeys(storageAccountRes.id, '2019-06-01').keys[0].value}'
-    APPINSIGHTS_INSTRUMENTATIONKEY: appInsightsRes.properties.InstrumentationKey
+    APPLICATIONINSIGHTS_CONNECTION_STRING: appInsightsRes.properties.ConnectionString
     FUNCTIONS_EXTENSION_VERSION: '~4'
     FUNCTIONS_WORKER_RUNTIME: 'dotnet'
     WEBSITE_TIME_ZONE: 'W. Europe Standard Time'

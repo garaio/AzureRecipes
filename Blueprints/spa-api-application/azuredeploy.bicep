@@ -380,7 +380,7 @@ resource serviceFuncAppSettingsRes 'Microsoft.Web/sites/config@2021-03-01' = {
     AzureWebJobsStorage: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${keyVaultSecretStorageAccountConnectionString})'
     AzureWebJobsDisableHomepage: 'true'
     WEBSITE_CONTENTAZUREFILECONNECTIONSTRING: 'DefaultEndpointsProtocol=https;AccountName=${storageAccountName};AccountKey=${listKeys(storageAccountRes.id, '2019-06-01').keys[0].value}'
-    APPINSIGHTS_INSTRUMENTATIONKEY: appInsightsRes.properties.InstrumentationKey
+    APPLICATIONINSIGHTS_CONNECTION_STRING: appInsightsRes.properties.ConnectionString
     FUNCTIONS_EXTENSION_VERSION: '~4'
     FUNCTIONS_WORKER_RUNTIME: 'dotnet'
     WEBSITE_TIME_ZONE: 'W. Europe Standard Time'
@@ -664,4 +664,4 @@ resource appConfigStoreDiagnosticsRes 'Microsoft.Insights/diagnosticSettings@201
 }
 
 output storageAccountWebEndpoint string = reference(storageAccountRes.id, '2019-06-01', 'Full').properties.primaryEndpoints.web
-output appInsightsInstrumentationKey string = appInsightsRes.properties.InstrumentationKey
+output appInsightsInstrumentationKey string = appInsightsRes.properties.InstrumentationKey // Likely required for config in SPA (the npm package is not yet updated to use connection-string)

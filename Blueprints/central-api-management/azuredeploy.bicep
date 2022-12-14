@@ -174,7 +174,7 @@ resource apiMgmtServiceLoggerRes 'Microsoft.ApiManagement/service/loggers@2021-0
   properties: {
     loggerType: 'applicationInsights'
     credentials: {
-      instrumentationKey: appInsightsRes.properties.InstrumentationKey
+      instrumentationKey: appInsightsRes.properties.InstrumentationKey // Despite migrated to connection-string in other places, this is still documented to require the key - but may change in future
     }
     isBuffered: true
     resourceId: appInsightsRes.id

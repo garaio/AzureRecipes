@@ -139,11 +139,7 @@ resource templateFuncAppSettingsRes 'Microsoft.Web/sites/config@2021-03-01' = {
     WEBSITE_TIME_ZONE: 'W. Europe Standard Time'
     WEBSITE_CONTENTSHARE: templateFuncName
     WEBSITE_CONTENTAZUREFILECONNECTIONSTRING: 'DefaultEndpointsProtocol=https;AccountName=${storageAccountName};AccountKey=${listKeys(storageAccountRes.id, '2019-06-01').keys[0].value}'
-    APPINSIGHTS_INSTRUMENTATIONKEY: appInsightsRes.properties.InstrumentationKey
-    APPINSIGHTS_PROFILERFEATURE_VERSION: '1.0.0'
-    APPINSIGHTS_SNAPSHOTFEATURE_VERSION: '1.0.0'
-    DiagnosticServices_EXTENSION_VERSION: '~3'
-    ApplicationInsightsAgent_EXTENSION_VERSION: '~2'
+    APPLICATIONINSIGHTS_CONNECTION_STRING: appInsightsRes.properties.ConnectionString
     FUNCTIONS_EXTENSION_VERSION: '~4'
     FUNCTIONS_WORKER_RUNTIME: 'dotnet'
   }

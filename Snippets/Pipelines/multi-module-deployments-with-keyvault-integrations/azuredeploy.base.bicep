@@ -25,7 +25,7 @@ var keyVaultAppPermissions = {
   ]
 }
 var keyVaultSecretNameStorageAccountConnectionString = 'storageAccountConnectionString'
-var keyVaultSecretNameAppInsightsInstrumentationKey = 'appInsightsInstrumentationKey'
+var keyVaultSecretNameAppInsightsConnectionString = 'appInsightsConnectionString'
 var keyVaultSecretNameServiceBusConnectionString = 'serviceBusConnectionString'
 
 var blobContainerConfig = 'config'
@@ -157,8 +157,8 @@ resource keyVaultRes 'Microsoft.KeyVault/vaults@2022-07-01' = {
     tenantId: subscription().tenantId
     enabledForTemplateDeployment: true
     enableRbacAuthorization: false
-    createMode: useExistingKeyVault ? 'recover' : 'default'
     enableSoftDelete: true // With default of softDeleteRetentionInDays = 90
+    createMode: useExistingKeyVault ? 'recover' : 'default'
     accessPolicies: []
   }
 }
@@ -214,10 +214,10 @@ resource keyVaultSecretServiceBusConnectionStringRes 'Microsoft.KeyVault/vaults/
   }
 }
 
-resource keyVaultSecretAppInsightsInstrumentationKeyRes 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
+resource keyVaultSecretAppInsightsConnectionStringRes 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
   parent: keyVaultRes
-  name: keyVaultSecretNameAppInsightsInstrumentationKey
+  name: keyVaultSecretNameAppInsightsConnectionString
   properties: {
-    value: appInsightsRes.properties.InstrumentationKey
+    value: appInsightsRes.properties.ConnectionString
   }
 }

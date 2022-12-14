@@ -46,7 +46,7 @@ resource function_name_appsettings 'Microsoft.Web/sites/config@2021-03-01' = {
     WEBSITE_CONTENTAZUREFILECONNECTIONSTRING: '<storage-account-connection-string>'
     WEBSITE_CONTENTSHARE: '<function-name>'
     WEBSITE_TIME_ZONE: 'W. Europe Standard Time'
-    APPINSIGHTS_INSTRUMENTATIONKEY: '<app-insights-instrumentation-key>'
+    APPLICATIONINSIGHTS_CONNECTION_STRING: '<app-insights-connection-string'
     FUNCTIONS_EXTENSION_VERSION: '~4'
     FUNCTIONS_WORKER_RUNTIME: 'dotnet'
   }

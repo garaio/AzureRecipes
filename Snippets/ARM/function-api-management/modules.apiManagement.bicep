@@ -12,13 +12,14 @@ param apiMgmtFuncKeySecret string
 param templateFuncId string
 param templateFuncName string
 
-param appInsightsId string
-param appInsightsName string
+param appInsightsResId string
 
 param logAnalyticsWsId string
 
 @secure()
 param monitoringSubscriptionKey string = base64(newGuid())
+
+var appInsightsResIdParts = split(appInsightsResId, '/') // Indexes: 2 = SubscriptionId, 4 = ResourceGroupName, 8 = ResourceName
 
 var apiMgmtInternalApiName = 'template'
 var apiMgmtTemplateApi = 'test-api'
@@ -26,6 +27,10 @@ var apiMgmtTemplateApiDisplayName = 'Test API'
 var apiMgmtTemplateApiPath = 'test'
 var apiMgmtTemplateProduct = 'test-product'
 var apiMgmtTemplateProductDisplayName = 'Test API Integration'
+
+resource appInsightsRes 'Microsoft.Insights/components@2020-02-02' existing = {
+  name: appInsightsResIdParts[8]
+}
 
 resource apiMgmtRes 'Microsoft.ApiManagement/service@2021-08-01' = {
   name: apiMgmtName
@@ -45,14 +50,14 @@ resource apiMgmtRes 'Microsoft.ApiManagement/service@2021-08-01' = {
 
 resource apiMgmtServiceLoggerRes 'Microsoft.ApiManagement/service/loggers@2021-08-01' = {
   parent: apiMgmtRes
-  name: appInsightsName
+  name: appInsightsResIdParts[8]
   properties: {
     loggerType: 'applicationInsights'
     credentials: {
-      instrumentationKey: reference(appInsightsId, '2015-05-01').InstrumentationKey
+      instrumentationKey: appInsightsRes.properties.InstrumentationKey // Despite migrated to connection-string in other places, this is still documented to require the key - but may change in future
     }
     isBuffered: true
-    resourceId: appInsightsId
+    resourceId: appInsightsResId
   }
 }
 
