@@ -401,6 +401,7 @@ resource botSiteRes 'Microsoft.Web/sites@2021-03-01' = {
         ]
       }
       alwaysOn: true
+      ftpsState: 'Disabled'
     }
   }
   identity: {

@@ -1,6 +1,6 @@
 param resourceLocation string = resourceGroup().location
 
-resource function_name 'Microsoft.Web/sites@2020-09-01' = {
+resource function_name 'Microsoft.Web/sites@2021-03-01' = {
   kind: 'functionapp'
   name: '<function-name>'
   location: resourceLocation
@@ -28,6 +28,7 @@ resource function_name 'Microsoft.Web/sites@2020-09-01' = {
           '*'
         ]
       }
+      ftpsState: 'Disabled'
     }
   }
   identity: {
@@ -36,7 +37,7 @@ resource function_name 'Microsoft.Web/sites@2020-09-01' = {
   dependsOn: []
 }
 
-resource function_name_appsettings 'Microsoft.Web/sites/config@2020-09-01' = {
+resource function_name_appsettings 'Microsoft.Web/sites/config@2021-03-01' = {
   parent: function_name
   name: 'appsettings'
   properties: {
