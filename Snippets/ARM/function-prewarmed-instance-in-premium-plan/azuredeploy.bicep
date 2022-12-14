@@ -6,6 +6,9 @@ param resourceNameSuffix string
 
 param resourceLocation string = resourceGroup().location
 
+@description('See https://learn.microsoft.com/en-us/azure/azure-functions/configure-monitoring?tabs=v2#configure-scale-controller-logs')
+param enableScaleControllerLogs bool = false
+
 var logAnalyticsWsName = '${resourceNamePrefix}-law-${resourceNameSuffix}'
 var appInsightsName = '${resourceNamePrefix}-ai-${resourceNameSuffix}'
 var storageAccountName = replace('${resourceNamePrefix}-sa-${resourceNameSuffix}', '-', '')
@@ -140,6 +143,7 @@ resource templateFuncAppSettingsRes 'Microsoft.Web/sites/config@2021-03-01' = {
     WEBSITE_CONTENTSHARE: templateFuncName
     WEBSITE_CONTENTAZUREFILECONNECTIONSTRING: 'DefaultEndpointsProtocol=https;AccountName=${storageAccountName};AccountKey=${listKeys(storageAccountRes.id, '2019-06-01').keys[0].value}'
     APPLICATIONINSIGHTS_CONNECTION_STRING: appInsightsRes.properties.ConnectionString
+    SCALE_CONTROLLER_LOGGING_ENABLED: 'AppInsights:${enableScaleControllerLogs ? 'Verbose' : 'None'}'
     FUNCTIONS_EXTENSION_VERSION: '~4'
     FUNCTIONS_WORKER_RUNTIME: 'dotnet'
   }

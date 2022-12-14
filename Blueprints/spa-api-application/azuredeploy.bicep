@@ -18,6 +18,9 @@ param aadB2cName string = ''
 @description('For production deployments use Premium App Service Plan which provides lower latency thanks to pre-warmed instances.')
 param usePremiumFunctionPlan bool = false
 
+@description('See https://learn.microsoft.com/en-us/azure/azure-functions/configure-monitoring?tabs=v2#configure-scale-controller-logs')
+param enableScaleControllerLogs bool = false
+
 @allowed([
   'Free_F1'
   'Standard_S1'
@@ -381,6 +384,7 @@ resource serviceFuncAppSettingsRes 'Microsoft.Web/sites/config@2021-03-01' = {
     AzureWebJobsDisableHomepage: 'true'
     WEBSITE_CONTENTAZUREFILECONNECTIONSTRING: 'DefaultEndpointsProtocol=https;AccountName=${storageAccountName};AccountKey=${listKeys(storageAccountRes.id, '2019-06-01').keys[0].value}'
     APPLICATIONINSIGHTS_CONNECTION_STRING: appInsightsRes.properties.ConnectionString
+    SCALE_CONTROLLER_LOGGING_ENABLED: 'AppInsights:${enableScaleControllerLogs ? 'Verbose' : 'None'}'
     FUNCTIONS_EXTENSION_VERSION: '~4'
     FUNCTIONS_WORKER_RUNTIME: 'dotnet'
     WEBSITE_TIME_ZONE: 'W. Europe Standard Time'
