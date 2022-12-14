@@ -12,10 +12,10 @@ param resourceNameSuffix string
 ])
 param defenderPlan string = 'Free'
 
-@description('Email address to send notifications concerning security alerts.')
-param securityContactEmail string
+@description('Email addresses (separated with semicolons) to send notifications concerning security alerts')
+param securityContactsEmails string
 
-@description('Location of the Log Analytics Workspace used to store exported Security Center data.')
+@description('Location of the Log Analytics Workspace used to store exported Defender for Cloud data')
 @allowed([
   'switzerlandnorth'
   'westeurope'
@@ -37,24 +37,31 @@ resource partnerIdRes 'Microsoft.Resources/deployments@2020-06-01' = {
   }
 }
 
-resource defenderPlanRes 'Microsoft.Security/pricings@2018-06-01' = {
+resource defenderPlanRes 'Microsoft.Security/pricings@2022-03-01' = {
   name: 'default'
   properties: {
     pricingTier: defenderPlan
   }
 }
 
-resource securityContactRes 'Microsoft.Security/securityContacts@2017-08-01-preview' = {
+resource securityContactRes 'Microsoft.Security/securityContacts@2020-01-01-preview' = {
   name: 'default'
   properties: {
-    email: securityContactEmail
-    phone: ''
-    alertNotifications: 'On'
-    alertsToAdmins: 'Off'
+    alertNotifications: {
+      minimalSeverity: 'Medium'
+      state: 'On'
+    }
+    emails: securityContactsEmails
+    notificationsByRole: {
+      roles: [
+        'Owner'
+      ]
+      state: 'On'
+    }
   }
 }
 
-resource resourceGroup 'Microsoft.Resources/resourceGroups@2019-10-01' = {
+resource resourceGroup 'Microsoft.Resources/resourceGroups@2021-04-01' = {
   name: resourceGroupName
   location: resourceLocation
   properties: {}

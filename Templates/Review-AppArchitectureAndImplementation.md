@@ -7,9 +7,9 @@ The following checklist can help to assess the realisation of an Azure applicati
 
 | Scope | Check | Notes | Result |
 |-------|-------|-------|--------|
-| Security Center | Plan configured | At least free plan should be activated, standard plan (with Azure Defender) depending on architecture and used components. If architecture includes IaaS resources (VM, VNET) this is highly recommended |  |
-| Security Center | Security Contact and email notifications configured |  |  |
-| Security Center | Continuous export of Alerts, Assessments and/or Scores to Log Analytics Workspace configured | Log Analytics Workspace must be deployed in same subscription, see [snippet for complete deployment of resources and continuous export configuration](../Snippets/ARM/security-center-configurations-for-subsription) |  |
+| Defender for Cloud | Plan configured | At least free plan should be activated, standard plan (with Azure Defender) depending on architecture and used components. If architecture includes IaaS resources (VM, VNET) this is highly recommended |  |
+| Defender for Cloud | Security Contact and email notifications configured |  |  |
+| Defender for Cloud | Continuous export of Alerts, Assessments and/or Scores to Log Analytics Workspace configured | Log Analytics Workspace must be deployed in same subscription, see [snippet for complete deployment of resources and continuous export configuration](../Snippets/ARM/defender-configurations-for-subsription) |  |
 | Partner Information | Partner reference configured on subscription | This is particularly applicable if the partner link has not already been made [at the tenant level](https://docs.microsoft.com/en-us/azure/cost-management-billing/manage/link-partner-id) |  |
 
 ## Resources
@@ -76,4 +76,4 @@ The following checklist can help to assess the realisation of an Azure applicati
 | Scope | Check | Notes | Result |
 |-------|-------|-------|--------|
 | Advisor | The Azure Advisor Recommendations are examined and reasonable proposals are implemented |  |  |
-| Security Center | The Security Center Score and Recommendations are examined and reasonable proposals are implemented |  |  |
+| Defender for Cloud | The Security Score and Recommendations are examined and reasonable proposals are implemented |  |  |

@@ -1,5 +1,4 @@
 param logAnalyticsWsName string
-param logAnalyticsSolName string = 'SecurityCenterFree(${logAnalyticsWsName})'
 
 param resourceLocation string = resourceGroup().location
 
@@ -15,10 +14,10 @@ resource logAnalyticsWsRes 'Microsoft.OperationalInsights/workspaces@2020-08-01'
 }
 
 resource logAnalyticsSolRes 'Microsoft.OperationsManagement/solutions@2015-11-01-preview' = {
-  name: logAnalyticsSolName
+  name: 'SecurityCenterFree(${logAnalyticsWsName})'
   plan: {
-    name: logAnalyticsSolName
-    product: 'OMSGallery/SecurityCenterFree'
+    name: 'SecurityCenterFree(${logAnalyticsWsName})'
+    product: 'OMSGallery/SecurityCenterFree' // According to Microsoft documentation this still seems to be current and not updated after renaming to Defender (https://learn.microsoft.com/en-us/cli/azure/monitor/log-analytics/solution?view=azure-cli-latest#az-monitor-log-analytics-solution-create-examples)
     publisher: 'Microsoft'
   }
   properties: {

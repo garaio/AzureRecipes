@@ -7,7 +7,7 @@ There are many services available which gather and analyse runtime data from res
 ![](./Infographic.png)
 
 The picture above tries to provide a new view to all these services and mainly shows its relations. There are mainly following differentiations:
-* Resources that are available globally and usually don't need an activation or much configuration. They usually do not generate costs (at least not in their basic setup, e.g. Security Center has a paid level too)
+* Resources that are available globally and usually don't need an activation or much configuration. They usually do not generate costs (at least not in their basic setup, e.g. Defender for Cloud has a paid level too)
 * Resources that have to be deployed and are thus placed in Resource Groups
 
 # The Story of Everything
