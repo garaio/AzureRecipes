@@ -13,8 +13,9 @@ This alerting concept is based on the following goals and principles:
 ![](./AlertingStrategy-Overview.drawio.png)
 
 These are some key principles:
-* Oriented to consumers of alerts: How needs which information in which form?
+* Oriented to consumers of alerts: Who needs which information in which form?
 * Notification and escalation based on RBAC and appropriate tools (such as ticketing system and backlog management system) instead of using specific user accounts (based on email address or phone number): The alert notifications shall be independend from persons and allow simplified management.
+* Reuse of Action Groups: Instead of defining actions per Alert Rule, centrally managed Action Groups are referenced. This simplifies management & maintenance and reduces the risk that Alerts may get lost over time (because e.g. an Alert Rule referenced a shadowed Action Group with an orphaned email address).
 * Standardisation: There are many highly standardized Alert Rule definitions, that can be referenced via Bicep Modules.
 
 # Knowledge
@@ -114,7 +115,15 @@ For consistency and testing, it is recommended to deploy all alerting resources 
 
 ## Samples & Templates for Standard Alert Rules
 
-_coming soon_
+Following ready-to-use Bicep modules can be used to implement this Alerting Strategy:
+
+> Action Groups on organisation level (shared for all applications): _coming soon_
+
+> Action Group(s) and DevOps Handler/Connector on application level (but common for all modules and independent from environments): _coming soon_
+
+> Standard Alert Rules (consisting of most of the above mentioned alerts) as a simply reusable Bicep module: [Alert Rules for Standard Monitoring Aspects](../../Snippets/ARM/alert-rules-standard-monitoring-aspects)
+
+> Application Insights Availability Test template: _coming soon_
 
 # Resources
 * [MSDN Overview of Azure Alerts](https://learn.microsoft.com/en-us/azure/azure-monitor/alerts/alerts-overview)
