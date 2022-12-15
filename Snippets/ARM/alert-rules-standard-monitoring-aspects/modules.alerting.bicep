@@ -20,6 +20,18 @@ param actionGrpAppDevOpsTeamResId string
 
 param enableAlertRules bool = true
 
+resource partnerIdRes 'Microsoft.Resources/deployments@2020-06-01' = {
+  name: 'pid-d16e7b59-716a-407d-96db-18d1cac40407'
+  properties: {
+    mode: 'Incremental'
+    template: {
+      '$schema': 'https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#'
+      contentVersion: '1.0.0.0'
+      resources: []
+    }
+  }
+}
+
 // [Standard] To be deployed for each (relevant) instance of Application Insights (caution: naming conflicts - encapsulate in Resource Group)
 module alertRulesTechnicalRequestErrorsRes './modules.alertRulesTechnicalRequestErrors.bicep' = if(!empty(appInsightsResId)) {
   name: 'alert-rules-techreqerr'

@@ -6,10 +6,11 @@ param resourceNameSuffix string
 
 param resourceLocation string = resourceGroup().location
 
-param monitoringAlertsReceiverEmail string = 'no-reply@garaio.com'
+param logAnalyticsWsResId string
+param actionGroupResId string
 
-var logAnalyticsWsName = '${resourceNamePrefix}-law-${resourceNameSuffix}'
-var actionGrpAdminName = '${resourceNamePrefix}-admin-ag-${resourceNameSuffix}'
+param enableAlertRules bool = true
+
 var alertRuleTamperingName = '${resourceNamePrefix}-tampering-ar-${resourceNameSuffix}'
 
 resource partnerIdRes 'Microsoft.Resources/deployments@2020-06-01' = {
@@ -24,44 +25,16 @@ resource partnerIdRes 'Microsoft.Resources/deployments@2020-06-01' = {
   }
 }
 
-resource logAnalyticsWsRes 'Microsoft.OperationalInsights/workspaces@2020-08-01' = {
-  name: logAnalyticsWsName
-  location: resourceLocation
-  properties: {
-    sku: {
-      name: 'pergb2018'
-    }
-    retentionInDays: 30
-  }
-}
-
-resource actionGrpAdminRes 'Microsoft.Insights/actionGroups@2019-03-01' = {
-  name: actionGrpAdminName
-  location: 'Global'
-  properties: {
-    groupShortName: 'Admin'
-    enabled: true
-    emailReceivers: [
-      {
-        name: 'ResponsibleEmail'
-        emailAddress: monitoringAlertsReceiverEmail
-        useCommonAlertSchema: false
-      }
-    ]
-    smsReceivers: []
-  }
-}
-
-resource alertRuleTamperingRes 'Microsoft.Insights/scheduledQueryRules@2022-06-15' = {
+resource alertRuleTamperingRes 'Microsoft.Insights/scheduledQueryRules@2022-06-15' = if (!empty(actionGroupResId) && !empty(logAnalyticsWsResId)) {
   name: alertRuleTamperingName
   location: resourceLocation
   properties: {
-    description: 'Manual activities in PROD environment'
+    description: 'Manual Activities in Resource Group ${resourceGroup().name} detected'
     severity: 2
-    enabled: true
+    enabled: enableAlertRules
     evaluationFrequency: 'PT30M'
     scopes: [
-      logAnalyticsWsRes.id
+      logAnalyticsWsResId
     ]
     windowSize: 'PT45M'
     criteria: {
@@ -82,11 +55,8 @@ resource alertRuleTamperingRes 'Microsoft.Insights/scheduledQueryRules@2022-06-1
     autoMitigate: false // Auto-resolve - not supported in combination with suppression (muteActionsDuration)
     actions: {
       actionGroups: [
-        actionGrpAdminRes.id
+        actionGroupResId
       ]
-      customProperties: {
-        subject: 'Manual Activities in Resource Group ${resourceGroup().name} detected'
-      }
     }
   }
 }
