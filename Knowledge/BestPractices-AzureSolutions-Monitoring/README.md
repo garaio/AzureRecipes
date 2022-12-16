@@ -55,6 +55,9 @@ As the data store of an `Application Insights` always is a `Log Analytics Worksp
 ## Application Insights
 
 * Always link `Application Insights` wherever possible (mainly `App Service` based resources and `API Management` instances). Share instance of `Application Insights` for components of same application or - for bigger architectures - isolated part of the application.
+* Define an Availability Test along with its Alert Rule for each relevant API endpoint resource (e.g. App Service or Container App). Consider:
+  * Call the outermost endpoint / level, i.e. including the whole propagation path (e.g. API Management, Front Door)
+  * Providing a dedicated API method for monitoring (e.g. `/api/status`) with an implementation of a connectivity check to all dependencies (e.g. database, bus, storage, ...) there. Include only dependencies which are included in you SLA (external systems may be not)
 * Prevent logging of sensitive information in code.
 * For .NET applications: Activate profiling and generate of Debugger Snapshots in deployment. Example [Function (properties in App Settings)](../../Snippets/ARM/function-api-management).
 * For .NET applications: Setup and integrate `TelemetryClient` and track events with context information. Documentation for Azure Functions: https://docs.microsoft.com/en-us/azure/azure-functions/functions-monitoring?tabs=cmd#log-custom-telemetry-in-c-functions.
@@ -94,7 +97,7 @@ Following list may help to identify critical aspects of an application for monit
 | App Service | CPU / Memory / Disk Usage | For Functions on a dedicated App Service Plan or Web Apps without configured auto-scaling this should be monitor to prevent overload situations | - |
 | Application Insights | Smart Detection | The above described smart detection rules can now [be migrated to regular alerts](https://learn.microsoft.com/en-us/azure/azure-monitor/alerts/alerts-smart-detections-migration), which improves the capabilities for processing | [Alert Rule (Bicep)](../../Snippets/ARM/alert-rules-standard-monitoring-aspects/modules.alertRulesSmartDetection.bicep) |
 | Application Insights | Requests | Last execution > x time: For specific use cases this may provide a valid measure to detect failures | [KQL query to summarize a metric for the last workday](../../Snippets/KQL/CustomMetricsFromPreviousWorkday.txt) |
-| Application Insights | Availability Tests | As explained in the text above, this is a great feature to continuously observe endpoints | _coming soon_ |
+| Application Insights | Availability Tests | As explained in the text above, this is a great feature to continuously observe endpoints | [Classic or Standard Availability Test with Alert Rule (Bicep)](../../Snippets/ARM/appinsights-classic-standard-availability-test-with-alert-rule) |
 | Cognitive Search | Index Size | Depending on the used plan, the number of indexes and especially the available storage is very limited and may cause problems in production. [Unfortunately, these metrics are not yet logged](https://learn.microsoft.com/en-us/azure/search/monitor-azure-cognitive-search#set-up-alerts) - creating a regular metric- or log-based `Alert Rule` is not yet possible | - |
 | Data Factory | Pipeline Executions | Inform about automatically triggered but failed executions (e.g. of integration or backup jobs) | [Alert Rule (Bicep)](../../Snippets/ARM/alert-rules-standard-monitoring-aspects/modules.alertRulesDataFactoryExecutions.bicep) |
 | Logic App | Executions | Inform about automatically triggered but failed executions (e.g. of integration or backup jobs) | [Alert Rule (Bicep)](../../Snippets/ARM/alert-rules-standard-monitoring-aspects/modules.alertRulesLogicAppExecutions.bicep) |

@@ -18,6 +18,33 @@ For consistency it is recommended to use this Bicep module in projects. Resource
 
 > [Full Alerting Setup](./modules.alerting.bicep)
 
+```ts
+module alertingRes './modules.alerting.bicep' = {
+  name: 'alerting-definitions'
+  scope: resourceGroup()
+  params: {
+    resourceNamePrefix: resourceNamePrefix
+    resourceNameSuffix: resourceNameSuffix
+    resourceLocation: resourceLocation
+    appInsightsResId: appInsightsRes.id
+    apiManagementResId: apiManagementRes.outputs.apiMgmtResId
+    dataFactoryResId: '' // No Data Factory deployed
+    logicAppResId: '' // No Logic App deployed
+    sqlDatabaseResId: sqlDatabaseRes.id
+    cosmosDbAccountResId: '' // No Cosmos DB deployed
+    serviceBusResId: '' // No Service Bus deployed
+    actionGrpOrgOpsIndicationsResId: '/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/org-apps-ops-c/providers/Microsoft.Insights/actiongroups/org-apps-indications-ag-c'
+    actionGrpOrgOpsIssuesResId: '/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/org-apps-ops-c/providers/Microsoft.Insights/actiongroups/org-apps-issues-ag-c'
+    actionGrpAppDevOpsTeamResId: '/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/project-customer-ops-c/providers/Microsoft.Insights/actiongroups/project-customer-devops-ag-c'
+    enableAlertRules: isProductionEnvironment
+  }
+}
+```
+
+This module can and should be taken as a basis and then extended with custom alert rule definitions such as:
+* [Application Insights Availability Tests](../appinsights-classic-standard-availability-test-with-alert-rule)
+* [Custom log-based Alert Rule Sample: Monitor manual changes in Resource Group](../alert-rule-tampering)
+
 ### Single Alert Rule definitions
 
 The referenced Bicep modules group Alert Rules by resource type and use case. All of them can also be directly used and cherry-picked.

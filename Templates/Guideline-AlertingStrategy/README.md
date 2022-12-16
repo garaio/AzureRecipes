@@ -74,7 +74,8 @@ Standard Alert Rules:
 * _none_
 
 Recommendations:
-* Define an Availability Test along with its Alert Rule for each relevant API endpoint resource (e.g. App Service or Container App), at best including the whole propagation path (e.g. API Management, Front Door)
+* Define an Availability Test along with its Alert Rule for each relevant API endpoint resource (e.g. App Service or Container App), at the outermost level (i.e. including the whole propagation path (e.g. API Management, Front Door))
+* Consider providing a dedicated API method for monitoring (e.g. `/api/status`) and implement a connectivity check to all dependencies (e.g. database, bus, storage, ...) there. Include only dependencies which are included in you SLA (external systems may be not)
 
 ## Custom Alerts (log- or metric-based)
 
@@ -123,7 +124,7 @@ Following ready-to-use Bicep modules can be used to implement this Alerting Stra
 
 > Standard Alert Rules (consisting of most of the above mentioned alerts) as a simply reusable Bicep module: [Alert Rules for Standard Monitoring Aspects](../../Snippets/ARM/alert-rules-standard-monitoring-aspects)
 
-> Application Insights Availability Test template: _coming soon_
+> Application Insights Availability Test template: [Application Insights Availability Tests](../../Snippets/ARM/appinsights-classic-standard-availability-test-with-alert-rule)
 
 # Resources
 * [MSDN Overview of Azure Alerts](https://learn.microsoft.com/en-us/azure/azure-monitor/alerts/alerts-overview)
