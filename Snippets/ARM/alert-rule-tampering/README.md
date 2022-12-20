@@ -1,6 +1,4 @@
-﻿# Alert Rule
-
-# Alert Rule for manual user activities in Resource Group (tampering)
+﻿# Alert Rule for manual user activities in Resource Group (tampering)
 Especially for productive environments it may be valuable to get notified of any manual changes (e.g. to make sure they are properly reflected in documentation or deployment scripts)
 
 This Bicep module can directly integrated into the deployment like:
