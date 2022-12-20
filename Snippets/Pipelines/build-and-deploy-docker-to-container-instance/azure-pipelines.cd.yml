@@ -6,15 +6,13 @@ parameters:
     default: 'd'
 
 resources:
-  containers:
-    - container: linux
-      image: ubuntu-latest
   pipelines:
   - pipeline: CI-Pipeline
     source: CI
     trigger: 
       branches:
       - develop
+      - release/*
 
 variables:
   - name: deploymentFolderName

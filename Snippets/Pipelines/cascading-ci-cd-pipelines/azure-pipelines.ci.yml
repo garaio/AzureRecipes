@@ -1,6 +1,11 @@
 trigger:
-- develop
-- feature/*
+  branches:
+    include:
+    - develop
+    - feature/*
+  paths:
+    exclude:
+    - README.md
 
 variables:
   - group: Build
@@ -77,6 +82,12 @@ stages:
             overrideParameters: '-resourceNameSuffix "$(resourceNameSuffix)"'
             deploymentMode: 'Validation'
           continueOnError: true
+
+        - task: CopyFiles@2
+          displayName: 'Copy Deployment Definitions (to be included in Artifact)'
+          inputs:
+            SourceFolder: '$(deploymentFolderName)'
+            TargetFolder: '$(Build.ArtifactStagingDirectory)/$(deploymentFolderName)'
 
         - task: PublishPipelineArtifact@1
           displayName: 'Publish Artifact'

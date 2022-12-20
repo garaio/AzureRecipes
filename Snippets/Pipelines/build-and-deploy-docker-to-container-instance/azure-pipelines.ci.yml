@@ -1,6 +1,11 @@
 trigger:
-- develop
-- feature/*
+  branches:
+    include:
+    - develop
+    - feature/*
+  paths:
+    exclude:
+    - README.md
 
 resources:
 - repo: self
