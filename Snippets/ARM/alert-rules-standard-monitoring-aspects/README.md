@@ -8,7 +8,7 @@ The Action Group(s) must be created in advance and its resource identifier speci
 
 > Action Groups on organisation level (shared for all applications): _coming soon_
 
-> Action Group(s) and DevOps Handler/Connector on application level (but common for all modules and independent from environments): _coming soon_
+> Action Group(s) and DevOps Handler/Connector on application level (but common for all modules and independent from environments): [Snippet `alerting-infra-application-level`](../alerting-infra-application-level)
 
 ## Contents
 

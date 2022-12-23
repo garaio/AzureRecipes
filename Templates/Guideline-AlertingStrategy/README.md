@@ -120,7 +120,7 @@ Following ready-to-use Bicep modules can be used to implement this Alerting Stra
 
 > Action Groups on organisation level (shared for all applications): _coming soon_
 
-> Action Group(s) and DevOps Handler/Connector on application level (but common for all modules and independent from environments): _coming soon_
+> Action Group(s) and DevOps Handler/Connector on application level (but common for all modules and independent from environments): [Alerting Infrastructure on Application Level](../../Snippets/ARM/alerting-infra-application-level)
 
 > Standard Alert Rules (consisting of most of the above mentioned alerts) as a simply reusable Bicep module: [Alert Rules for Standard Monitoring Aspects](../../Snippets/ARM/alert-rules-standard-monitoring-aspects)
 
