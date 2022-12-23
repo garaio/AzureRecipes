@@ -118,7 +118,7 @@ For consistency and testing, it is recommended to deploy all alerting resources 
 
 Following ready-to-use Bicep modules can be used to implement this Alerting Strategy:
 
-> Action Groups on organisation level (shared for all applications): _coming soon_
+> Action Groups on organisation level (shared for all applications): [Alerting Infrastructure on Organisation Level](../../Snippets/ARM/alerting-infra-organisation-level)
 
 > Action Group(s) and DevOps Handler/Connector on application level (but common for all modules and independent from environments): [Alerting Infrastructure on Application Level](../../Snippets/ARM/alerting-infra-application-level)
 

@@ -6,7 +6,7 @@ This snippet provides the implementation of the typical key aspects of often use
 
 The Action Group(s) must be created in advance and its resource identifier specified as parameter. Therefore, an alerting strategy should exist, which defines responsibilities and required notification flows. This snippet correlates with this [Alerting Strategy Template](../../../Templates/Guideline-AlertingStrategy) and plays well with following setup:
 
-> Action Groups on organisation level (shared for all applications): _coming soon_
+> Action Groups on organisation level (shared for all applications): [Snippet `alerting-infra-organisation-level`](../alerting-infra-organisation-level)
 
 > Action Group(s) and DevOps Handler/Connector on application level (but common for all modules and independent from environments): [Snippet `alerting-infra-application-level`](../alerting-infra-application-level)
 
