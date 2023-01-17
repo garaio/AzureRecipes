@@ -1,0 +1,161 @@
+trigger:
+  branches:
+    include:
+    - develop
+    - feature/*
+  paths:
+    exclude:
+    - README.md
+    - Resources/*
+
+parameters:
+  - name: Version
+    type: string
+    default: '2.14.0'
+
+variables:
+  - group: Build
+  - name: versionTag
+    value: ${{ parameters.Version }}
+  - name: devOpsOrgName
+    value: 'garaio-customer'
+  - name: devOpsProjName
+    value: 'project'
+  - name: devOpsWikiName
+    value: 'project.wiki'
+  - name: devOpsWikiPublishParentPagePath
+    value: '%2FReleases%2FArtifacts'
+  - name: devOpsWikiPublishParentPagePath
+    value: 'Artifact'
+  - name: devOpsWikiPath
+    value: '$(devOpsWikiPublishParentPagePath)%2F$(devOpsWikiPublishParentPagePath)%20$(versionTag).$(Build.BuildId)'
+  - name: devOpsWikiFileName
+    value: 'Project-$(versionTag).$(Build.BuildId)'
+  - name: artifactName
+    value: 'package'
+
+stages:
+  - stage: services
+    displayName: 'Services'
+    dependsOn: []
+    jobs:
+      - job: build_test
+        displayName: 'Build & Test'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - task: DotNetCoreCLI@2
+            displayName: Restore
+            inputs:
+              command: restore
+              projects: |
+                **/*.csproj
+                **/*.deployproj
+
+          - task: DotNetCoreCLI@2
+            displayName: Build
+            inputs:
+              projects: |
+                **/*.csproj
+                **/*.deployproj
+              arguments: '--configuration $(buildConfiguration)'
+
+          - task: DotNetCoreCLI@2
+            displayName: 'Execute Tests'
+            inputs:
+              command: test
+              projects: '**/*[Tt]ests/*.csproj'
+              arguments: '--configuration $(buildConfiguration)'
+
+          - task: DotNetCoreCLI@2
+            displayName: Publish
+            inputs:
+              command: publish
+              publishWebProjects: false
+              projects: '**/*.csproj'
+              arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)'
+              zipAfterPublish: True
+
+          - task: PublishPipelineArtifact@1
+            displayName: 'Publish Artifact'
+            inputs:
+              targetPath: '$(Build.ArtifactStagingDirectory)'
+              artifactName: '$(artifactName)'
+
+      - job: publish
+        displayName: 'Publish Artifact to Wiki'
+        dependsOn: ['build_test']
+        condition: eq(variables['Build.Reason'], 'Manual')
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+        
+        - task: DownloadBuildArtifacts@1
+          displayName: 'Fetch Build Artifacts'
+          inputs:
+            buildType: 'current'
+            downloadType: 'single'
+            artifactName: '$(artifactName)'
+            downloadPath: '$(Build.ArtifactStagingDirectory)'
+
+        - task: PowerShell@2
+          displayName: 'Upload Artifacts to Wiki'
+          inputs:
+            targetType: inline
+            script: |
+              $uri = ('https://dev.azure.com/{0}/{1}/_apis/wiki/wikis/{2}/attachments?name={3}&api-version=6.0' -f '$(devOpsOrgName)', '$(devOpsProjName)', '$(devOpsWikiName)', '$(devOpsWikiFileName).zip')
+              $directory = "$(Build.ArtifactStagingDirectory)/$(artifactName)"
+              $fileName = "$directory/$(devOpsWikiFileName)"
+
+              Write-Host "Uploading attachment in organization '$(devOpsOrgName)' in project '$(devOpsProjName)' in wiki space '$(devOpsWikiName)' at path '$(devOpsWikiPath)'..."
+              Write-Host "PUT URL: $uri"
+              Write-Host "File Path: $fileName.zip"
+
+              $Header = @{
+                  'Authorization' = 'Basic ' + [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(":$(PersonalAccessToken)")) 
+              }
+
+              # Compress files to zip
+              Compress-Archive -Path "$fileName.msi" -DestinationPath "$fileName.zip"
+              $base64File = [convert]::ToBase64String((Get-Content -path "$fileName.zip" -Encoding byte -ReadCount 0))
+
+              $params = @{
+                  'Uri'         = $uri
+                  'Headers'     = $Header
+                  'Method'      = 'Put'
+                  'ContentType' = 'application/octet-stream'
+                  'body'        = $base64File
+              }
+
+              Invoke-RestMethod @params
+
+              Write-Host "Attachment uploaded successfully."
+
+        - task: PowerShell@2
+          displayName: 'Create Wiki Page'
+          inputs:
+            targetType: inline
+            script: |
+              $uri = ('https://dev.azure.com/{0}/{1}/_apis/wiki/wikis/{2}/pages?path={3}&api-version=6.0' -f '$(devOpsOrgName)', '$(devOpsProjName)', '$(devOpsWikiName)', '$(devOpsWikiPath)')
+
+              Write-Host "Creating wiki page in organization '$(devOpsOrgName)' in project '$(devOpsProjName)' in wiki space '$(devOpsWikiName)' at path '$(devOpsWikiPath)'..."
+              Write-Host "PUT URL: $uri"
+
+              $Header = @{
+                  'Authorization' = 'Basic ' + [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes(":$(PersonalAccessToken)")) 
+              }
+
+              $date = Get-Date -Format "dd.MM.yyyy - HH:mm:ss"
+              $content = "**Createt at:** $date<br />**Artifact**: [$(devOpsWikiFileName).zip](/.attachments/$(devOpsWikiFileName).zip)"
+
+              $params = @{
+                  'Uri'         = $uri
+                  'Headers'     = $Header
+                  'Method'      = 'Put'
+                  'ContentType' = 'application/json; charset=utf-8'
+                  'body'        = @{content = $content; } | ConvertTo-Json
+              }
+
+              Invoke-RestMethod @params
+
+              Write-Host "Wiki page created successfully."
