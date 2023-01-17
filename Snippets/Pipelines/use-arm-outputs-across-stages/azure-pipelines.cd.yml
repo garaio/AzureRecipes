@@ -1,0 +1,118 @@
+trigger: none
+
+parameters:
+  - name: suffix
+    type: string
+    default: 't'
+
+resources:
+  pipelines:
+  - pipeline: CI-Pipeline
+    source: CI - Demo Project
+    trigger: 
+      branches:
+      - develop
+      - release/*
+
+variables:
+  - group: Release - Common
+  - name: currentDate
+    value: '$[format(''{0:yyyy}-{0:MM}-{0:dd}'', pipeline.startTime)]'
+
+stages:
+  - stage: deploy_cmn_monitor
+    displayName: 'Deploy COMMON Monitoring'
+    dependsOn: []
+    jobs:
+      - deployment: monitoring
+        displayName: 'Monitoring Services'
+        pool:
+          vmImage: 'ubuntu-latest'
+        environment: 'COMMON'
+        variables:
+          - group: Release - Common
+          - name: projectNamePrefix
+            value: 'Customer.Project.'
+          - name: deploymentFolderName
+            value: '${{ variables.projectNamePrefix }}Deployment'
+          - name: ciArtifactName
+            value: 'services'
+          - name: resourceGroupName
+            value: '$(resourceNamePrefix)-${{ variables.resourceNameSuffix }}'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: AzureCLI@2
+                  displayName: 'Create Resource Group'
+                  inputs:
+                    azureSubscription: 'ARM Service Connection'
+                    scriptType: bash
+                    scriptLocation: inlineScript
+                    inlineScript: |
+                      az group create --location $(resourceLocation) --name $(resourceGroupName) --tags 'DeployedAt=$(currentDate)' 'DeployedBy=$(Build.RequestedFor)' 'DeployedFrom=$(System.TeamProject)'
+
+                - task: AzureResourceManagerTemplateDeployment@3
+                  displayName: 'Deploy ARM Template (ResourceGroup)'
+                  inputs:
+                    azureResourceManagerConnection: 'ARM Service Connection'
+                    subscriptionId: '$(subscriptionId)'
+                    resourceGroupName: '$(resourceGroupName)'
+                    location: '$(resourceLocation)'
+                    csmFile: '$(Pipeline.Workspace)/CI-Pipeline/$(ciArtifactName)/$(deploymentFolderName)/azuredeploy.bicep'
+                    overrideParameters: '-resourceNamePrefix "$(opsResourceNamePrefix)" -resourceNameSuffix "$(resourceNameSuffix)"'
+                    deploymentMode: 'Incremental'
+                    deploymentName: 'Monitoring-$(Build.BuildId)-$(Environment.Name)'
+                    deploymentOutputs: armOutputs
+
+                # Map ARM outputs from JSON object to output-variables which can be read in later jobs/stages. More: https://learn.microsoft.com/en-us/azure/devops/pipelines/process/variables#set-a-multi-job-output-variable
+                - task: PowerShell@2
+                  name: resids
+                  displayName: 'Gather ARM Template Outputs'
+                  inputs:
+                    targetType: inline
+                    script: |
+                      $outputsObject = ConvertFrom-Json '$(armOutputs)'
+                      
+                      Write-Output "Parsed Object: $(ConvertTo-Json $outputsObject -Compress)"
+
+                      foreach ($output in $outputsObject.PSObject.Properties) {
+                          Write-Host "$($output.Name) = $($output.Value.value)"
+                          Write-Host "##vso[task.setvariable variable=$($output.Name);isOutput=true]$($output.Value.value)"
+                      }
+
+  - stage: deploy_test
+    displayName: 'Deploy TEST Environment'
+    dependsOn: deploy_cmn_monitor
+    variables:
+      # Note: Output referencing is special for deployment jobs: https://learn.microsoft.com/en-us/azure/devops/pipelines/process/deployment-jobs?view=azure-devops#support-for-output-variables
+      actionGrpDevOpsTeamResId: $[ stageDependencies.deploy_cmn_monitor.monitoring.outputs['monitoring.resids.actionGrpDevOpsTeamResId'] ]
+      actionGrpGaraioRemResId: $[ stageDependencies.deploy_cmn_monitor.monitoring.outputs['monitoring.resids.actionGrpGaraioRemResId'] ]
+    jobs:
+      - template: templates.deploy-to-stage.yml
+        parameters:
+          envName: 'TEST'
+          suffix: '${{ parameters.suffix }}'
+          releaseDate: '$(currentDate)'
+          armServiceConnection: 'ARM Service Connection'
+          actionGrpDevOpsTeamResId: '$(actionGrpDevOpsTeamResId)'
+          actionGrpGaraioRemResId: '$(actionGrpGaraioRemResId)'
+
+  - stage: deploy_prod
+    displayName: 'Deploy PROD Environment'
+    dependsOn: 
+      - deploy_cmn_monitor # Important: This stage must be referenced explicitely to allow reading of outputs via dependencies
+      - deploy_test
+    variables:
+      # Note: Output referencing is special for deployment jobs: https://learn.microsoft.com/en-us/azure/devops/pipelines/process/deployment-jobs?view=azure-devops#support-for-output-variables
+      actionGrpDevOpsTeamResId: $[ stageDependencies.deploy_cmn_monitor.monitoring.outputs['monitoring.resids.actionGrpDevOpsTeamResId'] ]
+      actionGrpGaraioRemResId: $[ stageDependencies.deploy_cmn_monitor.monitoring.outputs['monitoring.resids.actionGrpGaraioRemResId'] ]
+    jobs:
+      - template: templates.deploy-to-stage.yml
+        parameters:
+          envName: 'PROD'
+          suffix: 'p'
+          releaseDate: '$(currentDate)'
+          armServiceConnection: 'ARM Service Connection'
+          actionGrpDevOpsTeamResId: '$(actionGrpDevOpsTeamResId)'
+          actionGrpGaraioRemResId: '$(actionGrpGaraioRemResId)'
