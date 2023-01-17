@@ -1,0 +1,129 @@
+parameters:
+  - name: envName
+    type: string
+    values:
+    - DEV
+    - TEST
+    - PROD
+  - name: suffix
+    type: string
+  - name: releaseDate
+    type: string
+  - name: armServiceConnection
+    type: string
+
+jobs:
+  - deployment: resources
+    displayName: 'Azure Resources'
+    pool:
+      vmImage: 'ubuntu-latest'
+    environment: ${{ parameters.envName }}
+    variables:
+      - group: Release - Common
+      - group: ${{ format('Release - {0}', parameters.envName) }}
+      - name: deploymentFolderName
+        value: 'Deployment'
+      - name: ciArtifactName
+        value: 'services'
+      - name: resourceGroupName
+        value: '$(resourceNamePrefix)-${{ parameters.suffix }}'
+      - name: prefixUnhyphenated
+        value: '$[replace(variables[''resourceNamePrefix''],''-'','''')]'
+      - name: storageAccountName
+        value: '$(prefixUnhyphenated)sa${{ parameters.suffix }}'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+            - task: AzureCLI@2
+              displayName: 'Create Resource Group'
+              inputs:
+                azureSubscription: '${{ parameters.armServiceConnection }}'
+                scriptType: bash
+                scriptLocation: inlineScript
+                inlineScript: |
+                  az group create --location $(resourceLocation) --name $(resourceGroupName) --tags 'DeployedAt=${{ parameters.releaseDate }}' 'DeployedBy=$(Build.RequestedFor)' 'DeployedFrom=$(System.TeamProject)'
+            
+            - task: AzureCLI@2
+              displayName: 'Create Storage Account for Artifact'
+              inputs:
+                azureSubscription: '${{ parameters.armServiceConnection }}'
+                scriptType: bash
+                scriptLocation: inlineScript
+                inlineScript: |
+                  az storage account create --name $(storageAccountName) --resource-group $(resourceGroupName)
+
+            - task: AzureCLI@2
+              displayName: 'Create Storage Container'
+              inputs:
+                azureSubscription: '${{ parameters.armServiceConnection }}'
+                scriptType: bash
+                scriptLocation: inlineScript
+                inlineScript: |
+                  az storage container create --name $(blobContainerDeployment) --account-name $(storageAccountName) --resource-group $(resourceGroupName)
+
+            - task: AzureCLI@2
+              displayName: 'Copy Artifact to Storage Container'
+              inputs:
+                azureSubscription: '${{ parameters.armServiceConnection }}'
+                scriptType: bash
+                scriptLocation: inlineScript
+                inlineScript: |
+                  az storage blob upload-batch -s $(Pipeline.Workspace)/CI-Pipeline/$(ciArtifactName) -d $(blobContainerDeployment) --account-name $(storageAccountName) --overwrite=true
+            
+            - task: AzureResourceManagerTemplateDeployment@3
+              displayName: 'Deploy ARM Template (ResourceGroup)'
+              inputs:
+                azureResourceManagerConnection: '${{ parameters.armServiceConnection }}'
+                subscriptionId: '$(subscriptionId)'
+                resourceGroupName: '$(resourceGroupName)'
+                location: '$(resourceLocation)'
+                csmFile: '$(Pipeline.Workspace)/CI-Pipeline/$(ciArtifactName)/$(deploymentFolderName)/azuredeploy.resources.bicep'
+                overrideParameters: '-resourceNamePrefix "$(resourceNamePrefix)" -resourceNameSuffix "${{ parameters.suffix }}" -apiMgmtSku "$(apiMgmtSku)" -apiMgmtGatewayCustomDomain "$(apiMgmtGatewayCustomDomain)"'
+                deploymentMode: 'Incremental'
+                deploymentName: 'Resources-$(Build.BuildId)-$(Environment.Name)'
+
+  - deployment: api_definitions
+    dependsOn: resources
+    displayName: 'API Definitions'
+    pool:
+      vmImage: 'ubuntu-latest'
+    environment: ${{ parameters.envName }}
+    variables:
+      - group: Release - Common
+      - group: ${{ format('Release - {0}', parameters.envName) }}
+      - name: deploymentFolderName
+        value: 'Deployment'
+      - name: ciArtifactName
+        value: 'services'
+      - name: resourceGroupName
+        value: '$(resourceNamePrefix)-${{ parameters.suffix }}'
+      - name: demoFuncName
+        value: '$(resourceNamePrefix)-demo-f-${{ parameters.suffix }}'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+            - task: PowerShell@2
+              displayName: 'Gather API Definition info object(s)'
+              inputs:
+                targetType: inline
+                script: |
+                  [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+                  $json = Invoke-WebRequest 'https://$(demoFuncName).azurewebsites.net/api/openapi/v3.json' | ConvertFrom-Json
+                  $result = (ConvertTo-Json $json.info -Compress).Replace("`"","'")
+
+                  Write-Output "Demo: $($result)"
+                  Write-Host "##vso[task.setvariable variable=demoApiSpecInfoJson]$result"
+
+            - task: AzureResourceManagerTemplateDeployment@3
+              displayName: 'Deploy ARM Template (ResourceGroup)'
+              inputs:
+                azureResourceManagerConnection: '${{ parameters.armServiceConnection }}'
+                subscriptionId: '$(subscriptionId)'
+                resourceGroupName: '$(resourceGroupName)'
+                location: '$(resourceLocation)'
+                csmFile: '$(Pipeline.Workspace)/CI-Pipeline/$(ciArtifactName)/$(deploymentFolderName)/azuredeploy.api-definitions.bicep'
+                overrideParameters: '-resourceNamePrefix "$(resourceNamePrefix)" -resourceNameSuffix "${{ parameters.suffix }}" -demoApiSpecInfoJson "$(demoApiSpecInfoJson)"'
+                deploymentMode: 'Incremental'
+                deploymentName: 'API-Definitions-$(Build.BuildId)-$(Environment.Name)'

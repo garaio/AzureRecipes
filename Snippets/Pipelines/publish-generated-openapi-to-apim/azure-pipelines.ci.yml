@@ -1,0 +1,105 @@
+trigger:
+  branches:
+    include:
+    - develop
+    - feature/*
+  paths:
+    exclude:
+    - README.md
+    - Resources/*
+
+variables:
+  - group: Build
+  - name: deploymentFolderName
+    value: 'Deployment'
+  - name: resourceGroupName
+    value: '$(resourceNamePrefix)-$(resourceNameSuffix)'
+  - name: currentDate
+    value: '$[format(''{0:yyyy}-{0:MM}-{0:dd}'', pipeline.startTime)]'
+
+stages:
+- stage: services
+  displayName: 'Services'
+  dependsOn: []
+  jobs:
+    - job: build_test
+      displayName: "Build & Test"
+      pool:
+        vmImage: 'ubuntu-latest'
+      steps:
+        - task: DotNetCoreCLI@2
+          displayName: Restore
+          inputs:
+            command: restore
+            projects: |
+              **/*.csproj
+              **/*.deployproj
+
+        - task: DotNetCoreCLI@2
+          displayName: Build
+          inputs:
+            projects: |
+              **/*.csproj
+              **/*.deployproj
+            arguments: '--configuration $(buildConfiguration)'
+
+        - task: DotNetCoreCLI@2
+          displayName: 'Execute Tests'
+          inputs:
+            command: test
+            projects: '**/*[Tt]ests/*.csproj'
+            arguments: '--configuration $(buildConfiguration)'
+
+        - task: DotNetCoreCLI@2
+          displayName: Publish
+          inputs:
+            command: publish
+            publishWebProjects: false
+            projects: '**/*.csproj'
+            arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)'
+            zipAfterPublish: True
+
+        - task: AzureCLI@2
+          displayName: 'Create Resource Group'
+          inputs:
+            azureSubscription: '$(armServiceConnection)'
+            scriptType: bash
+            scriptLocation: inlineScript
+            inlineScript: |
+              az group create --location $(resourceLocation) --name $(resourceGroupName) --tags 'DeployedAt=$(currentDate)' 'DeployedBy=$(Build.RequestedFor)' 'DeployedFrom=$(System.TeamProject)'
+
+        - task: AzureResourceManagerTemplateDeployment@3
+          displayName: 'Validate ARM Template Resources'
+          inputs:
+            azureResourceManagerConnection: '$(armServiceConnection)'
+            subscriptionId: '$(subscriptionId)'
+            resourceGroupName: '$(resourceGroupName)'
+            location: '$(resourceLocation)'
+            csmFile: '$(deploymentFolderName)/azuredeploy.resources.bicep'
+            overrideParameters: '-resourceNamePrefix "$(resourceNamePrefix)" -resourceNameSuffix "$(resourceNameSuffix)"'
+            deploymentMode: 'Validation'
+          continueOnError: true
+        
+        - task: AzureResourceManagerTemplateDeployment@3
+          displayName: 'Validate ARM Template API Definitions'
+          inputs:
+            azureResourceManagerConnection: '$(armServiceConnection)'
+            subscriptionId: '$(subscriptionId)'
+            resourceGroupName: '$(resourceGroupName)'
+            location: '$(resourceLocation)'
+            csmFile: '$(deploymentFolderName)/azuredeploy.api-definitions.bicep'
+            overrideParameters: '-resourceNamePrefix "$(resourceNamePrefix)" -resourceNameSuffix "$(resourceNameSuffix)"'
+            deploymentMode: 'Validation'
+          continueOnError: true
+
+        - task: CopyFiles@2
+          displayName: 'Copy Deployment Definitions (to be included in Artifact)'
+          inputs:
+            SourceFolder: '$(deploymentFolderName)'
+            TargetFolder: '$(Build.ArtifactStagingDirectory)/$(deploymentFolderName)'
+            
+        - task: PublishPipelineArtifact@1
+          displayName: 'Publish Artifact'
+          inputs:
+            targetPath: '$(Build.ArtifactStagingDirectory)'
+            artifactName: '$(System.StageName)'

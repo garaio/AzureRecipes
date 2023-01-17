@@ -46,7 +46,10 @@ A more realistic and robust concept could be to separate the provisioning of the
 ![CI/CD Concept](./CICD-Concept.png)
 
 This ensures a consistent programming model based on OpenAPI specifications, which are either created manually or generated from code (with corresponding libraries or tools) and then are deployed as an integral part of the application CI/CD processes. Alternatively, the definitions can be created manually in the Azure Portal of the TEST environment and be exported as OpenAPI specification to source management.
+
 The implementation of this process is the responsibility of the application supplier, the deployment of the OpenAPI spec can be done within [Bicep/ARM definitions](https://docs.microsoft.com/en-us/azure/templates/microsoft.apimanagement/service/apis), [CLI](https://docs.microsoft.com/en-us/cli/azure/apim/api), [PowerShell](https://docs.microsoft.com/en-us/powershell/module/az.apimanagement/import-azapimanagementapi) or with specific DevOps Pipeline Tasks in the marketplace ([Example](https://marketplace.visualstudio.com/items?itemName=stephane-eyskens.apim)). Microsoft provides a useful [DevOps Pipeline Task to generate OpenAPI spec for .NET applications](https://marketplace.visualstudio.com/items?itemName=ms-openapi.OpenApiDocumentTools).
+
+> Pipeline snippet for automatic publishing of generated OpenAPI specification including versioning: [publish-generated-openapi-to-apim](../../Snippets/Pipelines/publish-generated-openapi-to-apim)
 
 ## Recommendations
 Provide integration guidelines for application developers (i.e. those who provide APIs), so that all APIs implement common patterns. This should contain definitions for:
