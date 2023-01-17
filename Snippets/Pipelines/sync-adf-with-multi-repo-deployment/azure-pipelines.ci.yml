@@ -1,0 +1,88 @@
+trigger:
+  branches:
+    include:
+    - develop
+    - feature/*
+  paths:
+    exclude:
+    - README.md
+    - Resources/*
+
+variables:
+  - group: Build
+  - name: deploymentFolderName
+    value: 'Deployment'
+  - name: resourceGroupName
+    value: '$(resourceNamePrefix)-$(resourceNameSuffix)'
+  - name: currentDate
+    value: '$[format(''{0:yyyy}-{0:MM}-{0:dd}'', pipeline.startTime)]'
+  - name: adfRepoPath
+    value: 'adf'
+  - name: adfTemplateFolder
+    value: '$(deploymentFolderName)/DataFactoryDefinitions'
+  - name: adfTemplateFilename
+    value: 'ARMTemplateForFactory.json'
+
+stages:
+- stage: services
+  displayName: 'Services'
+  dependsOn: []
+  jobs:
+    - job: build_test
+      displayName: "Build & Test"
+      pool:
+        vmImage: 'ubuntu-latest'
+      steps:
+        # Step required when using multiple repo's: https://docs.microsoft.com/en-us/azure/devops/pipelines/repos/multi-repo-checkout
+        - checkout: self
+          clean: true
+          path: 's' # Re-set default directory
+
+        - task: AzureCLI@2
+          displayName: 'Create Resource Group'
+          inputs:
+            azureSubscription: '$(armServiceConnection)'
+            scriptType: bash
+            scriptLocation: inlineScript
+            inlineScript: |
+              az group create --location $(resourceLocation) --name $(resourceGroupName) --tags 'DeployedAt=$(currentDate)' 'DeployedBy=$(Build.RequestedFor)' 'DeployedFrom=$(System.TeamProject)'
+
+        - task: AzureResourceManagerTemplateDeployment@3
+          displayName: 'Validate ARM Template'
+          inputs:
+            azureResourceManagerConnection: '$(armServiceConnection)'
+            subscriptionId: '$(subscriptionId)'
+            resourceGroupName: '$(resourceGroupName)'
+            location: '$(resourceLocation)'
+            csmFile: '$(deploymentFolderName)/azuredeploy.bicep'
+            overrideParameters: '-resourceNamePrefix "$(resourceNamePrefix)" -resourceNameSuffix "$(resourceNameSuffix)"'
+            deploymentMode: 'Validation'
+          continueOnError: true
+
+        - task: CopyFiles@2
+          displayName: 'Copy Deployment Definitions (to be included in Artifact)'
+          inputs:
+            SourceFolder: '$(deploymentFolderName)'
+            TargetFolder: '$(Build.ArtifactStagingDirectory)/$(deploymentFolderName)'
+            
+        - checkout: 'git://$(System.TeamProject)/$(adfRepoName)@$(adfRepoBranch)'
+          displayName: 'Download ADF ARM Template from its repository'
+          condition: and(ne(variables.adfRepoName, ''), ne(variables.adfRepoBranch, ''))
+          clean: true
+          path: 's/$(adfRepoPath)'
+
+        - task: CopyFiles@2
+          condition: and(ne(variables.adfRepoName, ''), ne(variables.adfRepoSourceProjectName, ''))
+          displayName: 'Copy ADF ARM Template (to be included in Artifact)'
+          inputs:
+            SourceFolder: '$(adfRepoPath)/$(adfRepoSourceProjectName)'
+            Contents: |
+              $(adfTemplateFilename)
+            TargetFolder: '$(Build.ArtifactStagingDirectory)/$(adfTemplateFolder)'
+            OverWrite: true
+
+        - task: PublishPipelineArtifact@1
+          displayName: 'Publish Artifact'
+          inputs:
+            targetPath: '$(Build.ArtifactStagingDirectory)'
+            artifactName: '$(System.StageName)'

@@ -1,0 +1,108 @@
+parameters:
+  - name: envName
+    type: string
+    values:
+    - DEV
+    - TEST
+    - PROD
+  - name: suffix
+    type: string
+  - name: releaseDate
+    type: string
+  - name: armServiceConnection
+    type: string
+
+jobs:
+  - deployment: provider_directory
+    displayName: 'Provider Directory Services'
+    pool:
+      vmImage: 'ubuntu-latest'
+    environment: ${{ parameters.envName }}
+    variables:
+      - group: Release - Common
+      - group: ${{ format('Release - {0}', parameters.envName) }}
+      - name: deploymentFolderName
+        value: 'Deployment'
+      - name: ciArtifactName
+        value: 'services'
+      - name: resourceGroupName
+        value: '$(resourceNamePrefix)-${{ parameters.suffix }}'
+      - name: prefixUnhyphenated
+        value: '$[replace(variables[''resourceNamePrefix''],''-'','''')]'
+      - name: storageAccountName
+        value: '$(prefixUnhyphenated)sa${{ parameters.suffix }}'
+      - name: dataFactoryName
+        value: '$(resourceNamePrefix)-df-${{ parameters.suffix }}'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+            - task: AzureCLI@2
+              displayName: 'Create Resource Group'
+              inputs:
+                azureSubscription: '${{ parameters.armServiceConnection }}'
+                scriptType: bash
+                scriptLocation: inlineScript
+                inlineScript: |
+                  az group create --location $(resourceLocation) --name $(resourceGroupName) --tags 'DeployedAt=${{ parameters.releaseDate }}' 'DeployedBy=$(Build.RequestedFor)' 'DeployedFrom=$(System.TeamProject)'
+
+            - task: AzureCLI@2
+              displayName: 'Create Storage Account for Artifact'
+              inputs:
+                azureSubscription: '${{ parameters.armServiceConnection }}'
+                scriptType: bash
+                scriptLocation: inlineScript
+                inlineScript: |
+                  az storage account create --name $(storageAccountName) --resource-group $(resourceGroupName)
+
+            - task: AzureCLI@2
+              displayName: 'Create Storage Container'
+              inputs:
+                azureSubscription: '${{ parameters.armServiceConnection }}'
+                scriptType: bash
+                scriptLocation: inlineScript
+                inlineScript: |
+                  az storage container create --name $(blobContainerDeployment) --account-name $(storageAccountName) --resource-group $(resourceGroupName)
+
+            - task: AzureCLI@2
+              displayName: 'Copy Artifact to Storage Container'
+              inputs:
+                azureSubscription: '${{ parameters.armServiceConnection }}'
+                scriptType: bash
+                scriptLocation: inlineScript
+                inlineScript: |
+                  az storage blob upload-batch -s $(Pipeline.Workspace)/CI-Pipeline/$(ciArtifactName) -d $(blobContainerDeployment) --account-name $(storageAccountName) --overwrite=true
+            
+              # Documentation: https://azurebi-docs.jppp.org/vsts-extensions/azure-data-factory-trigger.html
+            - task: toggle-adf-trigger@2
+              displayName: 'Stop ADF Triggers'
+              condition: and(succeeded(), eq(variables.isAdfDevelopmentStage, 'false'))
+              inputs:
+                azureSubscription: '${{ parameters.armServiceConnection }}'
+                ResourceGroupName: '$(resourceGroupName)'
+                DatafactoryName: '$(dataFactoryName)'
+                TriggerFilter: 'DemoTrigger' # '*' to include all triggers
+                TriggerStatus: 'stop'
+
+            - task: AzureResourceManagerTemplateDeployment@3
+              displayName: 'Deploy ARM Template (ResourceGroup)'
+              inputs:
+                azureResourceManagerConnection: '${{ parameters.armServiceConnection }}'
+                subscriptionId: '$(subscriptionId)'
+                resourceGroupName: '$(resourceGroupName)'
+                location: '$(resourceLocation)'
+                csmFile: '$(Pipeline.Workspace)/CI-Pipeline/$(ciArtifactName)/$(deploymentFolderName)/azuredeploy.bicep'
+                overrideParameters: '-resourceNamePrefix "$(resourceNamePrefix)" -resourceNameSuffix "${{ parameters.suffix }}" -isAdfDevelopmentStage $(isAdfDevelopmentStage) -adfRepoName "$(adfRepoName)" -adfRepoDevOpsProjectName "$(System.TeamProject)"'
+                deploymentMode: 'Incremental'
+                deploymentName: 'ADF-Demo-Project-$(Build.BuildId)-$(Environment.Name)'
+
+              # Documentation: https://azurebi-docs.jppp.org/vsts-extensions/azure-data-factory-trigger.html
+            - task: toggle-adf-trigger@2
+              displayName: 'Restart ADF Triggers'
+              condition: and(succeeded(), eq(variables.isAdfDevelopmentStage, 'false'))
+              inputs:
+                azureSubscription: '${{ parameters.armServiceConnection }}'
+                ResourceGroupName: '$(resourceGroupName)'
+                DatafactoryName: '$(dataFactoryName)'
+                TriggerFilter: 'DemoTrigger' # '*' to include all triggers
+                TriggerStatus: 'start'

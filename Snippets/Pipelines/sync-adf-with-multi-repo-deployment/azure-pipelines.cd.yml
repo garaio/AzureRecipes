@@ -1,0 +1,42 @@
+trigger: none
+
+parameters:
+  - name: suffix
+    type: string
+    default: 't'
+
+resources:
+  pipelines:
+  - pipeline: CI-Pipeline
+    source: CI - Demo Project
+    trigger: 
+      branches:
+      - develop
+      - release/*
+
+variables:
+  - group: Release - Common
+  - name: currentDate
+    value: '$[format(''{0:yyyy}-{0:MM}-{0:dd}'', pipeline.startTime)]'
+
+stages:
+  - stage: deploy_test
+    displayName: 'Deploy TEST Environment'
+    jobs:
+      - template: templates.deploy-to-stage.yml
+        parameters:
+          envName: 'TEST'
+          suffix: '${{ parameters.suffix }}'
+          releaseDate: '$(currentDate)'
+          armServiceConnection: 'ARM Service Connection'
+
+  - stage: deploy_prod
+    displayName: 'Deploy PROD Environment'
+    dependsOn: deploy_test
+    jobs:
+      - template: templates.deploy-to-stage.yml
+        parameters:
+          envName: 'PROD'
+          suffix: 'p'
+          releaseDate: '$(currentDate)'
+          armServiceConnection: 'ARM Service Connection'

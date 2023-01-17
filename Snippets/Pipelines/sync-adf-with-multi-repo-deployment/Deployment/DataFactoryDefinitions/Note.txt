@@ -1,0 +1,5 @@
+The file in this folder is a placeholder to:
+- document the deployment process
+- and ensure that the Bicep/ARM defintions can be validated
+
+The file will be overwritten with the most current definition from the ADF-linked GIT repository.
