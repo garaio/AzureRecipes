@@ -1,3 +1,5 @@
+[[TOC]]
+
 # Summary
 
 This page describes the methods available to better control Azure costs and avoid unpleasant surprises related to resource consumption that has increased beyond expectations. It rely on the [Monitoring Best-Practices](/Knowledge/BestPractices-AzureSolutions-Monitoring/README.md) when it is about alerting.
@@ -23,8 +25,10 @@ Azure supplies a variety of utilities and tools to enhance the planning, monitor
 - When designing a solution, the cost dimension should always be considered when choosing services and technologies.
 - In most cases, IaaS services are more expensive than PaaS services. Therefore, not only for cost reasons, PaaS services should be preferred over IaaS services.
 - Once a solution has been designed, before its first deployment, estimate the costs using the price calculator.
-- Each subscription should have a defined budget and at least one alert, triggered at most when the budget reaches 80%.
-- At the end of each month, the following should be reviewed:
+- Each subscription should have a defined budget (e.g. based on above pricing calculator estimation) and at least one alert, triggered when the 80% of the budget has been reached.
+- After every billing-period, review the subscriptions resources and costs to:
   - Check for cost anomalies that do not follow a trend;
   - Ensure proper scaling of Azure resources to avoid paying for unused capacity;
   - Adjust the associated budget and its alerts based on the past month and any adjustment made.
+
+## 
