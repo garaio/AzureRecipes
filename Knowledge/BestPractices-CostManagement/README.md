@@ -27,11 +27,11 @@ Depending on the starting conditions of the solution being designed, you may or 
 The costs are also influenced by the expected service level and the technical constraints applied on the solution according to the best practices, the IT constraints of the final customer or the regulations resulting from the sector of activity.
 
 Some constraints that might influence the costs:
-- The desire, or need, to favor a certain cloud architecture
+- The desire, or need, to favor a certain cloud architecture (Hub&Spoke pattern, usage of centralized Azure Firewall / API Management)
 - The expected service level (SLA)
-- The type and required retention of backups
-- The level of protection against interruptions and intrusions
-- The number of distinguish operation environments
+- The type and required retention of backups (ZRS, GRS, short-term, long-term)
+- The level of protection against interruptions and intrusions (Usage of centralized API Management, Azure Firewall with Advanced features...)
+- The number of distinguish operation environments (DEV, TEST, PROD...)
 
 The combination of the expected usages and the non-functional requirements will lead to set of services and configuration that can be declared within the Azure Pricing Calculator to obtain an estimated operation cost.
 
