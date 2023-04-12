@@ -1,5 +1,3 @@
-[[TOC]]
-
 # Summary
 
 This page describes the methods available to better control Azure costs and avoid unpleasant surprises related to resource consumption that has increased beyond expectations. It rely on the [Monitoring Best-Practices](/Knowledge/BestPractices-AzureSolutions-Monitoring/README.md) when it is about alerting.
