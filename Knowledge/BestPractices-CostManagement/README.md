@@ -18,7 +18,39 @@ Azure supplies a variety of utilities and tools to enhance the planning, monitor
 
 ## Cost Analysis
 
-# Recommendations
+# Best-Practices
+
+## When designing a solution
+
+Depending on the starting conditions of the solution being designed, you may or may not have access to information about the usage that will be applied to the application. Nonetheless it is crucial to have an idea of the potential load excepted. It will be necessary to be able to correctly select the services and their levels and will impact the future costs.
+
+The costs are also influenced by the expected service level and the technical constraints applied on the solution according to the best practices, the IT constraints of the final customer or the regulations resulting from the sector of activity.
+
+Some constraints that might influence the costs:
+- The desire, or need, to favor a certain cloud architecture
+- The expected service level (SLA)
+- The type and required retention of backups
+- The level of protection against interruptions and intrusions
+- The number of distinguish operation environments
+
+The combination of the expected usages and the non-functional requirements will lead to set of services and configuration that can be declared within the Azure Pricing Calculator to obtain an estimated operation cost.
+
+
+## When operating a solution
+
+- Setup budget
+- Periodically adjust the service scaling and budget
+  - After a couple of hours
+  - After a couple of days
+  - After a couple of weeks
+  - Every month
+  - After a year of operation
+
+For each review, try to identify an usage pattern to properly scale the systems.
+After a given period of time, as soon as we can identify a proper usage trend, given the solution has at least an operation lifetime of a year, study the possibility to opt-in in a reserved capacity program.
+
+
+## Archives
 
 - When designing a solution, the cost dimension should always be considered when choosing services and technologies.
 - In most cases, IaaS services are more expensive than PaaS services. Therefore, not only for cost reasons, PaaS services should be preferred over IaaS services.
