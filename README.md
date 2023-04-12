@@ -3,13 +3,14 @@
 # Azure Recipes
 This repository contains various guidances and artefacts collected during engineering of applications on Microsoft Azure. Most of them are based on PaaS or serverless services.
 
-* [Contents](#contents)
-  * [Blueprints](#blueprints)
-  * [Snippets](#snippets)
-  * [Templates](#templates)
-  * [Knowledge](#knowledge)
-* [Support](#support)
-* [License](#license)
+- [Azure Recipes](#azure-recipes)
+  - [Contents](#contents)
+    - [Blueprints](#blueprints)
+    - [Snippets](#snippets)
+    - [Templates](#templates)
+    - [Knowledge](#knowledge)
+  - [Support](#support)
+  - [License](#license)
 
 ## Contents
 The content is focused to the type of applications GARAIO AG typically develops as well as the tools and toolchain typically used for that. This includes mainly following tools:
@@ -69,6 +70,7 @@ In that folder various "Knowhow", "Tips & Tricks" and "Best Practices" content i
 | Best Practices | App Registrations | App Registrations are often used by resources such as Bot Service or App Services / Functions to grant access to API's or for user authentication. With a continuous deployment approach, there are certain challenges to ensure correct availability and continuity with the secret lifecycle. | [Show](./Knowledge/BestPractices-AppRegistrations) |
 | Knowhow | Azure Bot Service | Infographic (or schematic architecture) displaying the relationship of the various components and resources to build and run Azure Bot Service implementations. Includes Power Virtual Agent and Bot Framework tools such as the Composer or Emulator. | [Show](./Knowledge/Knowhow-AzureBotService-Overview) |
 | Tips & Tricks | Azure Management REST API | For almost every resource type as well as for the central Azure Resource Manager there is a [comprehensive REST API provided, which is also well documented](https://docs.microsoft.com/en-us/rest/api/azure/). However, the documentation and most of other internet resources just demonstrate how to authenticate a service principal for application access. This requires you to assign according permissions to resources (RBAC), which is not always wanted or even possible. For API calls with Postman you maybe want a delegated access based on your personal account. | [Show](./Knowledge/TipsAndTricks-ManagementApi-Postman) |
+| Best Practices | Azure Cost Management | How to enhance the Azure Cost controlling in your subscriptions by the setup of Budget and associated alerts.|[Show](./Knowledge/BestPractices-CostManagement/)|
 
 ## Support
 If you need help with some content or find a bug then you may [create an issue](https://github.com/garaio/AzureRecipes/issues). For further inquiries please use contact possibilities on the [official website](https://garaio.com).
